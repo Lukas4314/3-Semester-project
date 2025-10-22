@@ -2,8 +2,8 @@ from mqqtInterface import MQTTInterface
 import time
 
 
-SPEED = 1 # meaning when 1 is written it is 1 meter per second
-ANGULAR_SPEED = 1 # meaning when 1 is written it is 1 radian per second
+SPEED = 0.2 # meaning when 1 is written it is 1 meter per second
+ANGULAR_SPEED = 1 # meaning when 1 is written it is 1 degree per second
 
 
 class TurtleController:
@@ -33,6 +33,12 @@ class TurtleController:
     def turn_counter_clockwise(self, amount_deg):
         print(f"Turning counter-clockwise at angular speed {ANGULAR_SPEED}")
         self.set_turn_speed(ANGULAR_SPEED)
+        time.sleep(amount_deg / ANGULAR_SPEED)
+        self.set_turn_speed(0.0)
+
+    def turn_clockwise(self, amount_deg):
+        print(f"Turning clockwise at angular speed {ANGULAR_SPEED}")
+        self.set_turn_speed(-ANGULAR_SPEED)
         time.sleep(amount_deg / ANGULAR_SPEED)
         self.set_turn_speed(0.0)
 

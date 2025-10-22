@@ -1,4 +1,7 @@
-import turtleController
+import math
+import time
+from mqqtInterface import MQTTInterface
+from turtleController import TurtleController
 # Converting strings into actions
 
 # I want to map multiple strings to the same action, the actions have to be in order of direction, distance, unit. If the strings are not in that order the function doesn't do anything, it just keeps reading the input.
@@ -33,7 +36,7 @@ def string_to_command(input_string):
     # synonyms for the same direction
     directions = {
         "forward": ["forward", "straight"],
-        "backward": ["backward", "back", "reverse"],
+        "backward": ["backward", "backwards", "back", "reverse"],
         "left": ["left"],
         "right": ["right"]
     }
@@ -47,12 +50,12 @@ def string_to_command(input_string):
 
     # Defaults used when distance/unit aren't included
     DEFAULTS = {
-        "move": {"distance": 1, "unit": "meters"},   
-        "turn": {"distance": 90, "unit": "degrees"}  
+        "move": {"distance": 1.0, "unit": "meters"},
+        "turn": {"distance": 90.0, "unit": "degrees"}
     }
 
-    # Normalize and remove punctuation (keep letters, digits, spaces)
-    cleaned = ''.join(ch for ch in input_string.lower() if ch.isalnum() or ch.isspace())
+    # Normalize and remove punctuation but keep decimal point and minus sign so floats parse
+    cleaned = ''.join(ch for ch in input_string.lower() if ch.isalnum() or ch.isspace() or ch in ".-")
     words = cleaned.split()
 
     # collect all occurrences (don't overwrite earlier ones)
@@ -68,13 +71,21 @@ def string_to_command(input_string):
             actions_found.append((i, action_lookup[w]))
         if w in direction_lookup:
             directions_found.append((i, direction_lookup[w]))
-        if distance is None and w.isdigit():
-            distance = int(w)
-            distance_index = i
+
+        # parse numeric distance (floats) or "pi"
         if distance is None:
             if w == "pi":
-                distance = 3
+                distance = float(math.pi)
                 distance_index = i
+            else:
+                # only attempt float conversion if token contains a digit (avoids converting words with dots)
+                if any(ch.isdigit() for ch in w):
+                    try:
+                        distance = float(w)
+                        distance_index = i
+                    except ValueError:
+                        pass
+
         if unit is None and w in units:
             unit = w
             unit_index = i
@@ -157,24 +168,56 @@ def string_to_command(input_string):
             else:
                 direction = None
 
+    # normalize distance to a numeric value
+    try:
+        dist_val = float(distance)
+    except Exception:
+        dist_val = None
+
     if action == "stop":
-        turtleController.stop()
+        return {"action": "stop", "direction": None, "distance": None, "unit": None}
 
     if action == "move":
-        if direction == "forward":
-            turtleController.move(distance, unit)
-        elif direction == "backward":
-            turtleController.move(-distance, unit)
-        else:
+        if dist_val is None:
             return None
-        
+        linear_factors = {
+            "millimeter": 0.001,
+            "millimeters": 0.001,
+            "centimeter": 0.01,
+            "centimeters": 0.01,
+            "meter": 1.0,
+            "meters": 1.0
+        }
+        factor = linear_factors.get(unit)
+        if factor is None:
+            return None
+        meters = dist_val * factor
+        return {"action": "move", "direction": direction, "distance": float(meters), "unit": "meters"}
+    
     if action == "turn":
-        if direction == "left":
-            turtleController.turn(distance, unit)
-        elif direction == "right":
-            turtleController.turn(-distance, unit)
+        if dist_val is None:
+            return None
+        if unit in ("degree", "degrees"):
+            radians = dist_val / (180 / math.pi)
+        elif unit in ("radian", "radians"):
+            radians = dist_val
         else:
             return None
+        return {"action": "turn", "direction": direction, "distance": float(radians), "unit": "radians"}
+
+def execute_command(action, direction, distance):
+    if action == "move":
+        if direction == "forward":
+            turtleController.move_forward(distance)
+        elif direction == "backward":
+            turtleController.move_backward(distance)
+    elif action == "turn":
+        if direction == "left":
+            turtleController.turn_counter_clockwise(distance)
+        elif direction == "right":
+            turtleController.turn_clockwise(distance)
+    elif action == "stop":
+        turtleController.stop()
 """        
     return {
         "action": action,
@@ -185,8 +228,17 @@ def string_to_command(input_string):
 """
 # Test the function in the console
 if __name__ == "__main__":
+    MQTT_SERVER = "10.32.162.201"
+    MQTT_PORT = 1883
+    MQTT_TOPIC = "mqtt_vel"
+    mqtt_interface = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC)
+    time.sleep(3)
+
+    turtleController = TurtleController(mqtt_interface)
+    
     while True:
         user_input = input("Enter a command: ")
         command = string_to_command(user_input)
         if command:
             print("Parsed command:", command)
+            execute_command(command["action"], command["direction"], command["distance"])
