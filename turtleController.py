@@ -5,7 +5,7 @@ class TurtleController:
     def __init__(self, mqtt_interface):
         self.mqtt_interface = mqtt_interface
 
-    def move_forward(self, speed):
+    def move(self, speed):
         print(f"Moving forward at speed {speed}")
         self.mqtt_interface.publish_command(speed, 0.0)
 

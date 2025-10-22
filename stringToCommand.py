@@ -1,3 +1,4 @@
+import turtleController
 # Converting strings into actions
 
 # I want to map multiple strings to the same action, the actions have to be in order of direction, distance, unit. If the strings are not in that order the function doesn't do anything, it just keeps reading the input.
@@ -5,8 +6,7 @@
 
 # For example move, go, forward, straight all map to the same action "move".
 
-
-
+"""
 def stop():
     print("Stopping")
 
@@ -21,7 +21,8 @@ def turn_left(angle, unit):
 
 def turn_right(angle, unit):
     print(f"Turning right {angle} {unit}")
-
+"""
+    
 def string_to_command(input_string):
     actions = {
         "move": ["move", "go", "drive"],
@@ -75,7 +76,7 @@ def string_to_command(input_string):
             unit_index = i
 
     if any(a == "stop" for _, a in actions_found):
-        stop()
+        turtleController.stop()
         return
 
     # If a distance exists, ensure any explicit unit (if present) comes after it
@@ -153,21 +154,21 @@ def string_to_command(input_string):
                 direction = None
 
     if action == "stop":
-        stop()
+        turtleController.stop()
 
     if action == "move":
         if direction == "forward":
-            move_forward(distance, unit)
+            turtleController.move(distance, unit)
         elif direction == "backward":
-            move_backward(distance, unit)
+            turtleController.move(-distance, unit)
         else:
             return None
         
     if action == "turn":
         if direction == "left":
-            turn_left(distance, unit)
+            turtleController.turn(distance, unit)
         elif direction == "right":
-            turn_right(distance, unit)
+            turtleController.turn(-distance, unit)
         else:
             return None
 """        
