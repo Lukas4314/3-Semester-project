@@ -1,21 +1,45 @@
 from mqqtInterface import MQTTInterface
 import time
 
+
+SPEED = 1 # meaning when 1 is written it is 1 meter per second
+ANGULAR_SPEED = 1 # meaning when 1 is written it is 1 radian per second
+
+
 class TurtleController:
     def __init__(self, mqtt_interface):
         self.mqtt_interface = mqtt_interface
 
-    def move_forward(self, speed):
-        print(f"Moving forward at speed {speed}")
+    def set_forward_speed(self, speed):
+        print(f"Setting forward speed to {speed}")
         self.mqtt_interface.publish_command(speed, 0.0)
 
-    def turn(self, angular_speed):
-        print(f"Turning at angular speed {angular_speed}")
+    def set_turn_speed(self, angular_speed):
+        print(f"Setting turn speed to {angular_speed}")
         self.mqtt_interface.publish_command(0.0, angular_speed)
-    
+
+    def move_forward(self, distance):
+        print(f"Moving forward at speed {SPEED}")
+        self.set_forward_speed(SPEED)
+        time.sleep(distance / SPEED)
+        self.set_forward_speed(0.0)
+
+    def move_backward(self, distance):
+        print(f"Moving backward at speed {SPEED}")
+        self.set_forward_speed(-SPEED)
+        time.sleep(distance / SPEED)
+        self.set_forward_speed(0.0)
+
+    def turn_counter_clockwise(self, amount_deg):
+        print(f"Turning counter-clockwise at angular speed {ANGULAR_SPEED}")
+        self.set_turn_speed(ANGULAR_SPEED)
+        time.sleep(amount_deg / ANGULAR_SPEED)
+        self.set_turn_speed(0.0)
+
     def stop(self):
         print("Stopping the turtle")
         self.mqtt_interface.publish_command(0.0, 0.0)
+
 
 if __name__ == "__main__":
 
