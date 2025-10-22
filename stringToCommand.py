@@ -4,6 +4,24 @@
 # An example of a valid input would be "forward 10 meters" or "move 1 meter".
 
 # For example move, go, forward, straight all map to the same action "move".
+
+
+
+def stop():
+    print("Stopping")
+
+def move_forward(distance, unit):
+    print(f"Moving forward {distance} {unit}")
+
+def move_backward(distance, unit):
+    print(f"Moving backward {distance} {unit}")
+
+def turn_left(angle, unit):
+    print(f"Turning left {angle} {unit}")
+
+def turn_right(angle, unit):
+    print(f"Turning right {angle} {unit}")
+
 def string_to_command(input_string):
     actions = {
         "move": ["move", "go", "drive"],
@@ -55,6 +73,10 @@ def string_to_command(input_string):
         if unit is None and w in units:
             unit = w
             unit_index = i
+
+    if any(a == "stop" for _, a in actions_found):
+        stop()
+        return
 
     # If a distance exists, ensure any explicit unit (if present) comes after it
     if distance is not None and unit is not None and unit_index <= distance_index:
@@ -130,13 +152,32 @@ def string_to_command(input_string):
             else:
                 direction = None
 
+    if action == "stop":
+        stop()
+
+    if action == "move":
+        if direction == "forward":
+            move_forward(distance, unit)
+        elif direction == "backward":
+            move_backward(distance, unit)
+        else:
+            return None
+        
+    if action == "turn":
+        if direction == "left":
+            turn_left(distance, unit)
+        elif direction == "right":
+            turn_right(distance, unit)
+        else:
+            return None
+"""        
     return {
         "action": action,
         "direction": direction,
         "distance": distance,
         "unit": unit
     }
-
+"""
 # Test the function in the console
 if __name__ == "__main__":
     while True:
@@ -144,5 +185,3 @@ if __name__ == "__main__":
         command = string_to_command(user_input)
         if command:
             print("Parsed command:", command)
-        else:
-            print("Invalid command.")
