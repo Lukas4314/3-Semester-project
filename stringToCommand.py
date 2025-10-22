@@ -71,6 +71,10 @@ def string_to_command(input_string):
         if distance is None and w.isdigit():
             distance = int(w)
             distance_index = i
+        if distance is None:
+            if w == "pi":
+                distance = 3
+                distance_index = i
         if unit is None and w in units:
             unit = w
             unit_index = i
