@@ -7,6 +7,7 @@ ANGULAR_SPEED = 1 # meaning when 1 is written it is 1 degree per second
 
 
 class TurtleController:
+    # We need to implement threading in the future so the robot can move and receieve new commands at the same time
     def __init__(self, mqtt_interface):
         self.mqtt_interface = mqtt_interface
 

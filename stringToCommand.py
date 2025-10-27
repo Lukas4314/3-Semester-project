@@ -8,23 +8,6 @@ from turtleController import TurtleController
 # An example of a valid input would be "forward 10 meters" or "move 1 meter".
 
 # For example move, go, forward, straight all map to the same action "move".
-
-"""
-def stop():
-    print("Stopping")
-
-def move_forward(distance, unit):
-    print(f"Moving forward {distance} {unit}")
-
-def move_backward(distance, unit):
-    print(f"Moving backward {distance} {unit}")
-
-def turn_left(angle, unit):
-    print(f"Turning left {angle} {unit}")
-
-def turn_right(angle, unit):
-    print(f"Turning right {angle} {unit}")
-"""
     
 def string_to_command(input_string):
     actions = {
