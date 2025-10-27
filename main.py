@@ -24,7 +24,8 @@ def main():
             whisperResponse = whisper_queue.get()
             
             command = string_to_command(whisperResponse)
-            execute_command(turtleController, command["action"], command["direction"], command["distance"])
+            if command is not None:
+                execute_command(turtleController, command["action"], command["direction"], command["distance"])
         
     except KeyboardInterrupt:
         print("Exiting program.")
