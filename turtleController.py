@@ -68,6 +68,7 @@ class TurtleController:
 
     def execute_command(self, action, direction, distance):
         if self.executing_thread and self.executing_thread.is_alive():
+            print("Stopping current action before executing new command.")
             self.stop_event.set()
             self.executing_thread.join()
             self.stop_event.clear()
