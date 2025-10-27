@@ -188,7 +188,7 @@ def string_to_command(input_string):
             return None
         return {"action": "turn", "direction": direction, "distance": float(radians), "unit": "radians"}
 
-def execute_command(action, direction, distance):
+def execute_command(turtleController, action, direction, distance):
     if action == "move":
         if direction == "forward":
             turtleController.move_forward(distance)
@@ -224,4 +224,4 @@ if __name__ == "__main__":
         command = string_to_command(user_input)
         if command:
             print("Parsed command:", command)
-            execute_command(command["action"], command["direction"], command["distance"])
+            execute_command(turtleController, command["action"], command["direction"], command["distance"])

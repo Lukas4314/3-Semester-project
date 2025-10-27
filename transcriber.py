@@ -5,57 +5,68 @@ from whisper.audio import pad_or_trim, log_mel_spectrogram
 import queue
 import threading
 import time
+import stringToCommand
 
-# Load model
-model = whisper.load_model("base.en")  # or "base.en" for better accuracy
 
-# Constants
-samplerate = 16000
-chunk_duration = 5      # seconds per processed chunk
-overlap_duration = 2.5  # seconds overlap
-samples_per_chunk = int(samplerate * chunk_duration)
-samples_overlap = int(samplerate * overlap_duration)
+class transcriber:
+    def __init__(self, output_queue):
+        # Load model
+        self.model = whisper.load_model("base.en")  # or "base.en" for better accuracy
 
-# Audio queue
-q = queue.Queue()
+        # Constants
+        self.samplerate = 16000
+        self.chunk_duration = 5      # seconds per processed chunk
+        self.overlap_duration = 2.5  # seconds overlap
+        self.samples_per_chunk = int(self.samplerate * self.chunk_duration)
+        self.samples_overlap = int(self.samplerate * self.overlap_duration)
+        # Audio queue
+        self.q = queue.Queue()
+        self.output_queue = output_queue
+        threading.Thread(target=self.transcribe_stream, daemon=True).start()
+        threading.Thread(target=self.record_audio, daemon=True).start()
+        # Start audio recording
+        
+        
 
-def callback(indata, frames, time_, status):
-    q.put(indata[:, 0].copy())
+    def record_audio(self):
+        with sd.InputStream(channels=1, samplerate=self.samplerate, callback=self.callback):
+            while True:
+                sd.sleep(1000)
 
-def preprocess_segment(segment):
-    segment = pad_or_trim(segment)  # trims/pads to 30s
-    mel = log_mel_spectrogram(segment)
-    return mel
+    def callback(self, indata, frames, time_, status):
+        self.q.put(indata[:, 0].copy())
 
-def transcribe_stream():
-    buffer = np.zeros(0, dtype=np.float32)
-    step = samples_per_chunk - samples_overlap
+    def preprocess_segment(self, segment):
+        segment = pad_or_trim(segment)  # trims/pads to 30s
+        mel = log_mel_spectrogram(segment)
+        return mel
 
-    while True:
-        # Pull audio into buffer
-        while not q.empty():
-            buffer = np.append(buffer, q.get())
+    def transcribe_stream(self):
+        buffer = np.zeros(0, dtype=np.float32)
+        step = self.samples_per_chunk - self.samples_overlap
 
-        # If enough new audio for one step
-        while len(buffer) >= samples_per_chunk:
-            segment = buffer[:samples_per_chunk]
+        while True:
+            # Pull audio into buffer
+            while not self.q.empty():
+                buffer = np.append(buffer, self.q.get())
 
-            # Preprocess and decode
-            mel = preprocess_segment(segment)
-            options = whisper.DecodingOptions(fp16=False, language="en")
-            result = whisper.decode(model, mel, options)
-            print(f">>> {result.text.strip()}")
+            # If enough new audio for one step
+            while len(buffer) >= self.samples_per_chunk:
+                segment = buffer[:self.samples_per_chunk]
 
-            # Slide buffer window (keep overlap)
-            buffer = buffer[step:]
+                # Preprocess and decode
+                mel = self.preprocess_segment(segment)
+                options = whisper.DecodingOptions(fp16=False, language="en")
+                result = whisper.decode(self.model, mel, options)
+                print(f"Transcribed: {result.text}")
+                self.output_queue.put(result.text)
 
-        time.sleep(0.1)
+                # Slide buffer window (keep overlap)
+                buffer = buffer[step:]
 
-# Start audio recording
-stream = sd.InputStream(callback=callback, channels=1, samplerate=samplerate)
-threading.Thread(target=transcribe_stream, daemon=True).start()
+            time.sleep(0.1)
 
-with stream:
-    print("Listening with overlap... (press Ctrl+C to stop)")
-    while True:
-        time.sleep(1)
+
+
+
+
