@@ -75,20 +75,20 @@ class TurtleController:
             
         if action == "move":
             if direction == "forward":
-                self.executing_thread = threading.Thread(target=self.turtleController.move_forward, args=(distance,), daemon=True)
+                self.executing_thread = threading.Thread(target=self.move_forward, args=(distance,))
                 self.executing_thread.start()
             elif direction == "backward":
-                self.executing_thread = threading.Thread(target=self.turtleController.move_backward, args=(distance,), daemon=True)
+                self.executing_thread = threading.Thread(target=self.move_backward, args=(distance,))
                 self.executing_thread.start()
         elif action == "turn":
             if direction == "left":
-                self.executing_thread = threading.Thread(target=self.turtleController.turn_counter_clockwise, args=(distance,), daemon=True)
+                self.executing_thread = threading.Thread(target=self.turn_counter_clockwise, args=(distance,))
                 self.executing_thread.start()
             elif direction == "right":
-                self.executing_thread = threading.Thread(target=self.turtleController.turn_clockwise, args=(distance,), daemon=True)
+                self.executing_thread = threading.Thread(target=self.turn_clockwise, args=(distance,))
                 self.executing_thread.start()
         elif action == "stop":
-            self.executing_thread = threading.Thread(target=self.turtleController.stop, daemon=True)
+            self.executing_thread = threading.Thread(target=self.stop)
             self.executing_thread.start()
 
 
