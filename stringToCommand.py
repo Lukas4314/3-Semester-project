@@ -1,0 +1,227 @@
+import math
+import time
+from mqqtInterface import MQTTInterface
+from turtleController import TurtleController
+# Converting strings into actions
+
+# I want to map multiple strings to the same action, the actions have to be in order of direction, distance, unit. If the strings are not in that order the function doesn't do anything, it just keeps reading the input.
+# An example of a valid input would be "forward 10 meters" or "move 1 meter".
+
+# For example move, go, forward, straight all map to the same action "move".
+    
+def string_to_command(input_string):
+    actions = {
+        "move": ["move", "go", "drive"],
+        "turn": ["turn", "rotate", "spin"],
+        "stop": ["stop", "halt", "pause", "brake", "no"]
+    }
+
+    # synonyms for the same direction
+    directions = {
+        "forward": ["forward", "straight"],
+        "backward": ["backward", "backwards", "back", "reverse"],
+        "left": ["left"],
+        "right": ["right"]
+    }
+
+    # reverse lookups
+    action_lookup = {syn: act for act, syns in actions.items() for syn in syns}
+    direction_lookup = {syn: canon for canon, syns in directions.items() for syn in syns}
+
+    units = {"centimeters", "centimeter", "millimeters", "millimeter", "meters", "meter", 
+             "radians", "radian", "degrees", "degree"}
+
+    # Defaults used when distance/unit aren't included
+    DEFAULTS = {
+        "move": {"distance": 1.0, "unit": "meters"},
+        "turn": {"distance": 90.0, "unit": "degrees"}
+    }
+
+    # Normalize and remove punctuation but keep decimal point and minus sign so floats parse
+    cleaned = ''.join(ch for ch in input_string.lower() if ch.isalnum() or ch.isspace() or ch in ".-")
+    words = cleaned.split()
+
+    # collect all occurrences (don't overwrite earlier ones)
+    actions_found = []        # list of (index, action)
+    directions_found = []     # list of (index, direction)
+    distance = None
+    distance_index = None
+    unit = None
+    unit_index = None
+
+    for i, w in enumerate(words):
+        if w in action_lookup:
+            actions_found.append((i, action_lookup[w]))
+        if w in direction_lookup:
+            directions_found.append((i, direction_lookup[w]))
+
+        # parse numeric distance (floats) or "pi"
+        if distance is None:
+            if w == "pi":
+                distance = float(math.pi)
+                distance_index = i
+            else:
+                # only attempt float conversion if token contains a digit (avoids converting words with dots)
+                if any(ch.isdigit() for ch in w):
+                    try:
+                        distance = float(w)
+                        distance_index = i
+                    except ValueError:
+                        pass
+
+        if unit is None and w in units:
+            unit = w
+            unit_index = i
+
+    if any(a == "stop" for _, a in actions_found):
+        turtleController.stop()
+        return
+
+    # If a distance exists, ensure any explicit unit (if present) comes after it
+    if distance is not None and unit is not None and unit_index <= distance_index:
+        return None
+
+    # Choose action & base_index depending on whether distance is present
+    if distance is not None:
+        # pick the action that occurs before the distance and is closest to it
+        actions_before = [(i, a) for i, a in actions_found if i < distance_index]
+        if actions_before:
+            base_index, action = max(actions_before, key=lambda t: t[0])
+        else:
+            # no explicit action before distance: try to use a direction before distance as implicit move
+            directions_before = [(i, d) for i, d in directions_found if i < distance_index]
+            if directions_before:
+                base_index, dir_candidate = max(directions_before, key=lambda t: t[0])
+                action = "move"
+                direction = dir_candidate
+            else:
+                return None
+
+        # if unit missing, default by action type
+        if unit is None:
+            unit = DEFAULTS["turn"]["unit"] if action == "turn" else DEFAULTS["move"]["unit"]
+
+    else:
+        # No distance provided: require at least one action and one direction to apply defaults
+        if not actions_found or not directions_found:
+            return None
+
+        # Prefer pairs where action occurs before direction and is closest to it
+        best_pair = None
+        best_gap = None
+        for actioni, a in actions_found:
+            for directioni, d in directions_found:
+                gap = directioni - actioni
+                if gap >= 0:
+                    if best_pair is None or gap < best_gap:
+                        best_pair = (actioni, a, directioni, d)
+                        best_gap = gap
+        # If no action-before-direction pair, pick the closest pair (any order)
+        if best_pair is None:
+            for actioni, a in actions_found:
+                for directioni, d in directions_found:
+                    gap = abs(directioni - actioni)
+                    if best_pair is None or gap < best_gap:
+                        best_pair = (actioni, a, directioni, d)
+                        best_gap = gap
+
+        if best_pair is None:
+            return None
+
+        actioni, action, directioni, direction = best_pair
+        base_index = actioni if actioni <= directioni else directioni
+
+        # Apply defaults for missing distance/unit based on action
+        defaults = DEFAULTS.get(action, DEFAULTS["move"])
+        distance = defaults["distance"]
+        unit = defaults["unit"]
+        distance_index = base_index  # logical position for ordering checks
+
+    # choose the most relevant direction:
+    # prefer a direction that appears between the chosen base_index and the distance (if distance index known)
+    if distance_index is not None:
+        in_between_dirs = [(i, d) for i, d in directions_found if base_index < i < (distance_index if distance_index is not None else float("inf"))]
+        if in_between_dirs:
+            direction = max(in_between_dirs, key=lambda t: t[0])[1]
+        else:
+            # fallback: take the nearest direction before distance (could be before base_index)
+            directions_before = [(i, d) for i, d in directions_found if distance_index is None or i < distance_index]
+            if directions_before:
+                direction = max(directions_before, key=lambda t: t[0])[1]
+            else:
+                direction = None
+
+    # normalize distance to a numeric value
+    try:
+        dist_val = float(distance)
+    except Exception:
+        dist_val = None
+
+    if action == "stop":
+        return {"action": "stop", "direction": None, "distance": None, "unit": None}
+
+    if action == "move":
+        if dist_val is None:
+            return None
+        linear_factors = {
+            "millimeter": 0.001,
+            "millimeters": 0.001,
+            "centimeter": 0.01,
+            "centimeters": 0.01,
+            "meter": 1.0,
+            "meters": 1.0
+        }
+        factor = linear_factors.get(unit)
+        if factor is None:
+            return None
+        meters = dist_val * factor
+        return {"action": "move", "direction": direction, "distance": float(meters), "unit": "meters"}
+    
+    if action == "turn":
+        if dist_val is None:
+            return None
+        if unit in ("degree", "degrees"):
+            radians = dist_val / (180 / math.pi)
+        elif unit in ("radian", "radians"):
+            radians = dist_val
+        else:
+            return None
+        return {"action": "turn", "direction": direction, "distance": float(radians), "unit": "radians"}
+
+def execute_command(action, direction, distance):
+    if action == "move":
+        if direction == "forward":
+            turtleController.move_forward(distance)
+        elif direction == "backward":
+            turtleController.move_backward(distance)
+    elif action == "turn":
+        if direction == "left":
+            turtleController.turn_counter_clockwise(distance)
+        elif direction == "right":
+            turtleController.turn_clockwise(distance)
+    elif action == "stop":
+        turtleController.stop()
+"""        
+    return {
+        "action": action,
+        "direction": direction,
+        "distance": distance,
+        "unit": unit
+    }
+"""
+# Test the function in the console
+if __name__ == "__main__":
+    MQTT_SERVER = "10.32.162.201"
+    MQTT_PORT = 1883
+    MQTT_TOPIC = "mqtt_vel"
+    mqtt_interface = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC)
+    time.sleep(3)
+
+    turtleController = TurtleController(mqtt_interface)
+    
+    while True:
+        user_input = input("Enter a command: ")
+        command = string_to_command(user_input)
+        if command:
+            print("Parsed command:", command)
+            execute_command(command["action"], command["direction"], command["distance"])
