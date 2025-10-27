@@ -73,10 +73,6 @@ def string_to_command(input_string):
             unit = w
             unit_index = i
 
-    if any(a == "stop" for _, a in actions_found):
-        turtleController.stop()
-        return
-
     # If a distance exists, ensure any explicit unit (if present) comes after it
     if distance is not None and unit is not None and unit_index <= distance_index:
         return None
