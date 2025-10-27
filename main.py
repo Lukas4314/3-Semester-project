@@ -4,7 +4,7 @@ import queue
 import time
 from mqqtInterface import MQTTInterface
 from turtleController import TurtleController
-from stringToCommand import string_to_command, execute_command
+from stringToCommand import string_to_command
 from transcriber import transcriber
 
 def main():

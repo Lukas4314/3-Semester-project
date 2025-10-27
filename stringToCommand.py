@@ -184,7 +184,6 @@ def string_to_command(input_string):
             return None
         return {"action": "turn", "direction": direction, "distance": float(radians), "unit": "radians"}
 
-
 """        
     return {
         "action": action,
@@ -194,18 +193,9 @@ def string_to_command(input_string):
     }
 """
 # Test the function in the console
-if __name__ == "__main__":
-    MQTT_SERVER = "10.32.162.201"
-    MQTT_PORT = 1883
-    MQTT_TOPIC = "mqtt_vel"
-    mqtt_interface = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC)
-    time.sleep(3)
-
-    turtleController = TurtleController(mqtt_interface)
-    
+if __name__ == "__main__": 
     while True:
         user_input = input("Enter a command: ")
         command = string_to_command(user_input)
         if command:
             print("Parsed command:", command)
-            #execute_command(turtleController, command["action"], command["direction"], command["distance"])
