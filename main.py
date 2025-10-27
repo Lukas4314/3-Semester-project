@@ -25,7 +25,11 @@ def main():
             
             command = string_to_command(whisperResponse)
             if command is not None:
+                
+                if 'last_command' in locals() and command == last_command:
+                    continue  # Skip executing the same command again
                 execute_command(turtleController, command["action"], command["direction"], command["distance"])
+                last_command = command
         
     except KeyboardInterrupt:
         print("Exiting program.")
