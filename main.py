@@ -18,22 +18,20 @@ def main():
     whisper_queue = queue.Queue()
     transcriber_instance = transcriber(whisper_queue)
     try:
+        whisperResponse = "" 
         while True:
             while whisper_queue.empty():
                 time.sleep(0.1)
-            whisperResponse = "" 
             while not whisper_queue.empty():
                 whisperResponse += whisper_queue.get()
+                whisperResponse += " "
             
             
             command = string_to_command(whisperResponse)
             if command is not None:
-                if 'last_command' in locals() and command == last_command:
-                    continue  # Skip executing the same command again
+                whisperResponse = ""  # Clear after successful command parsing
                 turtleController.execute_command(command["action"], command["direction"], command["distance"])
-            
-            last_command = command
-        
+                    
     except KeyboardInterrupt:
         print("Exiting program.")
         mqtt_interface.client.loop_stop()

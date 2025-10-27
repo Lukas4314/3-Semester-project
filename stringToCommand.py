@@ -2,6 +2,7 @@ import math
 import time
 from mqqtInterface import MQTTInterface
 from turtleController import TurtleController
+import enum
 # Converting strings into actions
 
 # I want to map multiple strings to the same action, the actions have to be in order of direction, distance, unit. If the strings are not in that order the function doesn't do anything, it just keeps reading the input.
@@ -9,76 +10,174 @@ from turtleController import TurtleController
 
 # For example move, go, forward, straight all map to the same action "move".
     
+class actionEnum(enum.Enum):
+    MOVE = "move"
+    TURN = "turn"
+    STOP = "stop"
+    
+class directionEnum(enum.Enum):
+    FORWARD = "forward"
+    BACKWARD = "backward"
+    LEFT = "left"
+    RIGHT = "right"
+    
+
+ACTIONS = {
+    "move": actionEnum.MOVE,
+    "go": actionEnum.MOVE,
+    "drive": actionEnum.MOVE,
+    "dry": actionEnum.MOVE,
+    
+    "turn": actionEnum.TURN,
+    "rotate": actionEnum.TURN,
+    "spin": actionEnum.TURN,
+    
+    "stop": actionEnum.STOP,
+    "halt": actionEnum.STOP,
+    "pause": actionEnum.STOP,
+    "brake": actionEnum.STOP,
+    "no": actionEnum.STOP
+}
+
+DIRECTIONS = {
+    "forward": directionEnum.FORWARD,
+    "straight": directionEnum.FORWARD,
+    
+    "backward": directionEnum.BACKWARD,
+    "backwards": directionEnum.BACKWARD,
+    "back": directionEnum.BACKWARD,
+    "reverse": directionEnum.BACKWARD,
+    
+    "left": directionEnum.LEFT,
+    "lift": directionEnum.LEFT,
+    
+    "right": directionEnum.RIGHT,
+}
+
+UNITS = {"centimeters", "centimeter", "millimeters", "millimeter", "meters", "meter", 
+            "radians", "radian", "degrees", "degree"}
+
+# Defaults used when distance/unit aren't included
+DEFAULTS = {
+    "move": {"distance": 1.0, "unit": "meters"},
+    "turn": {"distance": 90.0, "unit": "degrees"}
+}
+
+
+def clean_string(input_string):
+    cleaned_chars = []
+    for ch in input_string.lower():
+        if ch.isalnum() or ch.isspace():
+            cleaned_chars.append(ch)
+
+    cleaned = ''.join(cleaned_chars)
+    return cleaned
+
+
+def apply_unit_conversion(distance, unit):
+    linear_factors = {
+        "millimeter": 0.001,
+        "millimeters": 0.001,
+        "centimeter": 0.01,
+        "centimeters": 0.01,
+        "meter": 1.0,
+        "meters": 1.0
+    }
+    if unit in linear_factors:
+        factor = linear_factors[unit]
+        return distance * factor, "meters"
+
+
 def string_to_command(input_string):
-    actions = {
-        "move": ["move", "go", "drive"],
-        "turn": ["turn", "rotate", "spin"],
-        "stop": ["stop", "halt", "pause", "brake", "no"]
-    }
-
-    # synonyms for the same direction
-    directions = {
-        "forward": ["forward", "straight"],
-        "backward": ["backward", "backwards", "back", "reverse"],
-        "left": ["left", "lift"],
-        "right": ["right"]
-    }
-
-    # reverse lookups
-    action_lookup = {syn: act for act, syns in actions.items() for syn in syns}
-    direction_lookup = {syn: canon for canon, syns in directions.items() for syn in syns}
-
-    units = {"centimeters", "centimeter", "millimeters", "millimeter", "meters", "meter", 
-             "radians", "radian", "degrees", "degree"}
-
-    # Defaults used when distance/unit aren't included
-    DEFAULTS = {
-        "move": {"distance": 1.0, "unit": "meters"},
-        "turn": {"distance": 90.0, "unit": "degrees"}
-    }
-
     # Normalize and remove punctuation but keep decimal point and minus sign so floats parse
-    cleaned = ''.join(ch for ch in input_string.lower() if ch.isalnum() or ch.isspace() or ch in ".-")
+    cleaned = clean_string(input_string)
     words = cleaned.split()
 
     # collect all occurrences (don't overwrite earlier ones)
     actions_found = []        # list of (index, action)
     directions_found = []     # list of (index, direction)
-    distance = None
-    distance_index = None
-    unit = None
-    unit_index = None
+    distances_found = []      # list of (index, distance)
+    units_found = []         # list of (index, unit)
 
     for i, w in enumerate(words):
-        if w in action_lookup:
-            actions_found.append((i, action_lookup[w]))
-        if w in direction_lookup:
-            directions_found.append((i, direction_lookup[w]))
+        if w in ACTIONS:
+            actions_found.append((i, ACTIONS[w].value))
+        if w in DIRECTIONS:
+            directions_found.append((i, DIRECTIONS[w].value))
+        if w in UNITS:
+            units_found.append((i, w))    
+        
+        if w == "pi":
+            distance = math.pi
+            distances_found.append((i, distance))
+        else:
+            try:
+                distance = float(w)
+                distances_found.append((i, distance))
+            except ValueError:
+                pass
 
-        # parse numeric distance (floats) or "pi"
-        if distance is None:
-            if w == "pi":
-                distance = float(math.pi)
-                distance_index = i
-            else:
-                # only attempt float conversion if token contains a digit (avoids converting words with dots)
-                if any(ch.isdigit() for ch in w):
-                    try:
-                        distance = float(w)
-                        distance_index = i
-                    except ValueError:
-                        pass
-
-        if unit is None and w in units:
-            unit = w
-            unit_index = i
-
-    # If a distance exists, ensure any explicit unit (if present) comes after it
-    if distance is not None and unit is not None and unit_index <= distance_index:
+    if actions_found == [] or directions_found == []:
+        print("No actions or directions found.")
         return None
+       
 
-    # Choose action & base_index depending on whether distance is present
-    if distance is not None:
+
+    distance_unit_pairs = []    
+    # Gets all the pairs where the unit comes right after the distance
+    for di, dist in distances_found:
+        for ui, un in units_found:
+            if ui == di + 1:
+                distance_unit_pairs.append((di, dist, un))
+        
+
+
+    # Takes the reversed order of commands to find the newest action
+    actions_found_reversed = list(reversed(actions_found))
+    for ai, action in actions_found_reversed:
+        
+        next_direction = None
+        
+        # Takes the first direction which comes after the action
+        for di, direction in directions_found:
+            if ai > di:
+                continue
+            next_direction = direction
+            break
+        
+        if next_direction is None:
+            print("No direction found after action.")
+            return None
+        
+        next_unit = None
+        next_distance = None
+        
+        for di, dist, un in distance_unit_pairs:
+            if ai > di:
+                continue
+            next_distance = dist
+            next_unit = un
+            break
+        
+        if next_distance is None and next_unit is None:
+            return None # Temporarily disable default distance/unit when missing
+            next_distance = DEFAULTS[action]["distance"]
+            next_unit = DEFAULTS[action]["unit"]
+        
+        
+        if action != "turn":
+            next_distance, next_unit = apply_unit_conversion(next_distance, next_unit)
+        else:
+            next_distance = float(next_distance) * (math.pi / 180)  
+        print("Parsed command:", {"action": action, "direction": next_direction, "distance": float(next_distance), "unit": next_unit})
+        return {"action": action, "direction": next_direction, "distance": float(next_distance), "unit": next_unit}
+    print("This should not be printing anyting, and if i does then something is wrong....")
+    return None
+
+"""
+
+
+
         # pick the action that occurs before the distance and is closest to it
         actions_before = [(i, a) for i, a in actions_found if i < distance_index]
         if actions_before:
@@ -184,14 +283,9 @@ def string_to_command(input_string):
             return None
         return {"action": "turn", "direction": direction, "distance": float(radians), "unit": "radians"}
 
-"""        
-    return {
-        "action": action,
-        "direction": direction,
-        "distance": distance,
-        "unit": unit
-    }
 """
+
+
 # Test the function in the console
 if __name__ == "__main__": 
     while True:
