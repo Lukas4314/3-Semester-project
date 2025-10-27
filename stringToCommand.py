@@ -20,7 +20,7 @@ def string_to_command(input_string):
     directions = {
         "forward": ["forward", "straight"],
         "backward": ["backward", "backwards", "back", "reverse"],
-        "left": ["left"],
+        "left": ["left", "lift"],
         "right": ["right"]
     }
 
