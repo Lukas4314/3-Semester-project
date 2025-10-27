@@ -21,15 +21,18 @@ def main():
         while True:
             while whisper_queue.empty():
                 time.sleep(0.1)
-            whisperResponse = whisper_queue.get()
+            whisperResponse = "" 
+            while not whisper_queue.empty():
+                whisperResponse += whisper_queue.get()
+            
             
             command = string_to_command(whisperResponse)
             if command is not None:
-                
                 if 'last_command' in locals() and command == last_command:
                     continue  # Skip executing the same command again
-                execute_command(turtleController, command["action"], command["direction"], command["distance"])
-                last_command = command
+                turtleController.execute_command(command["action"], command["direction"], command["distance"])
+            
+            last_command = command
         
     except KeyboardInterrupt:
         print("Exiting program.")
