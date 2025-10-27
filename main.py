@@ -8,7 +8,7 @@ import time
 import stringToCommand
 from mqqtInterface import MQTTInterface
 from turtleController import TurtleController
-from stringToCommand import string_to_command, excecute_command
+from stringToCommand import string_to_command, execute_command
 from transcriber import transcriber
 def main():
     MQTT_SERVER = "10.32.162.201"
@@ -27,7 +27,7 @@ def main():
             whisperResponse = queue.get()
             
             command = string_to_command(whisperResponse)
-            excecute_command(turtleController, command["action"], command["direction"], command["distance"])
+            execute_command(turtleController, command["action"], command["direction"], command["distance"])
         
     except KeyboardInterrupt:
         print("Exiting program.")
