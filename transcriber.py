@@ -1,3 +1,4 @@
+import string
 import sounddevice as sd
 import numpy as np
 import whisper
@@ -10,7 +11,7 @@ import wave
 
 
 class transcriber:
-    def __init__(self, output_queue):
+    def __init__(self):
         # Load model
         self.model = whisper.load_model("base.en")  # or "base.en" for better accuracy
 
@@ -22,16 +23,45 @@ class transcriber:
         self.samples_overlap = int(self.samplerate * self.overlap_duration)
         # Audio queue
         self.q = queue.Queue()
-        self.output_queue = output_queue
+        self.output_queue = queue.Queue()
         threading.Thread(target=self.transcribe_stream, daemon=True).start()
         threading.Thread(target=self.record_audio, daemon=True).start()
         # Start audio recording
-        
-        
+
+        self.total_string = ""
         self.recorded_audio = []  # To accumulate audio data
 
         
-        
+    def append_without_overlap(self, new):
+        """
+        Append only the non-overlapping part of 'new' to 'existing'.
+        Works even if 'new' contains the entire 'existing' text again.
+        """
+        # Trim whitespace
+        self.total_string = self.total_string.strip()
+
+        for punctuation in string.punctuation:
+            self.total_string = self.total_string.replace(punctuation, "")
+            new = new.replace(punctuation, "")
+
+        new = new.strip()
+
+        # If new already contains existing entirely, just replace it
+        if new.startswith(self.total_string):
+            self.total_string = new
+            return new
+
+        # Find overlap from the end of existing and start of new
+        max_overlap = min(len(self.total_string), len(new))
+        overlap_length = 0
+
+        for i in range(1, max_overlap + 1):
+            if self.total_string.endswith(new[:i]):
+                overlap_length = i
+
+        self.total_string += new[overlap_length:]
+        return new[overlap_length:]
+
 
     def record_audio(self):
         with sd.InputStream(channels=1, samplerate=self.samplerate, callback=self.callback):
@@ -66,14 +96,23 @@ class transcriber:
                 mel = self.preprocess_segment(segment)
                 options = whisper.DecodingOptions(fp16=False, language="en")
                 result = whisper.decode(self.model, mel, options)
-                print(f"Transcribed: {result.text}")
-                self.output_queue.put(result.text)
+                
+                # Handle transcription output
+                resultafterappend =self.append_without_overlap(result.text)
+                self.output_queue.put(resultafterappend)
 
                 # Slide buffer window (keep overlap)
                 buffer = buffer[step:]
 
             time.sleep(0.1)
 
+    def getNewTranscription(self):
+        """Retrieve new transcription text if available."""
+        texts = []
+        while not self.output_queue.empty():
+            texts.append(self.output_queue.get())
+        return " ".join(texts)
+        
 
     def save_audio_to_wav(self, filename="output.wav"):
         """Combine float32 chunks into a WAV file."""
