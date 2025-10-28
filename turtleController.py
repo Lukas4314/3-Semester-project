@@ -73,7 +73,10 @@ class TurtleController:
             self.executing_thread.join()
             self.stop_event.clear()
             
-        if action == "move":
+        if action == "stop":
+            self.executing_thread = threading.Thread(target=self.stop)
+            self.executing_thread.start()
+        elif action == "move":
             if direction == "forward":
                 self.executing_thread = threading.Thread(target=self.move_forward, args=(distance,))
                 self.executing_thread.start()
@@ -87,9 +90,7 @@ class TurtleController:
             elif direction == "right":
                 self.executing_thread = threading.Thread(target=self.turn_clockwise, args=(distance,))
                 self.executing_thread.start()
-        elif action == "stop":
-            self.executing_thread = threading.Thread(target=self.stop)
-            self.executing_thread.start()
+        
 
 
 

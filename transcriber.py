@@ -6,6 +6,7 @@ import queue
 import threading
 import time
 import stringToCommand
+import wave
 
 
 class transcriber:
@@ -27,6 +28,10 @@ class transcriber:
         # Start audio recording
         
         
+        self.recorded_audio = []  # To accumulate audio data
+
+        
+        
 
     def record_audio(self):
         with sd.InputStream(channels=1, samplerate=self.samplerate, callback=self.callback):
@@ -41,14 +46,17 @@ class transcriber:
         mel = log_mel_spectrogram(segment)
         return mel
 
-    def transcribe_stream(self):
+    def transcribe_stream(self, save_audio=True):
         buffer = np.zeros(0, dtype=np.float32)
         step = self.samples_per_chunk - self.samples_overlap
 
         while True:
             # Pull audio into buffer
             while not self.q.empty():
-                buffer = np.append(buffer, self.q.get())
+                new_chunk = self.q.get()
+                buffer = np.append(buffer, new_chunk)
+                if save_audio:
+                    self.recorded_audio.append(new_chunk)
 
             # If enough new audio for one step
             while len(buffer) >= self.samples_per_chunk:
@@ -67,6 +75,17 @@ class transcriber:
             time.sleep(0.1)
 
 
+    def save_audio_to_wav(self, filename="output.wav"):
+        """Combine float32 chunks into a WAV file."""
+        audio = np.concatenate(self.recorded_audio)
+        # Convert from float32 (-1.0 to 1.0) to int16
+        audio_int16 = np.int16(audio * 32767)
+        with wave.open(filename, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(self.samplerate)
+            wf.writeframes(audio_int16.tobytes())
+        print(f"Audio saved to {filename}")
 
 
 

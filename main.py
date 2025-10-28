@@ -1,5 +1,4 @@
 import sounddevice as sd
-from whisper.audio import pad_or_trim, log_mel_spectrogram
 import queue
 import time
 from mqqtInterface import MQTTInterface

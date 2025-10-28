@@ -20,7 +20,6 @@ class directionEnum(enum.Enum):
     BACKWARD = "backward"
     LEFT = "left"
     RIGHT = "right"
-    
 
 ACTIONS = {
     "move": actionEnum.MOVE,
@@ -41,6 +40,7 @@ ACTIONS = {
 
 DIRECTIONS = {
     "forward": directionEnum.FORWARD,
+    "forwards": directionEnum.FORWARD,
     "straight": directionEnum.FORWARD,
     
     "backward": directionEnum.BACKWARD,
@@ -86,13 +86,30 @@ def apply_unit_conversion(distance, unit):
     if unit in linear_factors:
         factor = linear_factors[unit]
         return distance * factor, "meters"
-
+    return distance, unit  # No conversion applied
 
 def string_to_command(input_string):
+    text_numbers = {
+        "zero": "0",
+        "one": "1",
+        "two": "2",
+        "three": "3",
+        "four": "4",
+        "five": "5",
+        "six": "6",
+        "seven": "7",
+        "eight": "8",
+        "nine": "9",
+        "ten": "10",
+    }
+
+    for word, digit in text_numbers.items():
+        input_string = input_string.replace(word, digit)
+
     # Normalize and remove punctuation but keep decimal point and minus sign so floats parse
     cleaned = clean_string(input_string)
     words = cleaned.split()
-
+    
     # collect all occurrences (don't overwrite earlier ones)
     actions_found = []        # list of (index, action)
     directions_found = []     # list of (index, direction)
@@ -116,6 +133,11 @@ def string_to_command(input_string):
                 distances_found.append((i, distance))
             except ValueError:
                 pass
+
+    # If a 'stop' action was spoken, prefer it and return immediately.
+    for _, act in reversed(actions_found):
+        if act == "stop":
+            return {"action": "stop", "direction": None, "distance": None, "unit": None}
 
     if actions_found == [] or directions_found == []:
         print("No actions or directions found.")
@@ -171,7 +193,7 @@ def string_to_command(input_string):
             next_distance = float(next_distance) * (math.pi / 180)  
         print("Parsed command:", {"action": action, "direction": next_direction, "distance": float(next_distance), "unit": next_unit})
         return {"action": action, "direction": next_direction, "distance": float(next_distance), "unit": next_unit}
-    print("This should not be printing anyting, and if i does then something is wrong....")
+    print("This should not be printing anyting, and if it does then something is wrong...")
     return None
 
 """
