@@ -1,5 +1,4 @@
 import sounddevice as sd
-from whisper.audio import pad_or_trim, log_mel_spectrogram
 import queue
 import time
 from mqqtInterface import MQTTInterface
@@ -36,6 +35,7 @@ def main():
         print("Exiting program.")
         mqtt_interface.client.loop_stop()
         mqtt_interface.client.disconnect()
+        transcriber_instance.save_audio_to_wav("recorded_audio.wav")
 
     
     
