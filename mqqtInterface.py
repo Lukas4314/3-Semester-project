@@ -37,7 +37,7 @@ class MQTTInterface:
                 "z": angular_z
             }
         }
-        
+    
         # Publish the payload to the MQTT topic
         self.client.publish(self.topic, json.dumps(payload), qos=1)
         print(f"Published to {self.topic}: {payload}")

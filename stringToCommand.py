@@ -135,8 +135,7 @@ def string_to_command(input_string):
                 pass
 
     # If a 'stop' action was spoken, prefer it and return immediately.
-    for _, act in reversed(actions_found):
-        if act == "stop":
+    if any(action == "stop" for _, action in actions_found):
             return {"action": "stop", "direction": None, "distance": None, "unit": None}
 
     if actions_found == [] or directions_found == []:
