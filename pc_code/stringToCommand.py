@@ -1,7 +1,4 @@
 import math
-import time
-from mqqtInterface import MQTTInterface
-from turtleController import TurtleController
 import enum
 # Converting strings into actions
 
@@ -142,8 +139,6 @@ def string_to_command(input_string):
         print("No actions or directions found.")
         return None
        
-
-
     distance_unit_pairs = []    
     # Gets all the pairs where the unit comes right after the distance
     for di, dist in distances_found:
@@ -151,8 +146,6 @@ def string_to_command(input_string):
             if ui == di + 1:
                 distance_unit_pairs.append((di, dist, un))
         
-
-
     # Takes the reversed order of commands to find the newest action
     actions_found_reversed = list(reversed(actions_found))
     for ai, action in actions_found_reversed:

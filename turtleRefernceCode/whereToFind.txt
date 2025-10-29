@@ -1,0 +1,2 @@
+mqtt reciever noden som lyter til topicen der får robtten til at køre
+    /home/pi/rb3_ws/src/mqtt_2_cmd_pkg/mqtt_2_cmd_pkg/mqtt_2_cmdvel_node.py

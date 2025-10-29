@@ -9,12 +9,10 @@ class MQTTInterface:
         self.port = port
         self.topic = topic
         
-        
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.client.on_connect = self.on_connect
         self.client.connect(self.server, self.port, 60)
         self.client.loop_start()
-
 
     # The callback for when the client receives a CONNACK response from the server.
     def on_connect(self, client, userdata, flags, reason_code, properties):
@@ -41,14 +39,26 @@ class MQTTInterface:
         # Publish the payload to the MQTT topic
         self.client.publish(self.topic, json.dumps(payload), qos=1)
         print(f"Published to {self.topic}: {payload}")
+
+    def publish_buffer(self, buffer):
+        # Publish raw buffer data as a JSON array
+        self.client.publish(self.topic, json.dumps(buffer), qos=1)
+        print(f"Published buffer to {self.topic}")
+    
+    def listen(self, output_queue):
+        def on_message(client, userdata, msg):
+            print(f"Received message on topic {msg.topic}")
+            output_queue.put(msg.payload)
+
+        self.client.subscribe(self.topic)
+        self.client.on_message = on_message
+        self.client.loop_start()
     
     def disconnect(self):
         self.publish_command(0.0, 0.0)
         self.client.loop_stop()
         self.client.disconnect()
         print("Disconnected from MQTT broker.")
-
-
 
 if __name__ == "__main__":
     # Define MQTT connection details
@@ -57,8 +67,8 @@ if __name__ == "__main__":
     MQTT_TOPIC = "mqtt_vel"
     mqtt_interface = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC)
     time.sleep(3)
+
     try:
-        
         mqtt_interface.publish_command(1.0, 0.5)
         time.sleep(2)
         mqtt_interface.publish_command(0.0, 0.0)
