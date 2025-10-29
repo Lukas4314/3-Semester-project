@@ -5,13 +5,10 @@ from mqqtInterface import MQTTInterface
 from pc_code.turtleController import TurtleController
 from pc_code.stringToCommand import string_to_command
 from pc_code.transcriber import transcriber
+from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD
+
 
 def main():
-    MQTT_SERVER = "10.32.162.201"
-    MQTT_PORT = 1883
-    MQTT_TOPIC_VEL = "mqtt_vel"
-    MQTT_TOPIC_AUD = "mqtt_aud"
-    
     mqtt_interface_vel = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL)
     mqtt_interface_aud = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD)
     turtleController = TurtleController(mqtt_interface_vel)
