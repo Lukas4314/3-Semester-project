@@ -16,6 +16,7 @@ def main():
                 time.sleep(0.1)
             
             while not audio_queue.empty():
+                print(audio_queue.qsize())
                 audio_data = audio_queue.get()
                 mqtt_interface_aud.publish_buffer(audio_data)
 

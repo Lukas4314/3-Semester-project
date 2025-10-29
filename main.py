@@ -28,7 +28,7 @@ def main():
             while not transcribed_queue.empty():
                 whisperResponse += transcribed_queue.get()
                 whisperResponse += " "
-            
+            print("Got something")
             command = string_to_command(whisperResponse)
             if command is not None:
                 whisperResponse = ""  # Clear after successful command parsing

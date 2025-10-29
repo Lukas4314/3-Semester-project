@@ -38,10 +38,10 @@ class transcriber:
             while not self.input_queue.empty():
                 new_chunk = self.input_queue.get()
                 buffer = np.append(buffer, new_chunk)
-
             # If enough new audio for one step
             while len(buffer) >= self.samples_per_chunk:
                 segment = buffer[:self.samples_per_chunk]
+                print("Transcribing segment...")
 
                 # Preprocess and decode
                 mel = self.preprocess_segment(segment)
@@ -49,6 +49,7 @@ class transcriber:
                 result = whisper.decode(self.model, mel, options)
                 print(f"Transcribed: {result.text}")
                 self.output_queue.put(result.text)
+                
 
                 # Slide buffer window (keep overlap)
                 buffer = buffer[step:]

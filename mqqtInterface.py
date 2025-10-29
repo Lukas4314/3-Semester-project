@@ -43,11 +43,9 @@ class MQTTInterface:
     def publish_buffer(self, buffer):
         # Publish raw buffer data as a JSON array
         self.client.publish(self.topic, json.dumps(buffer), qos=1)
-        print(f"Published buffer to {self.topic}")
     
     def listen(self, output_queue):
         def on_message(client, userdata, msg):
-            print(f"Received message on topic {msg.topic}")
             output_queue.put(msg.payload)
 
         self.client.subscribe(self.topic)
