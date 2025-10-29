@@ -10,6 +10,7 @@ class transcriber:
         # Load model
         self.model = whisper.load_model("base.en")  # or "base.en" for better accuracy
 
+        self.samplerate = 44100
         self.chunk_duration = 5      # seconds per processed chunk
         self.overlap_duration = 2.5  # seconds overlap
         self.samples_per_chunk = int(self.samplerate * self.chunk_duration)

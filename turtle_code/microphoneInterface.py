@@ -6,9 +6,11 @@ import wave
 class MicrophoneInterface:
     def __init__(self, output_queue, microphone_name = "USB THING"):
         # Temporary
+        
         if microphone_name == "USB THING":
-            print("PLEASE SET THE CORRECT MICROPHONE STANDARD AND THEN DELETE THIS CODE")
-            raise NotImplementedError("Microphone selection needs to be implemented properly.")
+            pass
+            #print("PLEASE SET THE CORRECT MICROPHONE STANDARD AND THEN DELETE THIS CODE")
+            #raise NotImplementedError("Microphone selection needs to be implemented properly.")
         
         # Constant
         self.samplerate = 16000
@@ -20,10 +22,14 @@ class MicrophoneInterface:
         self.recorded_audio = []  # To accumulate audio data
 
     def record_audio(self):
-        print("THIS NEEDS TO BE FIXED SINCE THE ROBOT DOES SOMETHING ELSE WHICH IS LOCATED ON THE PI FOR REFERENCE")
-        raise NotImplementedError("Microphone recording needs to be fixed for proper device selection.")
         device_index = None
-
+        for i, dev in enumerate(sd.query_devices()):
+                if "USB" in dev['name'] and dev['max_input_channels'] > 0:
+                        device_index = i
+                        samplerate = int(dev['default_samplerate'])
+                        print(f"Using device {i}: {dev['name']} with samplerate {samplerate}")
+                        self.samplerate = samplerate
+                        break
         with sd.InputStream(device=device_index, channels=1, samplerate=self.samplerate, callback=self.callback):
             while True:
                 sd.sleep(1000)
@@ -44,6 +50,3 @@ class MicrophoneInterface:
             wf.setframerate(self.samplerate)
             wf.writeframes(audio_data.tobytes())
         print(f"Audio saved to {filename}")
-
-
-
