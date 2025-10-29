@@ -39,9 +39,9 @@ class transcriber:
                 new_chunk = self.input_queue.get()
                 buffer = np.append(buffer, new_chunk)
             # If enough new audio for one step
+            print("Buffer length:", len(buffer), "Needed:", self.samples_per_chunk, "%: ", len(buffer)/self.samples_per_chunk*100)
             while len(buffer) >= self.samples_per_chunk:
                 segment = buffer[:self.samples_per_chunk]
-                print("Transcribing segment...")
 
                 # Preprocess and decode
                 mel = self.preprocess_segment(segment)
