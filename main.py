@@ -38,9 +38,14 @@ def main():
         print("Exiting program.")
         mqtt_interface_aud.client.loop_stop()
         mqtt_interface_vel.client.loop_stop()
-        
+
+
         mqtt_interface_aud.client.disconnect()
-        mqtt_interface_vel.client.disconnect()
+        mqtt_interface_vel.client.disconnect()        
+        
+        #transcriber_instance.save_audio_to_wav()
+        mqtt_interface_aud.save_to_wav()
+
 
 if __name__ == "__main__":
     main()

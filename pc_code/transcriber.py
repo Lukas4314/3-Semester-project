@@ -1,3 +1,4 @@
+import wave
 import numpy as np
 import whisper
 from whisper.audio import pad_or_trim, log_mel_spectrogram
@@ -22,10 +23,13 @@ class transcriber:
         # Queue for transcription output
         self.output_queue = output_queue
         
+        self.recorded_audio = []  # To accumulate audio data
+        
         threading.Thread(target=self.transcribe_stream, daemon=True).start()
 
     def preprocess_segment(self, segment):
         segment = pad_or_trim(segment)  # trims/pads to 30s
+        segment = segment.astype(np.float32)
         mel = log_mel_spectrogram(segment)
         return mel
 
@@ -37,9 +41,9 @@ class transcriber:
             # Pull audio into buffer
             while not self.input_queue.empty():
                 new_chunk = self.input_queue.get()
+                self.recorded_audio.append(new_chunk)
                 buffer = np.append(buffer, new_chunk)
-            # If enough new audio for one step
-            print("Buffer length:", len(buffer), "Needed:", self.samples_per_chunk, "%: ", len(buffer)/self.samples_per_chunk*100)
+                
             while len(buffer) >= self.samples_per_chunk:
                 segment = buffer[:self.samples_per_chunk]
 
@@ -49,9 +53,20 @@ class transcriber:
                 result = whisper.decode(self.model, mel, options)
                 print(f"Transcribed: {result.text}")
                 self.output_queue.put(result.text)
-                
 
                 # Slide buffer window (keep overlap)
                 buffer = buffer[step:]
 
             time.sleep(0.1)
+    def save_audio_to_wav(self, filename="output.wav"):
+        # Concatenate all recorded audio chunks
+        audio_data = np.concatenate(self.recorded_audio)
+        # Normalize to int16 range
+        audio_data = np.int16(audio_data / np.max(np.abs(audio_data)) * 32767)
+        # Write to WAV file
+        with wave.open(filename, 'wb') as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)  # 2 bytes for int16
+            wf.setframerate(self.samplerate)
+            wf.writeframes(audio_data.tobytes())
+        print(f"Audio saved to {filename}")

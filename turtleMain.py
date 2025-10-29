@@ -13,7 +13,7 @@ def main():
 
     buffer = np.zeros(0, dtype=np.float32)
     samplerate = 44100
-    chunk_duration = 5
+    chunk_duration = 2
     samples_per_chunk = int(samplerate * chunk_duration)
 
     try: 
