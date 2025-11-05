@@ -27,7 +27,7 @@ def main():
         while True:
             new_transcription = transcriber_instance.getNewTranscription()
             if new_transcription != "":
-                analysisstring += new_transcription
+                analysisstring += new_transcription + " "
                 print("Transcribed so far:", analysisstring)
             else:
                 time.sleep(0.1)
