@@ -41,7 +41,7 @@ class transcriber:
             # Pull audio into buffer
             while not self.input_queue.empty():
                 new_chunk = self.input_queue.get()
-                self.recorded_audio.append(new_chunk)
+                #self.recorded_audio.append(new_chunk)
                 buffer = np.append(buffer, new_chunk)
                 
             while len(buffer) >= self.samples_per_chunk:

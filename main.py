@@ -13,6 +13,7 @@ def main():
     mqtt_interface_aud = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD)
     turtleController = TurtleController(mqtt_interface_vel)
 
+
     audio_queue = queue.Queue()
     transcribed_queue = queue.Queue()
 

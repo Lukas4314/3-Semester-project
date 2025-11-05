@@ -3,6 +3,7 @@ import paho.mqtt.client as mqtt
 import json
 import time
 import numpy as np
+import ast
 
 
 class MQTTInterface:
@@ -53,10 +54,13 @@ class MQTTInterface:
     
     def listen(self, output_queue):
         def on_message(client, userdata, msg):
+            print("Recieved message")
             decoded_payload = msg.payload.decode('utf-8')
-            data = json.loads(decoded_payload)
-            self.recorded_data.append(data)
-            output_queue.put(data)
+            output_queue.put(decoded_payload)
+            
+            data = ast.literal_eval(decoded_payload)             # safely parse → [2, 4.2, 2]
+            arr = np.array(data, dtype=np.float32)
+            self.recorded_data.append(arr)
 
         self.client.subscribe(self.topic)
         self.client.on_message = on_message
@@ -69,14 +73,16 @@ class MQTTInterface:
         print("Disconnected from MQTT broker.")
 
     def save_to_wav(self, filename="output.wav"):
-        # Concatenate all recorded audio chunks
-        audio_data = np.concatenate(self.recorded_data)
         # Normalize to int16 range
-        audio_data = np.int16(audio_data / np.max(np.abs(audio_data)) * 32767)
+        flattened_data = np.concatenate(self.recorded_data)
+        audio_data = flattened_data
+        audio_data = np.int16(audio_data * 32767)
+        with open("temp.txt", 'wb') as f:
+            f.write(audio_data)
         # Write to WAV file
         with wave.open(filename, 'wb') as wf:
             wf.setnchannels(1)
-            wf.setsampwidth(4)  # 2 bytes for int16
+            wf.setsampwidth(2)  # 2 bytes for int16
             wf.setframerate(44100)
             wf.writeframes(audio_data.tobytes())
         print(f"Audio saved to {filename}")
