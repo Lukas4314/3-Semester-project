@@ -1,3 +1,4 @@
+from email.mime import audio
 import string
 import sounddevice as sd
 import numpy as np
@@ -72,6 +73,7 @@ class transcriber:
             # Pull audio into buffer
             while not self.input_queue.empty():
                 new_chunk = self.input_queue.get()
+                print(new_chunk[0])
                 self.recorded_audio.append(new_chunk)
                 buffer = np.append(buffer, new_chunk)
                 
@@ -104,13 +106,14 @@ class transcriber:
 
     def save_audio_to_wav(self, filename="output.wav"):
         # Concatenate all recorded audio chunks
-        audio_data = np.concatenate(self.recorded_audio).astype(np.int16)
-
+        #audio_data = np.concatenate(self.recorded_audio).astype(np.int16)
+        audio = np.concatenate(self.recorded_audio)
+        audio_int16 = np.int16(audio * 32767)
         # Normalize to int16 range
         # Write to WAV file
         with wave.open(filename, 'wb') as wf:
             wf.setnchannels(1)
             wf.setsampwidth(2)  # 2 bytes for int16
             wf.setframerate(self.samplerate)
-            wf.writeframes(audio_data.tobytes())
+            wf.writeframes(audio_int16.tobytes())
         print(f"Audio saved to {filename}")

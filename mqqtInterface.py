@@ -54,11 +54,10 @@ class MQTTInterface:
     
     def listen(self, output_queue):
         def on_message(client, userdata, msg):
-            if not hasattr(on_message, "count"):
-                on_message.count = 0
-            on_message.count += 1
+            print(f"message received: {msg.payload}")
             decoded_payload = msg.payload.decode('utf-8')
             data = ast.literal_eval(decoded_payload)             # safely parse → [2, 4.2, 2]
+            print(data[0])
             arr = np.array(data, dtype=np.float32)
             output_queue.put(arr)
             self.recorded_data.append(arr)
