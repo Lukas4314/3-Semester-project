@@ -1,3 +1,4 @@
+import string
 import sounddevice as sd
 import queue
 import time
@@ -6,6 +7,7 @@ from pc_code.turtleController import TurtleController
 from pc_code.stringToCommand import string_to_command
 from pc_code.transcriber import transcriber
 from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD
+
 
 
 def main():
@@ -22,17 +24,21 @@ def main():
     
     
     try:
-        whisperResponse = "" 
+        analysisstring = ""
         while True:
-            while transcribed_queue.empty():
+            new_transcription = transcriber_instance.getNewTranscription()
+            if new_transcription != "":
+                analysisstring += new_transcription
+                print("Transcribed so far:", analysisstring)
+            else:
                 time.sleep(0.1)
-            while not transcribed_queue.empty():
-                whisperResponse += transcribed_queue.get()
-                whisperResponse += " "
-            command = string_to_command(whisperResponse)
+                continue
+
+            command = string_to_command(analysisstring.strip())
             if command is not None:
-                whisperResponse = ""  # Clear after successful command parsing
-                turtleController.execute_command(command["action"], command["direction"], command["distance"])
+                print("Recognized command:", command)
+                analysisstring = ""  # Reset after a valid command
+                #turtleController.execute_command(command["action"], command["direction"], command["distance"])
                     
     except KeyboardInterrupt:
         print("Exiting program.")
@@ -48,4 +54,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
