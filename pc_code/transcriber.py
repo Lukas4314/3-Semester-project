@@ -73,14 +73,14 @@ class transcriber:
             # Pull audio into buffer
             while not self.input_queue.empty():
                 new_chunk = self.input_queue.get()
-                print(new_chunk[0])
                 self.recorded_audio.append(new_chunk)
                 buffer = np.append(buffer, new_chunk)
                 
             while len(buffer) >= self.samples_per_chunk:
                 print("Transcribing segment...")
                 segment = buffer[:self.samples_per_chunk]
-
+                self.save_list_to_wav([segment], filename="debug_segment.wav")
+                
                 # Preprocess and decode
                 mel = self.preprocess_segment(segment)
 
@@ -104,10 +104,9 @@ class transcriber:
         return " ".join(texts)
         
 
-    def save_audio_to_wav(self, filename="output.wav"):
+    def save_list_to_wav(self, audio_list, filename="output.wav"):
         # Concatenate all recorded audio chunks
-        #audio_data = np.concatenate(self.recorded_audio).astype(np.int16)
-        audio = np.concatenate(self.recorded_audio)
+        audio = np.concatenate(audio_list)
         audio_int16 = np.int16(audio * 32767)
         # Normalize to int16 range
         # Write to WAV file
@@ -117,3 +116,7 @@ class transcriber:
             wf.setframerate(self.samplerate)
             wf.writeframes(audio_int16.tobytes())
         print(f"Audio saved to {filename}")
+
+
+    def save_audio_to_wav(self, filename="output.wav"):
+        self.save_list_to_wav(self.recorded_audio, filename)
