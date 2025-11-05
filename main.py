@@ -17,10 +17,9 @@ def main():
 
 
     audio_queue = queue.Queue()
-    transcribed_queue = queue.Queue()
 
     mqtt_interface_aud.listen(audio_queue)
-    transcriber_instance = transcriber(audio_queue, transcribed_queue)
+    transcriber_instance = transcriber(audio_queue)
     
     
     try:
