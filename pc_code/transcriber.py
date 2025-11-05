@@ -22,9 +22,10 @@ class transcriber:
         # Audio queue
         self.input_queue = input_queue
         self.output_queue = queue.Queue()
-        threading.Thread(target=self.transcribe_stream, daemon=True).start()
         self.total_string = ""
         self.recorded_audio = []  # To accumulate audio data
+        threading.Thread(target=self.transcribe_stream, daemon=True).start()
+
         
     def append_without_overlap(self, new):
         """
@@ -71,20 +72,24 @@ class transcriber:
             # Pull audio into buffer
             while not self.input_queue.empty():
                 new_chunk = self.input_queue.get()
-                #self.recorded_audio.append(new_chunk)
-                buffer = np.append(buffer, new_chunk)
+                self.recorded_audio.append(new_chunk)
+                buffer = np.append(buffer, new_chunk.astype(np.float16))
                 
             while len(buffer) >= self.samples_per_chunk:
+                print("Transcribing segment...")
                 segment = buffer[:self.samples_per_chunk]
 
                 # Preprocess and decode
                 mel = self.preprocess_segment(segment)
+                with open("segment.txt", "wb") as f:
+                    f.write(segment)
+
                 options = whisper.DecodingOptions(fp16=False, language="en")
                 result = whisper.decode(self.model, mel, options)
                 
                 # Handle transcription output
-                resultafterappend =self.append_without_overlap(result.text)
-                self.output_queue.put(resultafterappend)
+                result_after_append =self.append_without_overlap(result.text)
+                self.output_queue.put(result_after_append)
 
                 # Slide buffer window (keep overlap)
                 buffer = buffer[step:]
@@ -101,7 +106,8 @@ class transcriber:
 
     def save_audio_to_wav(self, filename="output.wav"):
         # Concatenate all recorded audio chunks
-        audio_data = np.concatenate(self.recorded_audio)
+        audio_data = np.concatenate(self.recorded_audio).astype(np.int16)
+
         # Normalize to int16 range
         # Write to WAV file
         with wave.open(filename, 'wb') as wf:
