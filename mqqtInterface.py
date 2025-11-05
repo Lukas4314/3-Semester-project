@@ -54,12 +54,13 @@ class MQTTInterface:
     
     def listen(self, output_queue):
         def on_message(client, userdata, msg):
-            print("Recieved message")
+            if not hasattr(on_message, "count"):
+                on_message.count = 0
+            on_message.count += 1
             decoded_payload = msg.payload.decode('utf-8')
-            output_queue.put(decoded_payload)
-            
             data = ast.literal_eval(decoded_payload)             # safely parse → [2, 4.2, 2]
             arr = np.array(data, dtype=np.float32)
+            output_queue.put(arr)
             self.recorded_data.append(arr)
 
         self.client.subscribe(self.topic)
@@ -74,11 +75,7 @@ class MQTTInterface:
 
     def save_to_wav(self, filename="output.wav"):
         # Normalize to int16 range
-        flattened_data = np.concatenate(self.recorded_data)
-        audio_data = flattened_data
-        audio_data = np.int16(audio_data * 32767)
-        with open("temp.txt", 'wb') as f:
-            f.write(audio_data)
+        audio_data = np.concatenate(self.recorded_data).astype(np.int16)
         # Write to WAV file
         with wave.open(filename, 'wb') as wf:
             wf.setnchannels(1)
