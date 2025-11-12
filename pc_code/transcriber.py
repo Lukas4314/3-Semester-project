@@ -8,7 +8,8 @@ import threading
 import time
 import queue
 import wave
-
+import torch
+import torchaudio
 
 class transcriber:
     def __init__(self, input_queue):
@@ -60,10 +61,25 @@ class transcriber:
 
 
     def preprocess_segment(self, segment):
-        segment = pad_or_trim(segment)  # trims/pads to 30s
-        segment = segment.astype(np.float32)
+        """
+        Convert a 44.1 kHz NumPy audio segment to Whisper-compatible log-Mel spectrogram.
+        """
+        # Convert to float32 tensor
+        if not isinstance(segment, torch.Tensor):
+            segment = torch.from_numpy(segment.astype(np.float32))
+
+        # Resample to 16 kHz if needed
+        if self.samplerate != 16000:
+            resampler = torchaudio.transforms.Resample(orig_freq=self.samplerate, new_freq=16000)
+            segment = resampler(segment)
+
+        # Pad or trim to 30s (Whisper default)
+        segment = pad_or_trim(segment)
+
+        # Compute log-Mel spectrogram
         mel = log_mel_spectrogram(segment)
         return mel
+
 
     def transcribe_stream(self):
         buffer = np.zeros(0, dtype=np.float32)
@@ -77,16 +93,14 @@ class transcriber:
                 buffer = np.append(buffer, new_chunk)
                 
             while len(buffer) >= self.samples_per_chunk:
-                print("Transcribing segment...")
                 segment = buffer[:self.samples_per_chunk]
-                self.save_list_to_wav([segment], filename="debug_segment.wav")
                 
                 # Preprocess and decode
                 mel = self.preprocess_segment(segment)
 
                 options = whisper.DecodingOptions(fp16=False, language="en")
                 result = whisper.decode(self.model, mel, options)
-                
+                print("Raw transcription result:", result.text)
                 # Handle transcription output
                 result_after_append =self.append_without_overlap(result.text)
                 self.output_queue.put(result_after_append)

@@ -6,7 +6,7 @@ from mqqtInterface import MQTTInterface
 from pc_code.turtleController import TurtleController
 from pc_code.stringToCommand import string_to_command
 from pc_code.transcriber import transcriber
-from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD
+from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD, RED, RED_END
 
 
 
@@ -27,8 +27,9 @@ def main():
         while True:
             new_transcription = transcriber_instance.getNewTranscription()
             if new_transcription != "":
+                print(f"Transcribed so far:", analysisstring + RED + new_transcription + RED_END)
                 analysisstring += new_transcription + " "
-                print("Transcribed so far:", analysisstring)
+                
             else:
                 time.sleep(0.1)
                 continue
