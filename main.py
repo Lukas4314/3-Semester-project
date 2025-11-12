@@ -1,3 +1,4 @@
+import string
 import sounddevice as sd
 import queue
 import time
@@ -5,7 +6,8 @@ from mqqtInterface import MQTTInterface
 from pc_code.turtleController import TurtleController
 from pc_code.stringToCommand import string_to_command
 from pc_code.transcriber import transcriber
-from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD
+from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD, RED, RED_END
+
 
 
 def main():
@@ -15,24 +17,27 @@ def main():
 
 
     audio_queue = queue.Queue()
-    transcribed_queue = queue.Queue()
 
     mqtt_interface_aud.listen(audio_queue)
-    transcriber_instance = transcriber(audio_queue, transcribed_queue)
+    transcriber_instance = transcriber(audio_queue)
     
     
     try:
-        whisperResponse = "" 
+        analysisstring = ""
         while True:
-            while transcribed_queue.empty():
+            new_transcription = transcriber_instance.getNewTranscription()
+            if new_transcription != "":
+                print(f"Transcribed so far:", analysisstring + RED + new_transcription + RED_END)
+                analysisstring += new_transcription + " "
+                
+            else:
                 time.sleep(0.1)
-            while not transcribed_queue.empty():
-                whisperResponse += transcribed_queue.get()
-                whisperResponse += " "
-            print("Got something")
-            command = string_to_command(whisperResponse)
+                continue
+
+            command = string_to_command(analysisstring.strip())
             if command is not None:
-                whisperResponse = ""  # Clear after successful command parsing
+                print("Recognized command:", command)
+                analysisstring = ""  # Reset after a valid command
                 turtleController.execute_command(command["action"], command["direction"], command["distance"])
                     
     except KeyboardInterrupt:
@@ -44,9 +49,10 @@ def main():
         mqtt_interface_aud.client.disconnect()
         mqtt_interface_vel.client.disconnect()        
         
-        #transcriber_instance.save_audio_to_wav()
-        mqtt_interface_aud.save_to_wav()
+        transcriber_instance.save_audio_to_wav()
+        #mqtt_interface_aud.save_to_wav()
 
 
 if __name__ == "__main__":
+
     main()

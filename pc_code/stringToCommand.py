@@ -163,7 +163,7 @@ def string_to_command(input_string):
         
         if next_direction is None:
             print("No direction found after action.")
-            return None
+            continue
         
         next_direction = None
         # restrict which directions are valid for each action
@@ -195,6 +195,7 @@ def string_to_command(input_string):
             break
         
         if next_distance is None and next_unit is None:
+            continue
             return None # Temporarily disable default distance/unit when missing
             next_distance = DEFAULTS[action]["distance"]
             next_unit = DEFAULTS[action]["unit"]
@@ -206,7 +207,6 @@ def string_to_command(input_string):
             next_distance = float(next_distance) * (math.pi / 180)  
         print("Parsed command:", {"action": action, "direction": next_direction, "distance": float(next_distance), "unit": next_unit})
         return {"action": action, "direction": next_direction, "distance": float(next_distance), "unit": next_unit}
-    print("This should not be printing anyting, and if it does then something is wrong...")
     return None
 
 """
