@@ -38,7 +38,7 @@ def main():
             if command is not None:
                 print("Recognized command:", command)
                 analysisstring = ""  # Reset after a valid command
-                #turtleController.execute_command(command["action"], command["direction"], command["distance"])
+                turtleController.execute_command(command["action"], command["direction"], command["distance"])
                     
     except KeyboardInterrupt:
         print("Exiting program.")
