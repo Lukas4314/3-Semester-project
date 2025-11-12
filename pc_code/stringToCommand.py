@@ -98,6 +98,8 @@ def string_to_command(input_string):
         "eight": "8",
         "nine": "9",
         "ten": "10",
+
+        "further": "30",
     }
 
     for word, digit in text_numbers.items():
@@ -161,6 +163,25 @@ def string_to_command(input_string):
         
         if next_direction is None:
             print("No direction found after action.")
+            return None
+        
+        next_direction = None
+        # restrict which directions are valid for each action
+        allowed_dirs = {
+            "move": {directionEnum.FORWARD.value, directionEnum.BACKWARD.value},
+            "turn": {directionEnum.LEFT.value, directionEnum.RIGHT.value},
+            "stop": set()
+        }
+        # find the first direction after the action that is valid for this action
+        for di, direction in directions_found:
+            if ai > di:
+                continue
+            if direction in allowed_dirs.get(action, set()):
+                next_direction = direction
+                break
+            # if direction exists but is not allowed for this action, skip it and keep searching
+        if next_direction is None:
+            print(f"No valid direction found after action '{action}'.")
             return None
         
         next_unit = None
