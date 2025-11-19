@@ -42,7 +42,8 @@ class transcriber:
             new = new.replace(punctuation, "")
 
         new = new.strip()
-
+        new = new.lower()
+        
         # If new already contains existing entirely, just replace it
         if new.startswith(self.total_string):
             self.total_string = new
