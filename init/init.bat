@@ -10,3 +10,4 @@ pip install setuptools-rust
 pip install paho-mqtt
 pip install sounddevice
 pip install torchaudio
+pip install scipy
