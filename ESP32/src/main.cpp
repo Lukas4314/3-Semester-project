@@ -16,21 +16,21 @@
 
 
 // MIC 1 --> I2S0 channel 0 (left)
-#define MIC1_SEL_PIN  34 // GPIO to select mic1 (if needed)
+#define MIC1_SEL_PIN  13 // GPIO to select mic1 (if needed)
 #define MIC1_SEL_VALUE 0 // Left channel
 #define MIC1_SCK I2S0_BCLK // Clock on BCLK
 #define MIC1_WS  I2S0_LRCLK // Word select on LRCLK
 #define MIC1_DO I2S0_DIN // Data output from microphone to input for I2S0
 
 // MIC 2 --> I2S0 channel 1 (right)
-#define MIC2_SEL_PIN  35 // GPIO to select mic2 (if needed)
+#define MIC2_SEL_PIN  14 // GPIO to select mic2 (if needed)
 #define MIC2_SEL_VALUE 1 // Right channel
 #define MIC2_SCK I2S0_BCLK // Clock on BCLK
 #define MIC2_WS  I2S0_LRCLK // Word select on LRCLK
 #define MIC2_DO I2S0_DIN // Data output from microphone to input for I2S0
 
 // MIC 3 --> I2S1 channel 0 (left)
-#define MIC3_SEL_PIN  33 // GPIO to select mic3 (if needed)
+#define MIC3_SEL_PIN  27 // GPIO to select mic3 (if needed)
 #define MIC3_SEL_VALUE 0 // Left channel
 #define MIC3_SCK I2S1_BCLK // Clock on BCLK
 #define MIC3_WS  I2S1_LRCLK // Word select on LRCLK
@@ -39,13 +39,13 @@
 
 
 // Create I2S interface objects
-I2sInterface i2s0(I2S_NUM_0, I2S0_BCLK, I2S0_LRCLK, -1, I2S0_DIN, 
-                  (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
-                  I2S_BITS_PER_SAMPLE_16BIT,
-                  I2S_CHANNEL_FMT_RIGHT_LEFT, 44100);
+//I2sInterface i2s0(I2S_NUM_0, I2S0_BCLK, I2S0_LRCLK, -1, I2S0_DIN, 
+//                  (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
+//                  I2S_BITS_PER_SAMPLE_16BIT,
+//                  I2S_CHANNEL_FMT_RIGHT_LEFT, 44100);
 
 I2sInterface i2s1(I2S_NUM_1, I2S1_BCLK, I2S1_LRCLK, -1, I2S1_DIN,
-                  (i2s_mode_t)(I2S_MODE_SLAVE | I2S_MODE_RX),
+                  (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
                   I2S_BITS_PER_SAMPLE_16BIT,
                   I2S_CHANNEL_FMT_ONLY_LEFT, 44100);
 
@@ -57,9 +57,11 @@ void setup() {
     Serial.begin(115200);
     delay(1000);
 
+
     pinMode(MIC1_SEL_PIN, OUTPUT);
     pinMode(MIC2_SEL_PIN, OUTPUT);
     pinMode(MIC3_SEL_PIN, OUTPUT);
+
 
     // Select microphones
     digitalWrite(MIC1_SEL_PIN, MIC1_SEL_VALUE);
@@ -68,12 +70,13 @@ void setup() {
 
 
 
+
     // Initialize both I2S peripherals
-    if (i2s0.begin()) {
-        Serial.println("I2S0 initialized (stereo mic1+mic2)");
-    } else {
-        Serial.println("Failed to initialize I2S0");
-    }
+    //if (i2s0.begin()) {
+    //    Serial.println("I2S0 initialized (stereo mic1+mic2)");
+    //} else {
+    //    Serial.println("Failed to initialize I2S0");
+    //}
 
     if (i2s1.begin()) {
         Serial.println("I2S1 initialized (mono mic3)");
@@ -85,20 +88,24 @@ void setup() {
 
 }
 
+
+
+
 void loop() {
     mqtt.loop();
 
     const int numSamples = 1024;     // number of 16-bit samples to read
     static int16_t buffer0[numSamples * 2]; // I2S0: stereo = 2 channels
     static int16_t buffer1[numSamples];     // I2S1: mono = 1 channel
-
     // Read samples from I2S0 (stereo)
-    size_t bytesRead0 = i2s0.readSamples(buffer0, sizeof(buffer0));
+    //size_t bytesRead0 = i2s0.readSamples(buffer0, sizeof(buffer0));
+
 
     // Read samples from I2S1 (mono)
     size_t bytesRead1 = i2s1.readSamples(buffer1, sizeof(buffer1));
 
+    
 
-    mqtt.publish("I2S0", buffer0, sizeof(buffer0));
+    //mqtt.publish("I2S0", buffer0, sizeof(buffer0));
     mqtt.publish("I2S1", buffer1, sizeof(buffer1));
 }

@@ -3,7 +3,7 @@ import whisper
 
 model = whisper.load_model("base.en")
 
-SOUND_PATH = "debug_segment.wav"
+SOUND_PATH = "output.wav"
 
 
 

@@ -4,6 +4,8 @@ import json
 import time
 import numpy as np
 import ast
+import struct
+
 
 
 class MQTTInterface:
@@ -54,11 +56,15 @@ class MQTTInterface:
     
     def listen(self, output_queue):
         def on_message(client, userdata, msg):
-            decoded_payload = msg.payload.decode('utf-8')
-            data = ast.literal_eval(decoded_payload)             # safely parse → [2, 4.2, 2]
-            arr = np.array(data, dtype=np.float32)
+            
+            # number of int16 values
+            count = len(msg.payload) // 2  
+
+            values = struct.unpack('<' + 'h'*count, msg.payload)
+            arr = np.array(values, dtype=np.int16)
             output_queue.put(arr)
             self.recorded_data.append(arr)
+            
 
         self.client.subscribe(self.topic)
         self.client.on_message = on_message

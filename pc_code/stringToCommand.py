@@ -49,6 +49,7 @@ DIRECTIONS = {
     "lift": directionEnum.LEFT,
     
     "right": directionEnum.RIGHT,
+    "ride" : directionEnum.RIGHT
 }
 
 UNITS = {"centimeters", "centimeter", "millimeters", "millimeter", "meters", "meter", 
