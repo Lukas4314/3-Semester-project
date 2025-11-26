@@ -57,6 +57,17 @@ void setup() {
     Serial.begin(115200);
     delay(1000);
 
+    pinMode(MIC1_SEL_PIN, OUTPUT);
+    pinMode(MIC2_SEL_PIN, OUTPUT);
+    pinMode(MIC3_SEL_PIN, OUTPUT);
+
+    // Select microphones
+    digitalWrite(MIC1_SEL_PIN, MIC1_SEL_VALUE);
+    digitalWrite(MIC2_SEL_PIN, MIC2_SEL_VALUE);
+    digitalWrite(MIC3_SEL_PIN, MIC3_SEL_VALUE);
+
+
+
     // Initialize both I2S peripherals
     if (i2s0.begin()) {
         Serial.println("I2S0 initialized (stereo mic1+mic2)");
