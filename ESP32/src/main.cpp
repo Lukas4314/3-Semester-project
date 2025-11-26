@@ -15,6 +15,29 @@
 
 
 
+// MIC 1 --> I2S0 channel 0 (left)
+#define MIC1_SEL_PIN  34 // GPIO to select mic1 (if needed)
+#define MIC1_SEL_VALUE 0 // Left channel
+#define MIC1_SCK I2S0_BCLK // Clock on BCLK
+#define MIC1_WS  I2S0_LRCLK // Word select on LRCLK
+#define MIC1_DO I2S0_DIN // Data output from microphone to input for I2S0
+
+// MIC 2 --> I2S0 channel 1 (right)
+#define MIC2_SEL_PIN  35 // GPIO to select mic2 (if needed)
+#define MIC2_SEL_VALUE 1 // Right channel
+#define MIC2_SCK I2S0_BCLK // Clock on BCLK
+#define MIC2_WS  I2S0_LRCLK // Word select on LRCLK
+#define MIC2_DO I2S0_DIN // Data output from microphone to input for I2S0
+
+// MIC 3 --> I2S1 channel 0 (left)
+#define MIC3_SEL_PIN  33 // GPIO to select mic3 (if needed)
+#define MIC3_SEL_VALUE 0 // Left channel
+#define MIC3_SCK I2S1_BCLK // Clock on BCLK
+#define MIC3_WS  I2S1_LRCLK // Word select on LRCLK
+#define MIC3_DO I2S1_DIN // Data output from microphone to input for I2S1
+
+
+
 // Create I2S interface objects
 I2sInterface i2s0(I2S_NUM_0, I2S0_BCLK, I2S0_LRCLK, -1, I2S0_DIN, 
                   (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
