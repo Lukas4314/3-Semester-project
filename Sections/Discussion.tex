@@ -1,0 +1,24 @@
+\section{Discussion}
+
+
+The player's moves were correctly detected $98.7 \%$ of the time. The goal in \cref{tab:project_requirements} was $98 \%$ and therefore this goal was achieved.
+
+When moving pieces, their shadows will also move alongside them. This leaves an unfortunate area with a smaller yet similar difference in colour to the moved piece. When this shadow reaches to the next square it can interfere with the image processing and potentially result in a wrongful interpretation of the move. This is reduced by the fact the channels are squared, since the difference the shadow adds, often is not the largest, meaning when its squared and normalized it would be decreased. The channels are currently being squared, but more optimised values could possibly be found. Furthermore, the weight given to each channel when the average is taken, can be further optimised both for finding the chessboard corners and the pegs, but also for finding the move.
+
+Another way to mitigate the problem could be to ask the user to repeat their move, if a certain threshold of illegal moves (e.g. 10+ moves) were attempted by the camera. However, this would contradict the goal of making the player have as little interaction with the robot as possible.
+
+If the player accidentally slightly moves a piece that is located on a square of the opposite colour (e.g. white on black), and the player then makes their move with another piece that is on a square of the same colour (e.g. white on white), and the move is legal for both pieces, then the camera has a tendency to find the incorrect move. A possible fix would be to rework the image processing to sum the squares' values before calculating the absolute difference, instead of calculating the absolute difference first and then summing the squares' values.
+
+As mentioned in \cref{sec: vision}, the weights of HSV could be tweaked to increase the consistency in finding successful moves.
+
+The goal for the gripper was $98 \%$ but only achieved $97.2 \%$
+The chance for completing af full game of chess with 50 moves each can therefore be calculated as $0.97^{50} \cdot 0.987^{50}=11.33 \%$.
+
+The gripper was not able to pickup the piece every time. The only fails when the board was initially set up. When the player sets up the pieces, they are placed uncentered in the tiles, in contrast to the robot placing the pieces in the same area of the tiles consistently. This is mostly because of common rushing when setting up the board. The fact that it managed to pick up the player's pieces every time during subsequent gameplay, indicates that the player is either more precise when putting down a single piece, or the player places the piece accounting for the previous offset by the robot. 
+Another reason for the gripper inconsistent was the calculated transformation matrix of the chessboard. It would often have a slight deviation in comparison to the actual position and orientation of the chessboard, leading to the gripper not hovering over the center of the tile.
+
+The Gripper also consists of many moving parts, which increase the potential for mechanical failure. Each of the parts can be a source of malfunction. The reliance on many small parts makes the gripper more complex, and the chances of the gripper being misaligned are higher. 
+
+While ROS2 provides helpful tools like the simple interface of the UR driver and the GUI in Rviz, it also introduces a significant overhead that is unnecessary for the functions of the robot. While poorer performance is not a critical problem in the project, it could be beneficial to migrate the motion planning to raw RTDE or TCP and let the robot itself handle calibration. However, these do not support the same graphical interface.
+
+
