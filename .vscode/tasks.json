@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build LaTeX",
+            "type": "shell",
+            "command": "latexmk",
+            "args": [
+                "-pdf",
+                "-shell-escape",
+                "-interaction=nonstopmode",
+                "-f",
+                "Main.tex"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+        }
+    ]
+}

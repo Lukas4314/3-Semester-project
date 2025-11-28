@@ -1,7 +1,6 @@
 *.pdf
 *.run.xml
 *.synctex.gz
-.vscode/
 *.aux
 *.bbl
 *.blg
