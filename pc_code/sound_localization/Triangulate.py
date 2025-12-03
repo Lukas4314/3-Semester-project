@@ -1,4 +1,4 @@
-import gcc_phat_testing as gcc
+import pc_code.sound_localization.gccPhat as gcc
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -71,10 +71,11 @@ def find_sound_origin(mic_positions, tdoa_estimates, speed_of_sound=343.0):
         
 if __name__ == "__main__":
     import random
+    """
     # I now want to test multiple points and find an average difference 
     points = [(random.uniform(0, 4), random.uniform(0, 4), random.uniform(0, 3)) for _ in range(10)]
     
-    tdoa_estimates = [np.linalg.norm(points - [0.2,0,0])/343-np.linalg.norm(points - [0,0,0])/343, np.linalg.norm(points - [0.1,0.1732,0])/343-np.linalg.norm(points - [0,0,0])/343, np.linalg.norm(points - [0.1,0.1732,0])/343-np.linalg.norm(points - [0.2,0,0])/343]
+    tdoa_estimates = [np.linalg.norm(points - [0.2,0,0])/343 - np.linalg.norm(points - [0,0,0])/343, np.linalg.norm(points - [0.1,0.1732,0])/343 - np.linalg.norm(points - [0,0,0])/343, np.linalg.norm(points - [0.1,0.1732,0])/343 - np.linalg.norm(points - [0.2,0,0])/343]
     mic_positions = microphone_placement()
     grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa_estimates)
 
@@ -82,8 +83,8 @@ if __name__ == "__main__":
     best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)
 
     print("best_point:", best_point, "best_score:", best_score)
-
     """
+    
     point = np.array([1.9738428371, 0.881273731, 1.776132172])  # Example true position
     tdoa_estimates = [np.linalg.norm(point - [0.2,0,0])/343-np.linalg.norm(point - [0,0,0])/343, np.linalg.norm(point - [0.1,0.1732,0])/343-np.linalg.norm(point - [0,0,0])/343, np.linalg.norm(point - [0.1,0.1732,0])/343-np.linalg.norm(point - [0.2,0,0])/343]
     mic_positions = microphone_placement()
@@ -124,5 +125,3 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
-    """
-    
