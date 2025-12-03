@@ -20,9 +20,10 @@ def FFT(testarray):
     N = len(testarray)
     fft_freqs = np.fft.fftfreq(N, d=1/44100)
     fft_vals = np.fft.fft(testarray)
+    pos_mask = fft_freqs >= 0
     plt.figure(figsize=(10,5))
-    plt.plot(fft_freqs, fft_vals)
-    plt.title("Frekvensdomæne - FFT af input.wav")
+    plt.plot(fft_freqs[pos_mask], fft_vals[pos_mask])
+    plt.title("Frekvensdomæne - FFT af signal")
     plt.xlabel("Frekvens (Hz)")
     plt.ylabel("Amplitude")
     plt.grid(True)
@@ -38,9 +39,10 @@ def filter_telephone_band(fftarray):
 
     fft_freqs = np.fft.fftfreq(N, d=1/samplerate)
     filter_mask = ((np.abs(fft_freqs) >= lowcut) & (np.abs(fft_freqs) <= highcut)).astype(float)
-    fft_filtered = fftarray * filter_mask  
+    fft_filtered = fftarray * filter_mask 
+    pos_mask = fft_freqs >= 0 
     plt.figure(figsize=(10, 5))
-    plt.plot(fft_freqs, np.abs(fft_filtered))
+    plt.plot(fft_freqs[pos_mask], np.abs(fft_filtered[pos_mask]))
     plt.title("Filtered Spectrum (After Frequency-Domain Band-pass)")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Magnitude")
