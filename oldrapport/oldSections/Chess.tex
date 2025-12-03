@@ -1,0 +1,22 @@
+\section{Chess} \label{sec:Chess}
+The piece positions are saved as chars in a 2D vector where uppercase letters are black and lowercase letters are white. When a piece moves, the coordinates of the position the piece moved from and to is saved as a string (for example e2e4), then the board is updated. Finally, this string is saved in a vector of strings that contains all previous moves. 
+
+\subsection{Move validation}
+When the camera has found a move it is checked for legality. \cite{chessrules} Most moves can be validated by ensuring pieces do not capture their own colour and are not blocked. 
+
+In certain moves, additional checks are required to ensure a legal move.
+
+When moving the King, to make sure it does not move into a check, every opponent's piece movement is simulated to see if they have a valid move to the King's new position. The same process applies when moving all other pieces, since they can not leave the king in check. The same principle is applied when validating castling. 
+In addition, the vector of all previous moves is also checked to see if the king or rook has previously moved. The vector is also used for en passant.
+
+After every move, the board state is checked for checkmate or draw.
+This is done by checking if there are no legal moves left, if the king is in check it means it is a checkmate. If the king is not in check, it is a stalemate, and therefore a draw. The board is also checked for three other cases, which result in a draw: Insufficient material, the 50-move rule, which counts how many moves ago a pawn has moved or a capture has occurred and the 3-move rule where a copy of all board positions is saved in a 3D vector, and checked for 3 identical boards.
+
+\subsection{Stockfish and StockfishUCI} 
+
+Stockfish is an AI that determines the best possible move based on the current board state and with a given depth. The predetermined depth affects the difficulty. Depth is a rough estimate of how far ahead Stockfish predicts. Theoretically, if the depth is defined by the user to be 10, then Stockfish predicts 10 half moves ahead (5 moves for white, and 5 for black). \cite{Stockfish} 
+
+Stockfish is run as a separate executable, and is used as an API. By using fork() \cite{Fork} a local child program is instantiated. On this child program Stockfish is run. To communicate with Stockfish UCI (Universal Chess Interface) is used. Stockfish waits for UCI commands while the program is running. UCI commands are sent via UNIX pipes. \cite{Pipe}
+
+UCI is a text based protocol which is used for communication between the main C++ program and the child program (Stockfish). The UCI protocol is standardized and therefore has commands that are readable and understandable for both sides.  \cite{StockfishUCI} The central command, which dictates the way Stockfish handles finding the best move, is "start pos moves" + a string with every move separated by a space, where the strings are all the previous moves. If this vector is empty, Stockfish returns the best move based on the standard chess starting position. During gameplay, moves are added to the moves vector, which enables Stockfish to understand the current board position and return its best move based on the board state.
+The best move from Stockfish is now also appended to the moves vector of strings, and finally the internal board state for the main program is updated. 
