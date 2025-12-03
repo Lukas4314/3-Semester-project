@@ -62,6 +62,7 @@ class MQTTInterface:
 
             values = struct.unpack('<' + 'h'*count, msg.payload)
             arr = np.array(values, dtype=np.int16)
+            arr = arr[1::2]
             output_queue.put(arr)
             self.recorded_data.append(arr)
             
