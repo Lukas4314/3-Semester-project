@@ -8,14 +8,25 @@
 
 import numpy as np
 import time
-from matplotlib import pyplot
+from matplotlib import pyplot as plt
 import scipy.signal
+import scipy.io.wavfile as wavfile
 # 35.7
 # 28.8
 
 
 # 1. Take the FFT of all three signals.
 def FFT(testarray):
+    N = len(testarray)
+    fft_freqs = np.fft.fftfreq(N, d=1/44100)
+    fft_vals = np.fft.fft(testarray)
+    plt.figure(figsize=(10,5))
+    plt.plot(fft_freqs, fft_vals)
+    plt.title("Frekvensdomæne - FFT af input.wav")
+    plt.xlabel("Frekvens (Hz)")
+    plt.ylabel("Amplitude")
+    plt.grid(True)
+    plt.show()
     return np.fft.fft(testarray)
 
 # 1.5 Apply telephone band filter
@@ -23,11 +34,20 @@ def filter_telephone_band(fftarray):
     N = len(fftarray)
     samplerate = 44100
     lowcut = 300
-    highcut = 3600
+    highcut = 3400
 
     fft_freqs = np.fft.fftfreq(N, d=1/samplerate)
-
     filter_mask = ((np.abs(fft_freqs) >= lowcut) & (np.abs(fft_freqs) <= highcut)).astype(float)
+    fft_filtered = fftarray * filter_mask  
+    plt.figure(figsize=(10, 5))
+    plt.plot(fft_freqs, np.abs(fft_filtered))
+    plt.title("Filtered Spectrum (After Frequency-Domain Band-pass)")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Magnitude")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+    
     return fftarray * filter_mask #outot is the filterd fftarray
 
 # 2. Calculate the cross-correlation spectrum between pairs of signals.
@@ -67,7 +87,7 @@ def peak_lag(corr):
 def TDOA(cross_corr):
     return -peak_lag(cross_corr)
 
-def PHAT_GCC_TDOA(signal1, signal2, debug=False):
+def PHAT_GCC_TDOA(signal1, signal2):
     """
     Calculate TDOA between signal1 and signal2.
     Returns: tdoa in samples where positive value means signal2 arrives AFTER signal1
@@ -78,66 +98,13 @@ def PHAT_GCC_TDOA(signal1, signal2, debug=False):
     fft2 = filter_telephone_band(fft2)
     R = GCC(fft1, fft2)
     R_phat = phat_weight(R)
-    pyplot.plot(R_phat)
-    pyplot.title("GCC-PHAT spectrum")
-    pyplot.show()
+    plt.plot(R_phat)
+    plt.title("GCC-PHAT spectrum")
+    plt.show()
     cross_corr = IFFT(R_phat)
+    tdoa = TDOA(cross_corr)
     
-    if debug:
-        corr_real = np.real(cross_corr)
-        N = len(cross_corr)
-        
-        # Find top peaks
-        peak_indices = np.argsort(corr_real)[-5:][::-1]
-        peak_values = corr_real[peak_indices]
-        peak_lags = [idx if idx <= N//2 else idx - N for idx in peak_indices]
-        
-        print(f"DEBUG GCC-PHAT:")
-        print(f"  Signal length: {len(signal1)}")
-        print(f"  Top correlation peaks:")
-        for i, (idx, lag, val) in enumerate(zip(peak_indices, peak_lags, peak_values)):
-            print(f"    Peak {i+1}: Index {idx}, Lag {lag}, Value {val:.6f}")
-        
-        tdoa = TDOA(cross_corr)
-        print(f"  Selected TDOA: {tdoa} samples")
-        print(f"  Interpretation: signal2 arrives {tdoa} samples {'AFTER' if tdoa > 0 else 'BEFORE'} signal1")
-        print()
-    
-    return TDOA(cross_corr)
-
-def TELEPHONE_PHAT_GCC_TDOA(signal1, signal2, debug=False):
-    filtered_signal1 = filter_telephone_band(signal1, fs=44100)
-    filtered_signal2 = filter_telephone_band(signal2, fs=44100)
-    fft1 = FFT(filtered_signal1)
-    fft2 = FFT(filtered_signal2)
-    R = GCC(fft1, fft2)
-    R_phat = phat_weight(R)
-    pyplot.plot(R_phat)
-    pyplot.title("Telephone band filtered GCC-PHAT spectrum")
-    pyplot.show()
-    cross_corr = IFFT(R_phat)
-    
-    if debug:
-        corr_real = np.real(cross_corr)
-        N = len(cross_corr)
-        
-        # Find top peaks
-        peak_indices = np.argsort(corr_real)[-5:][::-1]
-        peak_values = corr_real[peak_indices]
-        peak_lags = [idx if idx <= N//2 else idx - N for idx in peak_indices]
-        
-        print(f"DEBUG TELEPHONE GCC-PHAT:")
-        print(f"  Signal length: {len(signal1)}")
-        print(f"  Top correlation peaks:")
-        for i, (idx, lag, val) in enumerate(zip(peak_indices, peak_lags, peak_values)):
-            print(f"    Peak {i+1}: Index {idx}, Lag {lag}, Value {val:.6f}")
-        
-        tdoa = TDOA(cross_corr)
-        print(f"  Selected TDOA: {tdoa} samples")
-        print(f"  Interpretation: signal2 arrives {tdoa} samples {'AFTER' if tdoa > 0 else 'BEFORE'} signal1")
-        print()
-    
-    return TDOA(cross_corr)
+    return tdoa
 
 def verify_signals(signal1, signal2, expected_lag, tolerance=2):
     """Verify that signals have the expected delay relationship"""
@@ -157,7 +124,7 @@ def verify_signals(signal1, signal2, expected_lag, tolerance=2):
 
 def verify_telephone_signals(signal1, signal2, expected_lag, tolerance=2):
     """Verify that signals have the expected delay relationship"""
-    actual_lag = TELEPHONE_PHAT_GCC_TDOA(signal1, signal2, debug=True)
+    actual_lag = PHAT_GCC_TDOA(signal1, signal2, debug=True)
     
     print(f"VERIFICATION:")
     print(f"  Expected lag: {expected_lag} samples")
@@ -193,6 +160,21 @@ def create_delayed_signals(base_signal, delays_samples, signal_length):
 
 if __name__ == "__main__":
     print("=== TEST 1: Basic delay verification ===")
+    filename = "output.wav"  
+    samplerate, data = wavfile.read(filename)
+    base = data[0:1000]
+    signal0 = base
+    signal1 = np.roll(base, 5)
+    signal2 = np.roll(base, 10)
+    
+    tdoa01 = PHAT_GCC_TDOA(signal0, signal1)
+    print(tdoa01)
+    tdoa02 = PHAT_GCC_TDOA(signal0, signal2)
+    print(tdoa02)
+    tdoa12 = PHAT_GCC_TDOA(signal1, signal2)
+    print(tdoa12)
+
+    """
     # Simple test with known delays
     signal_length = 44100  # 1 second
     base_signal = np.random.randn(signal_length)
@@ -266,7 +248,7 @@ if __name__ == "__main__":
         print(f"Mic2 arrives {tdoa_12} samples AFTER Mic1")
     else:
         print(f"Mic2 arrives {abs(tdoa_12)} samples BEFORE Mic1")
-    """
+        
     print("\n\n =======================================================================")
     print ("\n=== TEST 3: Telephone band filtered signals ===")
     print("True delays (samples):")

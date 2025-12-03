@@ -20,7 +20,7 @@ print(fft_vals)
 
 # --- Create frequency-domain band-pass filter ---
 lowcut = 300
-highcut = 3600
+highcut = 3400
 
 # Mask: 1 inside band, 0 outside
 filter_mask = ((np.abs(fft_freqs) >= lowcut) & (np.abs(fft_freqs) <= highcut)).astype(float)
