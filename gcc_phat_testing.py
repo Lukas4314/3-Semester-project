@@ -10,6 +10,8 @@ import numpy as np
 import time
 from matplotlib import pyplot
 import scipy.signal
+# 35.7
+# 28.8
 
 
 # 1. Take the FFT of all three signals.
