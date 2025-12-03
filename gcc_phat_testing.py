@@ -10,6 +10,8 @@ import numpy as np
 import time
 from matplotlib import pyplot
 import scipy.signal
+# 35.7
+# 28.8
 
 def filter_telephone_band(signal, fs):
     # Bandpass filter to telephone band (300 Hz to 3400 Hz)
