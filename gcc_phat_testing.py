@@ -74,6 +74,8 @@ def PHAT_GCC_TDOA(signal1, signal2, debug=False):
     """
     fft1 = FFT(signal1)
     fft2 = FFT(signal2)
+    fft1 = filter_telephone_band(fft1)
+    fft2 = filter_telephone_band(fft2)
     R = GCC(fft1, fft2)
     R_phat = phat_weight(R)
     pyplot.plot(R_phat)
@@ -264,7 +266,7 @@ if __name__ == "__main__":
         print(f"Mic2 arrives {tdoa_12} samples AFTER Mic1")
     else:
         print(f"Mic2 arrives {abs(tdoa_12)} samples BEFORE Mic1")
-
+    """
     print("\n\n =======================================================================")
     print ("\n=== TEST 3: Telephone band filtered signals ===")
     print("True delays (samples):")
@@ -304,6 +306,7 @@ if __name__ == "__main__":
         print(f"Mic2 arrives {tdoa_12} samples AFTER Mic1")
     else:
         print(f"Mic2 arrives {abs(tdoa_12)} samples BEFORE Mic1")
+    """
 """
 
 # 1.
