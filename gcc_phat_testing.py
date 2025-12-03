@@ -11,27 +11,22 @@ import time
 from matplotlib import pyplot
 import scipy.signal
 
-def filter_telephone_band(signal, fs):
-    # Bandpass filter to telephone band (300 Hz to 3400 Hz)
-
-    # 1. Define the normalized cutoff frequencies
-    nyquist = 0.5 * fs  # The maximum representable frequency
-    low = 300.0 / nyquist   # Normalized lower cutoff (300 Hz)
-    high = 3400.0 / nyquist # Normalized upper cutoff (3400 Hz)
-    
-    # 2. Design a 101-tap FIR bandpass filter
-    # 'pass_zero=False' means it's a bandpass, not a lowpass.
-    numtaps = 101
-    filter_coeff = scipy.signal.firwin(numtaps, [low, high], pass_zero=False)
-    
-    # 3. Apply the filter to the signal
-    telephone_filtered_signal = scipy.signal.filtfilt(filter_coeff, 1.0, signal)
-    
-    return telephone_filtered_signal
 
 # 1. Take the FFT of all three signals.
 def FFT(testarray):
     return np.fft.fft(testarray)
+
+# 1.5 Apply telephone band filter
+def filter_telephone_band(fftarray):
+    N = len(fftarray)
+    samplerate = 44100
+    lowcut = 300
+    highcut = 3600
+
+    fft_freqs = np.fft.fftfreq(N, d=1/samplerate)
+
+    filter_mask = ((np.abs(fft_freqs) >= lowcut) & (np.abs(fft_freqs) <= highcut)).astype(float)
+    return fftarray * filter_mask #outot is the filterd fftarray
 
 # 2. Calculate the cross-correlation spectrum between pairs of signals.
 def GCC(fft1, fft2):
