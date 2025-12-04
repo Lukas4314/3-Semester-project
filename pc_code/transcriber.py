@@ -24,7 +24,7 @@ class transcriber:
         # Audio queue
         self.input_queue = input_queue
         self.output_queue = queue.Queue()
-        self.total_string = ""
+        self.last_string = ""
         self.recorded_audio = []  # To accumulate audio data
         threading.Thread(target=self.transcribe_stream, daemon=True).start()
 
@@ -35,28 +35,29 @@ class transcriber:
         Works even if 'new' contains the entire 'existing' text again.
         """
         # Trim whitespace
-        self.total_string = self.total_string.strip()
+        self.last_string = self.last_string.strip()
 
         for punctuation in string.punctuation:
-            self.total_string = self.total_string.replace(punctuation, "")
+            self.last_string = self.last_string.replace(punctuation, "")
             new = new.replace(punctuation, "")
 
         new = new.strip()
 
         # If new already contains existing entirely, just replace it
-        if new.startswith(self.total_string):
-            self.total_string = new
+        if new.startswith(self.last_string):
+            self.last_string = new
             return new
 
         # Find overlap from the end of existing and start of new
-        max_overlap = min(len(self.total_string), len(new))
+        max_overlap = min(len(self.last_string), len(new))
         overlap_length = 0
 
         for i in range(1, max_overlap + 1):
-            if self.total_string.endswith(new[:i]):
+            if self.last_string.endswith(new[:i]):
                 overlap_length = i
 
-        self.total_string += new[overlap_length:]
+        self.last_string = new
+        
         return new[overlap_length:]
 
 

@@ -47,7 +47,6 @@ ACTIONS = {
     "halt": actionEnum.STOP,
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
-    "no": actionEnum.STOP,
 
     "come here": actionEnum.COME
 }

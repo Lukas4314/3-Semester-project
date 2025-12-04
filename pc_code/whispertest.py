@@ -53,6 +53,11 @@ def main():
                 if command is not None:
                     print("Recognized command:", command)
                     analysisstring = ""  # Reset after a valid command
+                #elif len(analysisstring.split()) > 50:
+                    # Prevent analysisstring from growing indefinitely
+                    #analysisstring = " ".join(analysisstring.split()[25:])
+                    
+                    
         except KeyboardInterrupt:
             print("Exiting program.")
 
