@@ -1,5 +1,6 @@
 import math
 import enum
+import re
 # Converting strings into actions
 
 # I want to map multiple strings to the same action, the actions have to be in order of direction, distance, unit. If the strings are not in that order the function doesn't do anything, it just keeps reading the input.
@@ -9,6 +10,7 @@ import enum
   
 class actionEnum(enum.Enum):
     MOVE = "move"
+    COME = "come here"
     TURN = "turn"
     STOP = "stop"
     
@@ -45,6 +47,9 @@ ACTIONS = {
     "halt": actionEnum.STOP,
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
+    "no": actionEnum.STOP,
+
+    "come here": actionEnum.COME
 }
 
 DIRECTIONS = {
@@ -105,7 +110,6 @@ DEFAULTS = {
     "turn": {"distance": 90.0, "unit": "degrees"},
 }
 
-
 def clean_string(input_string: str) -> str:
     """
     Lowercase, remove punctuation, keep spaces and digits.
@@ -115,7 +119,7 @@ def clean_string(input_string: str) -> str:
     last_was_digit = False
 
     for ch in input_string.lower():
-        if ch.isalnum():
+        if ch.isalnum() or ch.isspace() or ch == "_":
             result.append(ch)
             last_was_digit = ch.isdigit()
         elif ch == "," and last_was_digit:
@@ -130,6 +134,14 @@ def clean_string(input_string: str) -> str:
 
     return "".join(result)
 
+def collapse_multiword_actions(s):
+    # Turn spaces into underscores for multi-word actions (e.g. "come here" -> "come_here") ()
+    # sort by length desc so "come here" matches before "come"
+    for phrase in sorted(ACTIONS.keys(), key=len, reverse=True):
+        if " " in phrase:
+            token = phrase.replace(" ", "_")
+            s = re.sub(r"\b" + re.escape(phrase) + r"\b", token, s, flags=re.IGNORECASE)
+    return s
 
 def apply_unit_conversion(distance: float, unit: str):
     """
@@ -145,9 +157,11 @@ def apply_unit_conversion(distance: float, unit: str):
         return distance * factor, "meters"
     return distance, unit  # No conversion applied (e.g. degrees/radians)
 
+def string_to_command(input_string):
+    # Preprocess input string
+    s = input_string.lower()
+    s = collapse_multiword_actions(s)
 
-def string_to_command(input_string: str):
-    # simple word → number replacement
     text_numbers = {
         "zero": "0",
         "one": "1",
@@ -160,6 +174,7 @@ def string_to_command(input_string: str):
         "eight": "8",
         "nine": "9",
         "ten": "10",
+
         "further": "30",
         "while": "1",
         "we're": "1",
@@ -168,21 +183,22 @@ def string_to_command(input_string: str):
     }
 
     for word, digit in text_numbers.items():
-        input_string = input_string.replace(word, digit)
+        # replace digit words with digits
+        s = re.sub(r"\b" + re.escape(word) + r"\b", digit, s)
 
-    # Normalize and remove punctuation but keep decimal/negative numbers
-    cleaned = clean_string(input_string)
+    cleaned = clean_string(s)
     words = cleaned.split()
     
-    # collect all occurrences (don't overwrite earlier ones)
-    actions_found = []        # list of (index, action_string)
-    directions_found = []     # list of (index, direction_string)
-    distances_found = []      # list of (index, distance_float)
-    units_found = []          # list of (index, unit_string_canonical)
+    # collect all occurrences
+    actions_found = []        # list of (index, action)
+    directions_found = []     # list of (index, direction)
+    distances_found = []      # list of (index, distance)
+    units_found = []         # list of (index, unit)
 
     for i, w in enumerate(words):
-        if w in ACTIONS:
-            actions_found.append((i, ACTIONS[w].value))
+        w_action_key = w.replace("_", " ")
+        if w_action_key in ACTIONS:
+            actions_found.append((i, ACTIONS[w_action_key].value))
         if w in DIRECTIONS:
             directions_found.append((i, DIRECTIONS[w].value))
         if w in UNITS:
@@ -190,19 +206,23 @@ def string_to_command(input_string: str):
             canonical_unit = UNITS[w].value
             units_found.append((i, canonical_unit))
         
+            units_found.append((i, w))
+
         if w == "pi":
-            distance = math.pi
-            distances_found.append((i, distance))
+            distances_found.append((i, math.pi))
         else:
             try:
-                distance = float(w)
-                distances_found.append((i, distance))
+                distances_found.append((i, float(w)))
             except ValueError:
                 pass
 
     # If a 'stop' action was spoken, prefer it and return immediately.
     if any(action == "stop" for _, action in actions_found):
         return {"action": "stop", "direction": None, "distance": None, "unit": None}
+
+    # If a 'come' action was spoken, return come immediately (no direction/distance)
+    if any(action == "come here" for _, action in actions_found):
+        return {"action": "come here", "direction": None, "distance": None, "unit": None}
 
     if actions_found == [] or directions_found == []:
         print("No actions or directions found.")
