@@ -44,7 +44,7 @@ ACTIONS = {
     "halt": actionEnum.STOP,
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
-    "no": actionEnum.STOP,,
+    "no": actionEnum.STOP,
 
     "come here": actionEnum.COME
 }
@@ -108,7 +108,7 @@ def clean_string(input_string: str) -> str:
     last_was_digit = False
 
     for ch in input_string.lower():
-        if ch.isalnum():
+        if ch.isalnum() or ch.isspace() or ch == "_":
             result.append(ch)
             last_was_digit = ch.isdigit()
         elif ch == "," and last_was_digit:
@@ -122,12 +122,15 @@ def clean_string(input_string: str) -> str:
             last_was_digit = False
 
     return "".join(result)
-        # allow underscore so multi-word tokens survive (e.g. "come_here")
-        if ch.isalnum() or ch.isspace() or ch == "_":
-            cleaned_chars.append(ch)
-    cleaned = ''.join(cleaned_chars)
-    return cleaned
 
+def collapse_multiword_actions(s):
+    # Turn spaces into underscores for multi-word actions (e.g. "come here" -> "come_here") ()
+    # sort by length desc so "come here" matches before "come"
+    for phrase in sorted(ACTIONS.keys(), key=len, reverse=True):
+        if " " in phrase:
+            token = phrase.replace(" ", "_")
+            s = re.sub(r"\b" + re.escape(phrase) + r"\b", token, s, flags=re.IGNORECASE)
+    return s
 
 def apply_unit_conversion(distance: float, unit: str):
     """
@@ -143,14 +146,11 @@ def apply_unit_conversion(distance: float, unit: str):
         return distance * factor, "meters"
     return distance, unit  # No conversion applied (e.g. degrees/radians)
 
-
 def string_to_command(input_string):
     # Preprocess input string
     s = input_string.lower()
     s = collapse_multiword_actions(s)
 
-def string_to_command(input_string: str):
-    # simple word → number replacement
     text_numbers = {
         "zero": "0",
         "one": "1",
@@ -163,6 +163,7 @@ def string_to_command(input_string: str):
         "eight": "8",
         "nine": "9",
         "ten": "10",
+
         "further": "30",
     }
 
@@ -171,8 +172,6 @@ def string_to_command(input_string: str):
         s = re.sub(r"\b" + re.escape(word) + r"\b", digit, s)
 
     cleaned = clean_string(s)
-    # Normalize and remove punctuation but keep decimal/negative numbers
-    cleaned = clean_string(input_string)
     words = cleaned.split()
     
     # collect all occurrences
@@ -180,11 +179,6 @@ def string_to_command(input_string: str):
     directions_found = []     # list of (index, direction)
     distances_found = []      # list of (index, distance)
     units_found = []         # list of (index, unit)
-    # collect all occurrences (don't overwrite earlier ones)
-    actions_found = []        # list of (index, action_string)
-    directions_found = []     # list of (index, direction_string)
-    distances_found = []      # list of (index, distance_float)
-    units_found = []          # list of (index, unit_string_canonical)
 
     for i, w in enumerate(words):
         w_action_key = w.replace("_", " ")
@@ -209,7 +203,6 @@ def string_to_command(input_string: str):
 
     # If a 'stop' action was spoken, prefer it and return immediately.
     if any(action == "stop" for _, action in actions_found):
-        return {"action": "stop", "direction": None, "distance": None, "unit": None}
         return {"action": "stop", "direction": None, "distance": None, "unit": None}
 
     # If a 'come' action was spoken, return come immediately (no direction/distance)
