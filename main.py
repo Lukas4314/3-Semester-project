@@ -58,7 +58,8 @@ def main():
         mqtt_interface_vel.client.disconnect()        
         
         #transcriber_instance.save_audio_to_wav()
-        mqtt_interface_aud1.save_to_wav()
+        mqtt_interface_aud0.save_to_wav("audio_aud0.wav")
+        mqtt_interface_aud1.save_to_wav("audio_aud1.wav")
 
 if __name__ == "__main__":
 

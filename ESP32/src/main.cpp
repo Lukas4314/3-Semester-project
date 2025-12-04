@@ -42,12 +42,12 @@
 I2sInterface i2s0(I2S_NUM_0, I2S0_BCLK, I2S0_LRCLK, -1, I2S0_DIN, 
                   (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
                   I2S_BITS_PER_SAMPLE_16BIT,
-                  I2S_CHANNEL_FMT_RIGHT_LEFT, 44100);
+                  I2S_CHANNEL_FMT_RIGHT_LEFT, 22050);
 
 I2sInterface i2s1(I2S_NUM_1, I2S1_BCLK, I2S1_LRCLK, -1, I2S1_DIN,
                   (i2s_mode_t)(I2S_MODE_SLAVE | I2S_MODE_RX),
                   I2S_BITS_PER_SAMPLE_16BIT,
-                  I2S_CHANNEL_FMT_ONLY_LEFT, 44100);
+                  I2S_CHANNEL_FMT_ONLY_LEFT, 22050);
 
 MqttInterface mqtt("Havefun", "Havefun2", "10.250.34.201");
 
@@ -91,8 +91,11 @@ void setup() {
 
 
 
+
+
+
 void loop() {
-    //mqtt.loop();
+    mqtt.loop();
 
     const int numSamples = 1024;
 
@@ -130,14 +133,4 @@ void loop() {
     mqtt.publish("I2S0", (uint8_t*)buffer0, sizeof(buffer0));
 
     mqtt.publish("I2S1", (uint8_t*)buffer1, sizeof(buffer1));
-    
-
-    static int16_t dummy_buffer[256];
-    for (int i = 0; i < 256; i++) {
-        dummy_buffer[i] = i;
-    }
-
-    mqtt.publish("DUMMY", (uint8_t*)dummy_buffer, sizeof(dummy_buffer));
-
-    Serial.println("Published buffers with counter: " + String(counter - 1));
 }

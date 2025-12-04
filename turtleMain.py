@@ -3,7 +3,7 @@ from mqqtInterface import MQTTInterface
 import queue
 import time
 import numpy as np
-from consts import LOCALHOST, MQTT_PORT, MQTT_TOPIC_AUD
+from consts import LOCALHOST, MQTT_PORT, MQTT_TOPIC_AUD, SAMPLE_RATE
 
 def main():
     mqtt_interface_aud = MQTTInterface(LOCALHOST, MQTT_PORT, MQTT_TOPIC_AUD)
@@ -12,7 +12,7 @@ def main():
     mic_interface = MicrophoneInterface(audio_queue)
 
     buffer = np.zeros(0, dtype=np.float32)
-    samplerate = 44100
+    samplerate = SAMPLE_RATE
     chunk_duration = 2
     samples_per_chunk = int(samplerate * chunk_duration)
 
