@@ -33,6 +33,9 @@ ACTIONS = {
     "go": actionEnum.MOVE,
     "drive": actionEnum.MOVE,
     "dry": actionEnum.MOVE,
+    "going": actionEnum.MOVE,
+    "oh": actionEnum.MOVE,
+    "so": actionEnum.MOVE,
     
     "turn": actionEnum.TURN,
     "rotate": actionEnum.TURN,
@@ -42,7 +45,6 @@ ACTIONS = {
     "halt": actionEnum.STOP,
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
-    "no": actionEnum.STOP,
 }
 
 DIRECTIONS = {
@@ -50,11 +52,15 @@ DIRECTIONS = {
     "forwards": directionEnum.FORWARD,
     "straight": directionEnum.FORWARD,
     "for": directionEnum.FORWARD,
+    "false": directionEnum.FORWARD,
     
     "backward": directionEnum.BACKWARD,
     "backwards": directionEnum.BACKWARD,
     "back": directionEnum.BACKWARD,
     "reverse": directionEnum.BACKWARD,
+    "thank": directionEnum.BACKWARD,
+    "bag": directionEnum.BACKWARD,
+    "backwalks": directionEnum.BACKWARD,
     
     "left": directionEnum.LEFT,
     "lift": directionEnum.LEFT,
@@ -66,7 +72,11 @@ UNITS = {
     "meters":    unitEnum.METERS,
     "metre":     unitEnum.METERS,
     "metres":    unitEnum.METERS,
+    "metered":    unitEnum.METERS,
     "m":         unitEnum.METERS,
+    "minute":    unitEnum.METERS,
+    "minutes":   unitEnum.METERS,
+    "media":     unitEnum.METERS,
 
     "centimeter":    unitEnum.CENTIMETERS,
     "centimeters":   unitEnum.CENTIMETERS,
@@ -151,6 +161,10 @@ def string_to_command(input_string: str):
         "nine": "9",
         "ten": "10",
         "further": "30",
+        "while": "1",
+        "we're": "1",
+        "with": "1",
+        
     }
 
     for word, digit in text_numbers.items():

@@ -35,20 +35,26 @@ def main():
         blocksize=0,   # let sounddevice choose
     ):
         try:
+            RED = "\033[31m"
+            RED_END = "\033[0m"
+            analysisstring = ""
             while True:
-                # Get any new text from the transcriber
-                new_text = t.getNewTranscription()
-                if new_text:
-                    print("TEXT:", new_text)
+                new_transcription = t.getNewTranscription()
+                if new_transcription != "":
+                    print(f"Transcribed so far:", analysisstring + RED + new_transcription + RED_END)
+                    analysisstring += new_transcription + " "
+                    
+                else:
+                    time.sleep(0.01)
+                    continue
 
-                    # Optionally: detect commands in the new text
-                    cmd = string_to_command(new_text)
-                    if cmd is not None:
-                        print("COMMAND:", cmd)
-
-                time.sleep(0.05)
+                command = string_to_command(analysisstring.strip())
+                
+                if command is not None:
+                    print("Recognized command:", command)
+                    analysisstring = ""  # Reset after a valid command
         except KeyboardInterrupt:
-            print("\nStopping.")
+            print("Exiting program.")
 
 
 if __name__ == "__main__":

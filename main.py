@@ -31,7 +31,7 @@ def main():
                 analysisstring += new_transcription + " "
                 
             else:
-                time.sleep(0.1)
+                time.sleep(0.01)
                 continue
 
             command = string_to_command(analysisstring.strip())

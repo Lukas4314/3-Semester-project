@@ -100,7 +100,7 @@ class transcriber:
 
                 options = whisper.DecodingOptions(fp16=False, language="en")
                 result = whisper.decode(self.model, mel, options)
-                print("Raw transcription result:", result.text)
+                #xprint("Raw transcription result:", result.text)
                 # Handle transcription output
                 result_after_append =self.append_without_overlap(result.text)
                 self.output_queue.put(result_after_append)
