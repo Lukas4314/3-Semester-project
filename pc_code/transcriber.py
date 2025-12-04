@@ -42,7 +42,8 @@ class transcriber:
             new = new.replace(punctuation, "")
 
         new = new.strip()
-
+        new = new.lower()
+        
         # If new already contains existing entirely, just replace it
         if new.startswith(self.last_string):
             self.last_string = new
@@ -65,13 +66,22 @@ class transcriber:
         """
         Convert a 44.1 kHz NumPy audio segment to Whisper-compatible log-Mel spectrogram.
         """
+
+        # Convert from int16 to float32 in -1.0 to 1.0 range
+        if segment.dtype == np.int16:
+            #segment = segment.astype(np.float32)
+            segment = segment.astype(np.float32) / 32768.0
+        else:
+            segment = segment.astype(np.float32)
+
         # Convert to float32 tensor
-        if not isinstance(segment, torch.Tensor):
-            segment = torch.from_numpy(segment.astype(np.float32))
+        segment = torch.from_numpy(segment)
 
         # Resample to 16 kHz if needed
         if self.samplerate != 16000:
-            resampler = torchaudio.transforms.Resample(orig_freq=self.samplerate, new_freq=16000)
+            resampler = torchaudio.transforms.Resample(
+                orig_freq=self.samplerate, new_freq=16000
+            )
             segment = resampler(segment)
 
         # Pad or trim to 30s (Whisper default)
@@ -79,11 +89,11 @@ class transcriber:
 
         # Compute log-Mel spectrogram
         mel = log_mel_spectrogram(segment)
+        
         return mel
 
-
     def transcribe_stream(self):
-        buffer = np.zeros(0, dtype=np.float32)
+        buffer = np.zeros(0, dtype=np.int16)
         step = self.samples_per_chunk - self.samples_overlap
 
         while True:
@@ -98,10 +108,11 @@ class transcriber:
                 
                 # Preprocess and decode
                 mel = self.preprocess_segment(segment)
+                
 
                 options = whisper.DecodingOptions(fp16=False, language="en")
                 result = whisper.decode(self.model, mel, options)
-                #xprint("Raw transcription result:", result.text)
+                #print("Raw transcription result:", result.text)
                 # Handle transcription output
                 result_after_append =self.append_without_overlap(result.text)
                 self.output_queue.put(result_after_append)
