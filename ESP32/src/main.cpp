@@ -92,7 +92,7 @@ void setup() {
 
 
 void loop() {
-    mqtt.loop();
+    //mqtt.loop();
 
     const int numSamples = 1024;
 
@@ -106,7 +106,6 @@ void loop() {
     int16_t* audioBufferPtr0 = buffer0 + 2;
     int16_t* audioBufferPtr1 = buffer1 + 2;
 
-    Serial.println("Reading samples...");
 
     // Read stereo samples
     size_t bytesRead0 = i2s0.readSamples(
@@ -114,7 +113,6 @@ void loop() {
         numSamples * 2 * sizeof(int16_t)
     );
 
-    Serial.println("Reading samples from I2S1...");
 
     // Read mono samples
     size_t bytesRead1 = i2s1.readSamples(
@@ -128,11 +126,18 @@ void loop() {
 
     counter++;
 
-    Serial.println("I2S0 bytes read: " + String(bytesRead0) + ", I2S1 bytes read: " + String(bytesRead1));
 
     mqtt.publish("I2S0", (uint8_t*)buffer0, sizeof(buffer0));
-    Serial.println("Published I2S0 data");
 
     mqtt.publish("I2S1", (uint8_t*)buffer1, sizeof(buffer1));
-    Serial.println("Published I2S1 data");
+    
+
+    static int16_t dummy_buffer[256];
+    for (int i = 0; i < 256; i++) {
+        dummy_buffer[i] = i;
+    }
+
+    mqtt.publish("DUMMY", (uint8_t*)dummy_buffer, sizeof(dummy_buffer));
+
+    Serial.println("Published buffers with counter: " + String(counter - 1));
 }

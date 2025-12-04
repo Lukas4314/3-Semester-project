@@ -5,7 +5,7 @@ import time
 import numpy as np
 import ast
 import struct
-
+import queue
 
 
 class MQTTInterface:
@@ -102,6 +102,7 @@ class MQTTInterface:
             output_queue1.put((message_index, arr))
             output_queue2.put((message_index, arr))
             self.recorded_data.append(arr)
+            print(f"Received message index: {message_index}, data length: {len(arr)}")
             
         self.client.subscribe(self.topic)
         self.client.on_message = on_message
@@ -129,7 +130,7 @@ class MQTTInterface:
             
             output_queue1.put((message_index, arr[0::2]))
             output_queue2.put((message_index, arr[1::2]))
-            self.recorded_data.append(arr[0::2])
+            #self.recorded_data.append(arr[0::2])
             
         self.client.subscribe(self.topic)
         self.client.on_message = on_message
@@ -155,20 +156,20 @@ class MQTTInterface:
 
 if __name__ == "__main__":
     # Define MQTT connection details
-    MQTT_SERVER = "10.32.162.201"
+    MQTT_SERVER = "10.250.34.201"
     MQTT_PORT = 1883
-    MQTT_TOPIC = "mqtt_vel"
+    MQTT_TOPIC = "DUMMY"
     mqtt_interface = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC)
     time.sleep(3)
+    qeueie1 = queue.Queue()
+    qeueie2 = queue.Queue()
+    mqtt_interface.listen_and_clone_into_2_outputs(qeueie1, qeueie2)
 
     try:
-        mqtt_interface.publish_command(1.0, 0.5)
-        time.sleep(2)
-        mqtt_interface.publish_command(0.0, 0.0)
-        time.sleep(2)
-        mqtt_interface.publish_command(0.4, 0)
-        time.sleep(2)
-        mqtt_interface.publish_command(1, 6)
+        while True:
+            if not qeueie1.empty():
+                index, data = qeueie1.get()
+                print(f"Queue 1 - Message index: {index}, Data length: {len(data)}")
 
     except Exception as e:
         print(f"Error occurred: {e}")
