@@ -62,14 +62,78 @@ class MQTTInterface:
 
             values = struct.unpack('<' + 'h'*count, msg.payload)
             arr = np.array(values, dtype=np.int16)
-            arr = arr[1::2]
-            output_queue.put(arr)
+            bigInt16 = arr[0]
+            smallInt16 = arr[1]
+            arr = arr[2:]
+            
+            big_u = bigInt16 & 0xFFFF
+            small_u = smallInt16 & 0xFFFF
+
+            message_index = (big_u << 16) | small_u
+            
+            output_queue.put((message_index, arr))
             self.recorded_data.append(arr)
             
-
         self.client.subscribe(self.topic)
         self.client.on_message = on_message
         self.client.loop_start()
+    
+    def listen_and_clone_into_2_outputs(self, output_queue1, output_queue2):
+        def on_message(client, userdata, msg):
+            
+            # number of int16 values
+            count = len(msg.payload) // 2  
+
+            values = struct.unpack('<' + 'h'*count, msg.payload)
+            arr = np.array(values, dtype=np.int16)
+            
+            
+            
+            bigInt16 = arr[0]
+            smallInt16 = arr[1]
+            arr = arr[2:]
+            
+            big_u = bigInt16 & 0xFFFF
+            small_u = smallInt16 & 0xFFFF
+
+            message_index = (big_u << 16) | small_u
+            
+            #arr = arr[1::2]
+            output_queue1.put((message_index, arr))
+            output_queue2.put((message_index, arr))
+            self.recorded_data.append(arr)
+            
+        self.client.subscribe(self.topic)
+        self.client.on_message = on_message
+        self.client.loop_start()
+    
+    def listen_into_2_outputs(self, output_queue1, output_queue2):
+        def on_message(client, userdata, msg):
+            
+            # number of int16 values
+            count = len(msg.payload) // 2  
+
+            values = struct.unpack('<' + 'h'*count, msg.payload)
+            arr = np.array(values, dtype=np.int16)
+            
+            bigInt16 = arr[0]
+            smallInt16 = arr[1]
+            arr = arr[2:]
+            
+            big_u = bigInt16 & 0xFFFF
+            small_u = smallInt16 & 0xFFFF
+
+            message_index = (big_u << 16) | small_u
+            
+            
+            
+            output_queue1.put((message_index, arr[0::2]))
+            output_queue2.put((message_index, arr[1::2]))
+            self.recorded_data.append(arr[0::2])
+            
+        self.client.subscribe(self.topic)
+        self.client.on_message = on_message
+        self.client.loop_start()    
     
     def disconnect(self):
         self.publish_command(0.0, 0.0)

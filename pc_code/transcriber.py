@@ -98,7 +98,7 @@ class transcriber:
         while True:
             # Pull audio into buffer
             while not self.input_queue.empty():
-                new_chunk = self.input_queue.get()
+                message_index, new_chunk = self.input_queue.get()
                 self.recorded_audio.append(new_chunk)
                 buffer = np.append(buffer, new_chunk)
                 
