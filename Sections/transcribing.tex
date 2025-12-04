@@ -1,4 +1,7 @@
 \section{Whisper}
+
+% https://huggingface.co/learn/audio-course/en/chapter3/introduction
+
 1. The audio is sampled at a fixed sampling rate to amplitude values.
 
 2. The values are converted into spectrogram by using a Short-Time Fourier Transform, which means the wave is broken into tiny windows and Fourier transformed, so it is known how much of each specific frequency there is present. Then a spectrogram is created where the x-axis is time, the y-axis is frequency and the z-axis is the magnitude of each frequency (given by different colours)
@@ -6,3 +9,15 @@
 3. The spectrogram is converted into Mel-spectrogram, which is a scale that approximates the non-linear response humans have to sound. The linear frequencies are grouped into filters that are spread across the mel-warped frequency axis, which compresses the data so there is a high resolution at lower frequency ranges and low resolution at higher frequency ranges. (An example of how this is done could be included)
 
 4. The Mel-spectrogram is converted into a logarithmic scale of the magnitudes, because humans hear a sound twice as loud only if the sound is 10 times more powerful.
+
+
+Whisper follows a transformer architecture, a deep learning model that uses attention mechanisms to focus on specific parts of the input data. Conversely to convulutional neural networks (CNNs) that process data in a sequential manner, transformers can process the entire input simultaneously, whilst performing the attention mechanisms. The usage of whisper follows the approach shown in \cref{fig:whisper_approach} 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Pictures/whisper_approach.png}
+    \caption{Whisper approach\cite{whisper_github}}
+    \label{fig:whisper_approach}
+\end{figure}
+
+Firstly the log-mel spectrogram is processed by a CNN resulting in sequence of embeddings, which are then passed to the transformer.\cite{huggingface_whisper} The transformer then consists of a series of encoder blocks each with self attention and MLP layers. The output of this series is then fed into a series of decoder blocks in a process known as cross attention, where the decoder blocks besides having self attention and MLP layers also has a cross attention layer that takes the original output of the encoder series as input
