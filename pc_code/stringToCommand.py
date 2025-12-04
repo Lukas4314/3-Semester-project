@@ -6,17 +6,27 @@ import enum
 # An example of a valid input would be "forward 10 meters" or "move 1 meter".
 
 # For example move, go, forward, straight all map to the same action "move".
-    
+  
 class actionEnum(enum.Enum):
     MOVE = "move"
     TURN = "turn"
     STOP = "stop"
     
+
 class directionEnum(enum.Enum):
     FORWARD = "forward"
     BACKWARD = "backward"
     LEFT = "left"
     RIGHT = "right"
+    
+
+class unitEnum(enum.Enum):
+    METERS = "meters"
+    CENTIMETERS = "centimeters"
+    MILLIMETERS = "millimeters"
+    DEGREES = "degrees"
+    RADIANS = "radians"
+
 
 ACTIONS = {
     "move": actionEnum.MOVE,
@@ -32,13 +42,14 @@ ACTIONS = {
     "halt": actionEnum.STOP,
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
-    "no": actionEnum.STOP
+    "no": actionEnum.STOP,
 }
 
 DIRECTIONS = {
     "forward": directionEnum.FORWARD,
     "forwards": directionEnum.FORWARD,
     "straight": directionEnum.FORWARD,
+    "for": directionEnum.FORWARD,
     
     "backward": directionEnum.BACKWARD,
     "backwards": directionEnum.BACKWARD,
@@ -50,42 +61,83 @@ DIRECTIONS = {
     
     "right": directionEnum.RIGHT,
 }
+UNITS = {
+    "meter":     unitEnum.METERS,
+    "meters":    unitEnum.METERS,
+    "metre":     unitEnum.METERS,
+    "metres":    unitEnum.METERS,
+    "m":         unitEnum.METERS,
 
-UNITS = {"centimeters", "centimeter", "millimeters", "millimeter", "meters", "meter", 
-            "radians", "radian", "degrees", "degree"}
+    "centimeter":    unitEnum.CENTIMETERS,
+    "centimeters":   unitEnum.CENTIMETERS,
+    "centimetre":    unitEnum.CENTIMETERS,
+    "centimetres":   unitEnum.CENTIMETERS,
+    "cm":            unitEnum.CENTIMETERS,
+
+    "millimeter":    unitEnum.MILLIMETERS,
+    "millimeters":   unitEnum.MILLIMETERS,
+    "millimetre":    unitEnum.MILLIMETERS,
+    "millimetres":   unitEnum.MILLIMETERS,
+    "mm":            unitEnum.MILLIMETERS,
+
+    "degree":    unitEnum.DEGREES,
+    "degrees":   unitEnum.DEGREES,
+    "deg":       unitEnum.DEGREES,
+
+    "radian":    unitEnum.RADIANS,
+    "radians":   unitEnum.RADIANS,
+    "rad":       unitEnum.RADIANS,
+}
 
 # Defaults used when distance/unit aren't included
 DEFAULTS = {
-    "move": {"distance": 1.0, "unit": "meters"},
-    "turn": {"distance": 90.0, "unit": "degrees"}
+    "move": {"distance": 1.0,  "unit": "meters"},
+    "turn": {"distance": 90.0, "unit": "degrees"},
 }
 
 
-def clean_string(input_string):
-    cleaned_chars = []
+def clean_string(input_string: str) -> str:
+    """
+    Lowercase, remove punctuation, keep spaces and digits.
+    Treat decimal commas like '1,5' as '1.5'.
+    """
+    result = []
+    last_was_digit = False
+
     for ch in input_string.lower():
-        if ch.isalnum() or ch.isspace():
-            cleaned_chars.append(ch)
+        if ch.isalnum():
+            result.append(ch)
+            last_was_digit = ch.isdigit()
+        elif ch == "," and last_was_digit:
+            # decimal comma → convert to dot
+            result.append(".")
+        elif ch.isspace():
+            result.append(" ")
+            last_was_digit = False
+        else:
+            # ignore other punctuation
+            last_was_digit = False
 
-    cleaned = ''.join(cleaned_chars)
-    return cleaned
+    return "".join(result)
 
 
-def apply_unit_conversion(distance, unit):
+def apply_unit_conversion(distance: float, unit: str):
+    """
+    Convert linear units to meters. `unit` is the canonical string.
+    """
     linear_factors = {
-        "millimeter": 0.001,
         "millimeters": 0.001,
-        "centimeter": 0.01,
         "centimeters": 0.01,
-        "meter": 1.0,
-        "meters": 1.0
+        "meters":      1.0,
     }
     if unit in linear_factors:
         factor = linear_factors[unit]
         return distance * factor, "meters"
-    return distance, unit  # No conversion applied
+    return distance, unit  # No conversion applied (e.g. degrees/radians)
 
-def string_to_command(input_string):
+
+def string_to_command(input_string: str):
+    # simple word → number replacement
     text_numbers = {
         "zero": "0",
         "one": "1",
@@ -98,22 +150,21 @@ def string_to_command(input_string):
         "eight": "8",
         "nine": "9",
         "ten": "10",
-
         "further": "30",
     }
 
     for word, digit in text_numbers.items():
         input_string = input_string.replace(word, digit)
 
-    # Normalize and remove punctuation but keep decimal point and minus sign so floats parse
+    # Normalize and remove punctuation but keep decimal/negative numbers
     cleaned = clean_string(input_string)
     words = cleaned.split()
     
     # collect all occurrences (don't overwrite earlier ones)
-    actions_found = []        # list of (index, action)
-    directions_found = []     # list of (index, direction)
-    distances_found = []      # list of (index, distance)
-    units_found = []         # list of (index, unit)
+    actions_found = []        # list of (index, action_string)
+    directions_found = []     # list of (index, direction_string)
+    distances_found = []      # list of (index, distance_float)
+    units_found = []          # list of (index, unit_string_canonical)
 
     for i, w in enumerate(words):
         if w in ACTIONS:
@@ -121,7 +172,9 @@ def string_to_command(input_string):
         if w in DIRECTIONS:
             directions_found.append((i, DIRECTIONS[w].value))
         if w in UNITS:
-            units_found.append((i, w))    
+            # convert to canonical unit string (e.g. "cm" -> "centimeters")
+            canonical_unit = UNITS[w].value
+            units_found.append((i, canonical_unit))
         
         if w == "pi":
             distance = math.pi
@@ -135,7 +188,7 @@ def string_to_command(input_string):
 
     # If a 'stop' action was spoken, prefer it and return immediately.
     if any(action == "stop" for _, action in actions_found):
-            return {"action": "stop", "direction": None, "distance": None, "unit": None}
+        return {"action": "stop", "direction": None, "distance": None, "unit": None}
 
     if actions_found == [] or directions_found == []:
         print("No actions or directions found.")
@@ -170,7 +223,7 @@ def string_to_command(input_string):
         allowed_dirs = {
             "move": {directionEnum.FORWARD.value, directionEnum.BACKWARD.value},
             "turn": {directionEnum.LEFT.value, directionEnum.RIGHT.value},
-            "stop": set()
+            "stop": set(),
         }
         # find the first direction after the action that is valid for this action
         for di, direction in directions_found:
@@ -179,7 +232,7 @@ def string_to_command(input_string):
             if direction in allowed_dirs.get(action, set()):
                 next_direction = direction
                 break
-            # if direction exists but is not allowed for this action, skip it and keep searching
+
         if next_direction is None:
             print(f"No valid direction found after action '{action}'.")
             return None
@@ -196,17 +249,33 @@ def string_to_command(input_string):
         
         if next_distance is None and next_unit is None:
             continue
-            return None # Temporarily disable default distance/unit when missing
-            next_distance = DEFAULTS[action]["distance"]
-            next_unit = DEFAULTS[action]["unit"]
         
-        
+        # unit handling
+        # For MOVE: convert linear units to meters
+        # For TURN: convert degrees/radians to radians
         if action != "turn":
             next_distance, next_unit = apply_unit_conversion(next_distance, next_unit)
         else:
-            next_distance = float(next_distance) * (math.pi / 180)  
-        print("Parsed command:", {"action": action, "direction": next_direction, "distance": float(next_distance), "unit": next_unit})
-        return {"action": action, "direction": next_direction, "distance": float(next_distance), "unit": next_unit}
+            # next_unit is canonical "degrees" or "radians"
+            if next_unit == "degrees":
+                next_distance = float(next_distance) * (math.pi / 180.0)
+                next_unit = "radians"
+            elif next_unit == "radians":
+                next_distance = float(next_distance)
+            else:
+                # invalid unit for a turn
+                print(f"Invalid unit '{next_unit}' for turn.")
+                return None
+        
+        cmd = {
+            "action": action,
+            "direction": next_direction,
+            "distance": float(next_distance),
+            "unit": next_unit,
+        }
+        print("Parsed command:", cmd)
+        return cmd
+
     return None
 
 """
