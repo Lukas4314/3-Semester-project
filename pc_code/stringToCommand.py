@@ -1,5 +1,6 @@
 import math
 import enum
+import re
 # Converting strings into actions
 
 # I want to map multiple strings to the same action, the actions have to be in order of direction, distance, unit. If the strings are not in that order the function doesn't do anything, it just keeps reading the input.
@@ -9,6 +10,7 @@ import enum
     
 class actionEnum(enum.Enum):
     MOVE = "move"
+    COME = "come here"
     TURN = "turn"
     STOP = "stop"
     
@@ -32,7 +34,9 @@ ACTIONS = {
     "halt": actionEnum.STOP,
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
-    "no": actionEnum.STOP
+    "no": actionEnum.STOP,
+
+    "come here": actionEnum.COME
 }
 
 DIRECTIONS = {
@@ -60,16 +64,24 @@ DEFAULTS = {
     "turn": {"distance": 90.0, "unit": "degrees"}
 }
 
-
 def clean_string(input_string):
     cleaned_chars = []
     for ch in input_string.lower():
-        if ch.isalnum() or ch.isspace():
+        # allow underscore so multi-word tokens survive (e.g. "come_here")
+        if ch.isalnum() or ch.isspace() or ch == "_":
             cleaned_chars.append(ch)
-
     cleaned = ''.join(cleaned_chars)
     return cleaned
 
+# In order to match multi-word actions (the come here action), I need to replace multi-word phrases with single-token forms.
+def collapse_multiword_actions(s):
+# Turn spaces into underscores for multi-word actions (e.g. "come here" -> "come_here") ()
+    # sort by length desc so "come here" matches before "come"
+    for phrase in sorted(ACTIONS.keys(), key=len, reverse=True):
+        if " " in phrase:
+            token = phrase.replace(" ", "_")
+            s = re.sub(r"\b" + re.escape(phrase) + r"\b", token, s, flags=re.IGNORECASE)
+    return s
 
 def apply_unit_conversion(distance, unit):
     linear_factors = {
@@ -86,6 +98,10 @@ def apply_unit_conversion(distance, unit):
     return distance, unit  # No conversion applied
 
 def string_to_command(input_string):
+    # Preprocess input string
+    s = input_string.lower()
+    s = collapse_multiword_actions(s)
+
     text_numbers = {
         "zero": "0",
         "one": "1",
@@ -103,39 +119,42 @@ def string_to_command(input_string):
     }
 
     for word, digit in text_numbers.items():
-        input_string = input_string.replace(word, digit)
+        # replace digit words with digits
+        s = re.sub(r"\b" + re.escape(word) + r"\b", digit, s)
 
-    # Normalize and remove punctuation but keep decimal point and minus sign so floats parse
-    cleaned = clean_string(input_string)
+    cleaned = clean_string(s)
     words = cleaned.split()
     
-    # collect all occurrences (don't overwrite earlier ones)
+    # collect all occurrences
     actions_found = []        # list of (index, action)
     directions_found = []     # list of (index, direction)
     distances_found = []      # list of (index, distance)
     units_found = []         # list of (index, unit)
 
     for i, w in enumerate(words):
-        if w in ACTIONS:
-            actions_found.append((i, ACTIONS[w].value))
+        w_action_key = w.replace("_", " ")
+        if w_action_key in ACTIONS:
+            actions_found.append((i, ACTIONS[w_action_key].value))
         if w in DIRECTIONS:
             directions_found.append((i, DIRECTIONS[w].value))
         if w in UNITS:
-            units_found.append((i, w))    
-        
+            units_found.append((i, w))
+
         if w == "pi":
-            distance = math.pi
-            distances_found.append((i, distance))
+            distances_found.append((i, math.pi))
         else:
             try:
-                distance = float(w)
-                distances_found.append((i, distance))
+                distances_found.append((i, float(w)))
             except ValueError:
                 pass
 
     # If a 'stop' action was spoken, prefer it and return immediately.
     if any(action == "stop" for _, action in actions_found):
-            return {"action": "stop", "direction": None, "distance": None, "unit": None}
+        return {"action": "stop", "direction": None, "distance": None, "unit": None}
+
+    # If a 'come' action was spoken, return come immediately (no direction/distance)
+    if any(action == "come here" for _, action in actions_found):
+        return {"action": "come here", "direction": None, "distance": None, "unit": None}
 
     if actions_found == [] or directions_found == []:
         print("No actions or directions found.")
