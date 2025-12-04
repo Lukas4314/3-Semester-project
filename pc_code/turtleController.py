@@ -1,6 +1,8 @@
 from mqqtInterface import MQTTInterface
+from pc_code.sound_localization.Triangulate import tringulate_from_sound
 import time
 import threading
+import numpy as np
 
 SPEED = 0.2 # meaning when 1 is written it is 1 meter per second
 ANGULAR_SPEED = 1 # meaning when 1 is written it is 1 degree per second
@@ -8,10 +10,13 @@ ANGULAR_SPEED = 1 # meaning when 1 is written it is 1 degree per second
 
 class TurtleController:
     # We need to implement threading in the future so the robot can move and receieve new commands at the same time
-    def __init__(self, mqtt_interface):
+    def __init__(self, mqtt_interface, queue1, queue2, queue3):
         self.mqtt_interface = mqtt_interface
         self.executing_thread = None
         self.stop_event = threading.Event()
+        self.queue1 = queue1
+        self.queue2 = queue2
+        self.queue3 = queue3
 
     def set_forward_speed(self, speed):
         print(f"Setting forward speed to {speed}")
@@ -64,7 +69,38 @@ class TurtleController:
             if self.stop_event.is_set():
                 break
             time.sleep(sleep_interval)
+    
+    def go_to_human(self, start_index, end_index):
+        mic1_data = []
+        mic2_data = []
+        mic3_data = []
         
+        while not self.queue1.empty():
+            message_index, new_chunk = self.queue1.get()
+            if start_index <= message_index <= end_index:
+                mic1_data.append(new_chunk)
+                
+        while not self.queue2.empty():
+            message_index, new_chunk = self.queue2.get()
+            if start_index <= message_index <= end_index:
+                mic2_data.append(new_chunk)
+                
+        while not self.queue3.empty():
+            message_index, new_chunk = self.queue3.get()
+            if start_index <= message_index <= end_index:
+                mic3_data.append(new_chunk)
+                
+        mic1_data = np.concatenate(mic1_data)
+        mic2_data = np.concatenate(mic2_data)
+        mic3_data = np.concatenate(mic3_data)        
+        
+        best_point = tringulate_from_sound(mic1_data, mic2_data, mic3_data)
+        angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
+        distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
+        
+        self.turn_counter_clockwise(angle)
+        time.sleep(0.5)
+        self.move_forward(distance)
 
     def execute_command(self, action, direction, distance):
         if self.executing_thread and self.executing_thread.is_alive():
@@ -90,7 +126,8 @@ class TurtleController:
             elif direction == "right":
                 self.executing_thread = threading.Thread(target=self.turn_clockwise, args=(distance,))
                 self.executing_thread.start()
-        
+        elif action == "come":
+            self.go_to_speaker()
 
 
 

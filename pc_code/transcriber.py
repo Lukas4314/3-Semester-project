@@ -11,6 +11,10 @@ import wave
 import torch
 import torchaudio
 from consts import SAMPLE_RATE
+import math
+#for debbing
+import os
+from scipy.io.wavfile import write
 
 class transcriber:
     def __init__(self, input_queue):
@@ -28,6 +32,13 @@ class transcriber:
         self.last_string = ""
         self.recorded_audio = []  # To accumulate audio data
         threading.Thread(target=self.transcribe_stream, daemon=True).start()
+        self.lock = threading.Lock()
+        self.whisper_lock = threading.Lock()
+        self.start_index = float('inf')
+        self.end_index = float('-inf')
+
+        
+        
 
         
     def append_without_overlap(self, new):
@@ -92,58 +103,117 @@ class transcriber:
         mel = log_mel_spectrogram(segment)
         
         return mel
+    
+    
+    def whisperoutput(self, segment):
+        with self.whisper_lock:
+            mel = self.preprocess_segment(segment)
+            options = whisper.DecodingOptions(fp16=False, language="en")
+            result = whisper.decode(self.model, mel, options)
+            return result.text
+    
+    def find_nearest_here(self, start_index, end_index):
+        end_stop = False
+        #start_index = start_index - math.ceil(self.samples_overlap/1024)
+        while True:
+            start = None
+            end = None
+            #print([msg_idx for msg_idx, _ in self.recorded_audio])
+            print(f"Searching for here between {start_index} and {end_index}")
+            for i, (msg_idx, chunk) in enumerate(self.recorded_audio):
+                if start_index == msg_idx:
+                    start = i
+                if end_index == msg_idx:
+                    end = i
+            if start is None or end is None:
+                print("kunne ikke finde")
+                print(f"start: {start_index}, end: {end_index}")
+                return None
+            specified_data = self.recorded_audio[start : end + 1]
+            segment = np.concatenate([chunk for _, chunk in specified_data])
+            
+            debug_fname = f"debug_segment_{start_index}_{end_index}.wav"
+            print("Saving debug wav:", debug_fname)
+            write(debug_fname, self.samplerate, segment.astype(np.int16))
+
+            
+            text = self.whisperoutput(segment)
+            text = text.strip().lower().replace(".", "")
+            print(text)
+            
+            if not end_stop:
+                if "here" in text.split():
+                    start_index += 1
+                else:
+                    start_index -= 1
+                    end_stop = True  
+            else:
+                if "here" in text.split():
+                    end_index -= 1
+                else:
+                    start_index += 1
+                    break
+        
+        here_index = (start_index + end_index) / 2
+        return here_index    
+                
+        
+        
+        pass
 
     def transcribe_stream(self):
         buffer = np.zeros(0, dtype=np.int16)
         step = self.samples_per_chunk - self.samples_overlap
+        stamp_queue = queue.Queue()
 
         while True:
             # Pull audio into buffer
             while not self.input_queue.empty():
                 message_index, new_chunk = self.input_queue.get()
-                self.recorded_audio.append(new_chunk)
+                
+                with self.lock:
+                    if message_index < self.start_index:
+                        self.start_index = message_index
+                    if message_index > self.end_index:
+                        self.end_index = message_index
+                #print(f"Updated indices: start={self.start_index}, end={self.end_index}")
+                
+                #stamp_queue.put(message_index)
+                
+                self.recorded_audio.append((message_index, new_chunk))
                 buffer = np.append(buffer, new_chunk)
                 
             while len(buffer) >= self.samples_per_chunk:
                 segment = buffer[:self.samples_per_chunk]
                 
-                # Preprocess and decode
-                mel = self.preprocess_segment(segment)
+                result = self.whisperoutput(segment)
                 
-
-                options = whisper.DecodingOptions(fp16=False, language="en")
-                result = whisper.decode(self.model, mel, options)
+        
                 #print("Raw transcription result:", result.text)
                 # Handle transcription output
-                result_after_append =self.append_without_overlap(result.text)
+                result_after_append =self.append_without_overlap(result)
                 self.output_queue.put(result_after_append)
-
+                
                 # Slide buffer window (keep overlap)
                 buffer = buffer[step:]
-
+            stamp_queue.empty()
             time.sleep(0.1)
 
     def getNewTranscription(self):
         """Retrieve new transcription text if available."""
         texts = []
-        while not self.output_queue.empty():
-            texts.append(self.output_queue.get())
-        return " ".join(texts)
+        while texts == []:
+            while not self.output_queue.empty():
+                texts.append(self.output_queue.get())
+            time.sleep(0.01) # kan jeg bare blokkere her????
+        with self.lock:
+            start_index = self.start_index
+            end_index = self.end_index
+            self.start_index = float('inf')
+            self.end_index = float('-inf')
+            print(f"Current indices: start={start_index}, end={end_index}")
+
+            
+            return start_index, end_index, " ".join(texts)
         
 
-    def save_list_to_wav(self, audio_list, filename="output.wav"):
-        # Concatenate all recorded audio chunks
-        audio = np.concatenate(audio_list)
-        audio_int16 = np.int16(audio * 32767)
-        # Normalize to int16 range
-        # Write to WAV file
-        with wave.open(filename, 'wb') as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)  # 2 bytes for int16
-            wf.setframerate(self.samplerate)
-            wf.writeframes(audio_int16.tobytes())
-        print(f"Audio saved to {filename}")
-
-
-    def save_audio_to_wav(self, filename="output.wav"):
-        self.save_list_to_wav(self.recorded_audio, filename)

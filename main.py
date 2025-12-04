@@ -31,7 +31,7 @@ def main():
     try:
         analysisstring = ""
         while True:
-            new_transcription = transcriber_instance.getNewTranscription()
+            start_index, end_index, new_transcription = transcriber_instance.getNewTranscription()
             if new_transcription != "":
                 print(f"Transcribed so far:", analysisstring + RED + new_transcription + RED_END)
                 analysisstring += new_transcription + " "
@@ -41,7 +41,15 @@ def main():
                 continue
 
             command = string_to_command(analysisstring.strip())
+            
             if command is not None:
+                
+                if command["action"] == "come here":
+                    best_index = transcriber_instance.find_nearest_here(start_index, end_index)
+                    turtleController.go_to_human(best_index)
+                    continue
+            
+            
                 print("Recognized command:", command)
                 analysisstring = ""  # Reset after a valid command
                 turtleController.execute_command(command["action"], command["direction"], command["distance"])
