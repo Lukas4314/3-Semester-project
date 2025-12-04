@@ -42,14 +42,14 @@
 I2sInterface i2s0(I2S_NUM_0, I2S0_BCLK, I2S0_LRCLK, -1, I2S0_DIN, 
                   (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
                   I2S_BITS_PER_SAMPLE_16BIT,
-                  I2S_CHANNEL_FMT_RIGHT_LEFT, 44100);
+                  I2S_CHANNEL_FMT_RIGHT_LEFT, 22050);
 
 I2sInterface i2s1(I2S_NUM_1, I2S1_BCLK, I2S1_LRCLK, -1, I2S1_DIN,
                   (i2s_mode_t)(I2S_MODE_SLAVE | I2S_MODE_RX),
                   I2S_BITS_PER_SAMPLE_16BIT,
-                  I2S_CHANNEL_FMT_ONLY_LEFT, 44100);
+                  I2S_CHANNEL_FMT_ONLY_LEFT, 22050);
 
-MqttInterface mqtt("Havefun", "Havefun2", "10.32.162.201");
+MqttInterface mqtt("Havefun", "Havefun2", "10.250.34.201");
 
 
 void setup() {
@@ -92,22 +92,45 @@ void setup() {
 
 
 
+
+
 void loop() {
     mqtt.loop();
 
-    const int numSamples = 1024;     // number of 16-bit samples to read
-    static int16_t buffer0[numSamples * 2]; // I2S0: stereo = 2 channels
-    static int16_t buffer1[numSamples]; // I2S1: mono = 1 channel
-    
-    // Read samples from I2S0 (stereo)
-    size_t bytesRead0 = i2s0.readSamples(buffer0, sizeof(buffer0));
+    const int numSamples = 1024;
+
+    // Reserve space for: [counter(4 bytes)] + audio samples
+    static int16_t buffer0[numSamples * 2 + 2]; 
+    static int16_t buffer1[numSamples + 2];
+
+    static uint32_t counter = 0;
+
+    // Audio starts after first 2 int16 = 4 bytes
+    int16_t* audioBufferPtr0 = buffer0 + 2;
+    int16_t* audioBufferPtr1 = buffer1 + 2;
 
 
+    // Read stereo samples
+    size_t bytesRead0 = i2s0.readSamples(
+        audioBufferPtr0,
+        numSamples * 2 * sizeof(int16_t)
+    );
 
-    // Read samples from I2S1 (mono)
-    size_t bytesRead1 = i2s1.readSamples(buffer1, sizeof(buffer1));
+
+    // Read mono samples
+    size_t bytesRead1 = i2s1.readSamples(
+        audioBufferPtr1,
+        numSamples * sizeof(int16_t)
+    );
+
+    // Write counter (4 bytes) into first 2 int16 positions
+    memcpy(buffer0, &counter, sizeof(counter));
+    memcpy(buffer1, &counter, sizeof(counter));
+
+    counter++;
 
 
-    mqtt.publish("I2S0", buffer0, sizeof(buffer0));
-    mqtt.publish("I2S1", buffer1, sizeof(buffer1));
+    mqtt.publish("I2S0", (uint8_t*)buffer0, sizeof(buffer0));
+
+    mqtt.publish("I2S1", (uint8_t*)buffer1, sizeof(buffer1));
 }

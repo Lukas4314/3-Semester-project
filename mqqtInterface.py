@@ -5,8 +5,8 @@ import time
 import numpy as np
 import ast
 import struct
-
-
+import queue
+from consts import SAMPLE_RATE
 
 class MQTTInterface:
     def __init__(self, server, port, topic):
@@ -62,14 +62,85 @@ class MQTTInterface:
 
             values = struct.unpack('<' + 'h'*count, msg.payload)
             arr = np.array(values, dtype=np.int16)
-            arr = arr[1::2]
-            output_queue.put(arr)
+            bigInt16 = arr[1]
+            smallInt16 = arr[0]
+            arr = arr[2:]
+
+            # Convert to unsigned 16-bit integers
+            big_u = np.uint16(bigInt16)
+            small_u = np.uint16(smallInt16)
+
+            # Combine into a 32-bit unsigned integer
+            message_index = (int(big_u) << 16) | int(small_u)
+
+            message_index = (big_u << 16) | small_u
+            
+            output_queue.put((message_index, arr))
             self.recorded_data.append(arr)
             
-
         self.client.subscribe(self.topic)
         self.client.on_message = on_message
         self.client.loop_start()
+    
+    def listen_and_clone_into_2_outputs(self, output_queue1, output_queue2):
+        def on_message(client, userdata, msg):
+            
+            # number of int16 values
+            count = len(msg.payload) // 2  
+
+            values = struct.unpack('<' + 'h'*count, msg.payload)
+            arr = np.array(values, dtype=np.int16)
+            
+            
+            bigInt16 = arr[1]
+            smallInt16 = arr[0]
+            arr = arr[2:]
+
+            # Convert to unsigned 16-bit integers
+            big_u = np.uint16(bigInt16)
+            small_u = np.uint16(smallInt16)
+
+            # Combine into a 32-bit unsigned integer
+            message_index = (int(big_u) << 16) | int(small_u)
+            
+            #arr = arr[1::2]
+            output_queue1.put((message_index, arr))
+            output_queue2.put((message_index, arr))
+            self.recorded_data.append(arr)
+            
+        self.client.subscribe(self.topic)
+        self.client.on_message = on_message
+        self.client.loop_start()
+    
+    def listen_into_2_outputs(self, output_queue1, output_queue2):
+        def on_message(client, userdata, msg):
+            
+            # number of int16 values
+            count = len(msg.payload) // 2  
+
+            values = struct.unpack('<' + 'h'*count, msg.payload)
+            arr = np.array(values, dtype=np.int16)
+
+            bigInt16 = arr[1]
+            smallInt16 = arr[0]
+            arr = arr[2:]
+
+            # Convert to unsigned 16-bit integers
+            big_u = np.uint16(bigInt16)
+            small_u = np.uint16(smallInt16)
+
+            # Combine into a 32-bit unsigned integer
+            message_index = (int(big_u) << 16) | int(small_u)
+            
+            
+            
+            output_queue1.put((message_index, arr[0::2]))
+            output_queue2.put((message_index, arr[1::2]))
+            self.recorded_data.append(arr[1::2])
+            
+        self.client.subscribe(self.topic)
+        self.client.on_message = on_message
+        self.client.loop_start()    
     
     def disconnect(self):
         self.publish_command(0.0, 0.0)
@@ -84,27 +155,27 @@ class MQTTInterface:
         with wave.open(filename, 'wb') as wf:
             wf.setnchannels(1)
             wf.setsampwidth(2)  # 2 bytes for int16
-            wf.setframerate(44100)
+            wf.setframerate(SAMPLE_RATE)
             wf.writeframes(audio_data.tobytes())
         print(f"Audio saved to {filename}")
 
 
 if __name__ == "__main__":
     # Define MQTT connection details
-    MQTT_SERVER = "10.32.162.201"
+    MQTT_SERVER = "10.250.34.201"
     MQTT_PORT = 1883
-    MQTT_TOPIC = "mqtt_vel"
+    MQTT_TOPIC = "DUMMY"
     mqtt_interface = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC)
     time.sleep(3)
+    qeueie1 = queue.Queue()
+    qeueie2 = queue.Queue()
+    mqtt_interface.listen_and_clone_into_2_outputs(qeueie1, qeueie2)
 
     try:
-        mqtt_interface.publish_command(1.0, 0.5)
-        time.sleep(2)
-        mqtt_interface.publish_command(0.0, 0.0)
-        time.sleep(2)
-        mqtt_interface.publish_command(0.4, 0)
-        time.sleep(2)
-        mqtt_interface.publish_command(1, 6)
+        while True:
+            if not qeueie1.empty():
+                index, data = qeueie1.get()
+                print(f"Queue 1 - Message index: {index}, Data length: {len(data)}")
 
     except Exception as e:
         print(f"Error occurred: {e}")

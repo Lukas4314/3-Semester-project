@@ -29,7 +29,7 @@ bool I2sInterface::begin() {
         .channel_format = _channelFormat,                       // Channel format: mono, stereo, etc.
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,      // Standard I2S format (L/R aligned)
         .intr_alloc_flags = 0,                                  // Interrupt allocation flags (0 = default, level 1)
-        .dma_buf_count = 8,                                     // Number of DMA buffers used by I2S
+        .dma_buf_count = 16,                                     // Number of DMA buffers used by I2S
         .dma_buf_len = 1024,                                    // Size of each DMA buffer in "samples per channel"
         .use_apll = false,                                      // Use APLL for higher precision clock (false = use default)
         .tx_desc_auto_clear = true,                             // Automatically clear TX descriptor on underflow

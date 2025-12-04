@@ -10,13 +10,14 @@ import queue
 import wave
 import torch
 import torchaudio
+from consts import SAMPLE_RATE
 
 class transcriber:
     def __init__(self, input_queue):
         # Load model
         self.model = whisper.load_model("base.en")  # or "base.en" for better accuracy
 
-        self.samplerate = 44100
+        self.samplerate = SAMPLE_RATE
         self.chunk_duration = 5      # seconds per processed chunk
         self.overlap_duration = 2.5  # seconds overlap
         self.samples_per_chunk = int(self.samplerate * self.chunk_duration)
@@ -99,7 +100,7 @@ class transcriber:
         while True:
             # Pull audio into buffer
             while not self.input_queue.empty():
-                new_chunk = self.input_queue.get()
+                message_index, new_chunk = self.input_queue.get()
                 self.recorded_audio.append(new_chunk)
                 buffer = np.append(buffer, new_chunk)
                 
