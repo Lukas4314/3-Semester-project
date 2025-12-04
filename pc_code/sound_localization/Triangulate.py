@@ -42,10 +42,10 @@ def create_grid(search_range=4.0, grid_size=0.1):
                 grid_points.append(np.array([x, y, z]))
     return grid_points
 
-def find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_sound=343.0):
-    measured_d1 = tdoa_estimates[0] * speed_of_sound  # mic1 - mic0
-    measured_d2 = tdoa_estimates[1] * speed_of_sound  # mic2 - mic0
-    measured_d3 = tdoa_estimates[2] * speed_of_sound  # mic2 - mic1
+def find_all_possible_sound_positions(mic_positions, tdoa01, tdoa02, tdoa12, speed_of_sound=343.0):
+    measured_d1 = tdoa01 * speed_of_sound  # mic1 - mic0
+    measured_d2 = tdoa02 * speed_of_sound  # mic2 - mic0
+    measured_d3 = tdoa12 * speed_of_sound  # mic2 - mic1
 
     grid_points = create_grid()
     grid_points_scores = []
@@ -57,8 +57,8 @@ def find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_so
 
     return grid_points_scores
 
-def find_sound_origin(mic_positions, tdoa_estimates, speed_of_sound=343.0):
-    grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_sound)
+def find_sound_origin(mic_positions, tdoa01, tdoa02, tdoa12, speed_of_sound=343.0):
+    grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa01=tdoa01, tdoa02=tdoa02, tdoa12=tdoa12, speed_of_sound=speed_of_sound)
 
     best_score = float('inf')
     best_point = None
@@ -68,35 +68,31 @@ def find_sound_origin(mic_positions, tdoa_estimates, speed_of_sound=343.0):
             best_score = score
             best_point = point
     return best_point, best_score
-        
-if __name__ == "__main__":
-    import random
-    """
-    # I now want to test multiple points and find an average difference 
-    points = [(random.uniform(0, 4), random.uniform(0, 4), random.uniform(0, 3)) for _ in range(10)]
-    
-    tdoa_estimates = [np.linalg.norm(points - [0.2,0,0])/343 - np.linalg.norm(points - [0,0,0])/343, np.linalg.norm(points - [0.1,0.1732,0])/343 - np.linalg.norm(points - [0,0,0])/343, np.linalg.norm(points - [0.1,0.1732,0])/343 - np.linalg.norm(points - [0.2,0,0])/343]
+
+def triangulate_from_tdoa(tdoa01, tdoa02, tdoa12):
     mic_positions = microphone_placement()
-    grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa_estimates)
+    best_point, best_score = find_sound_origin(mic_positions, tdoa01=tdoa01, tdoa02=tdoa02, tdoa12=tdoa12)
+    return best_point
+        
+def tringulate_from_sound(signal0, signal1, signal2, fs):
+    tdoa01 = gcc.PHAT_GCC_TDOA(signal0, signal1, fs)
+    tdoa02 = gcc.PHAT_GCC_TDOA(signal0, signal2, fs)
+    tdoa12 = gcc.PHAT_GCC_TDOA(signal1, signal2, fs)
+    return triangulate_from_tdoa(tdoa01=tdoa01, tdoa02=tdoa02, tdoa12=tdoa12)
 
-    print("Calculating...")
-    best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)
-
-    print("best_point:", best_point, "best_score:", best_score)
-    """
-    
+if __name__ == "__main__":
     point = np.array([1.9738428371, 0.881273731, 1.776132172])  # Example true position
     tdoa_estimates = [np.linalg.norm(point - [0.2,0,0])/343-np.linalg.norm(point - [0,0,0])/343, np.linalg.norm(point - [0.1,0.1732,0])/343-np.linalg.norm(point - [0,0,0])/343, np.linalg.norm(point - [0.1,0.1732,0])/343-np.linalg.norm(point - [0.2,0,0])/343]
     mic_positions = microphone_placement()
-    grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa_estimates)
+    grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa01=tdoa_estimates[0], tdoa02=tdoa_estimates[1], tdoa12=tdoa_estimates[2])
 
     print("Calculating...")
-    best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)
+    best_point, best_score = find_sound_origin(mic_positions, tdoa01=tdoa_estimates[0], tdoa02=tdoa_estimates[1], tdoa12=tdoa_estimates[2])
 
     print("best_point:", best_point, "best_score:", best_score)
     
     # find best point (keep for overlay)
-    best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)
+    best_point, best_score = find_sound_origin(mic_positions, tdoa01=tdoa_estimates[0], tdoa02=tdoa_estimates[1], tdoa12=tdoa_estimates[2])
 
     # prepare arrays of all grid points and scores
     coords = np.array([p for p, s in grid_points_scores])
