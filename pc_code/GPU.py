@@ -12,35 +12,49 @@ import torch
 import torchaudio
 from consts import SAMPLE_RATE
 import math
-#for debbing
+# for debugging
 import os
 from scipy.io.wavfile import write
 
+
 class transcriber:
     def __init__(self, input_queue):
-        # Load model
-        self.model = whisper.load_model("base.en")  # or "base.en" for better accuracy
+        # Enforce GPU-only
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA GPU is required, but torch.cuda.is_available() == False")
+
+        self.device = "cuda"
+
+        # Load model directly on GPU
+        self.model = whisper.load_model("base.en", device=self.device)
 
         self.samplerate = SAMPLE_RATE
         self.chunk_duration = 5      # seconds per processed chunk
         self.overlap_duration = 2.5  # seconds overlap
         self.samples_per_chunk = int(self.samplerate * self.chunk_duration)
         self.samples_overlap = int(self.samplerate * self.overlap_duration)
+
         # Audio queue
         self.input_queue = input_queue
         self.output_queue = queue.Queue()
         self.last_string = ""
         self.recorded_audio = []  # To accumulate audio data
-        threading.Thread(target=self.transcribe_stream, daemon=True).start()
+
         self.lock = threading.Lock()
         self.whisper_lock = threading.Lock()
         self.start_index = float('inf')
         self.end_index = float('-inf')
 
-        
-        
+        # Optional: pre-create a resampler (on CPU) if needed
+        self.resampler = None
+        if self.samplerate != 16000:
+            self.resampler = torchaudio.transforms.Resample(
+                orig_freq=self.samplerate,
+                new_freq=16000
+            )
 
-        
+        threading.Thread(target=self.transcribe_stream, daemon=True).start()
+
     def append_without_overlap(self, new):
         """
         Append only the non-overlapping part of 'new' to 'existing'.
@@ -55,7 +69,7 @@ class transcriber:
 
         new = new.strip()
         new = new.lower()
-        
+
         # If new already contains existing entirely, just replace it
         if new.startswith(self.last_string):
             self.last_string = new
@@ -70,55 +84,57 @@ class transcriber:
                 overlap_length = i
 
         self.last_string = new
-        
-        return new[overlap_length:]
 
+        return new[overlap_length:]
 
     def preprocess_segment(self, segment):
         """
         Convert a 44.1 kHz NumPy audio segment to Whisper-compatible log-Mel spectrogram.
+        All heavy computation ends up on the GPU.
         """
 
         # Convert from int16 to float32 in -1.0 to 1.0 range
         if segment.dtype == np.int16:
-            #segment = segment.astype(np.float32)
             segment = segment.astype(np.float32) / 32768.0
         else:
             segment = segment.astype(np.float32)
 
-        # Convert to float32 tensor
-        segment = torch.from_numpy(segment)
+        # Convert to float32 tensor (CPU for now)
+        segment = torch.from_numpy(segment).float()
 
-        # Resample to 16 kHz if needed
-        if self.samplerate != 16000:
-            resampler = torchaudio.transforms.Resample(
-                orig_freq=self.samplerate, new_freq=16000
-            )
-            segment = resampler(segment)
+        # Resample to 16 kHz if needed (still CPU)
+        if self.resampler is not None:
+            segment = self.resampler(segment)
 
         # Pad or trim to 30s (Whisper default)
         segment = pad_or_trim(segment)
 
-        # Compute log-Mel spectrogram
+        # Move to GPU
+        segment = segment.to(self.device)
+
+        # Compute log-Mel spectrogram on GPU
         mel = log_mel_spectrogram(segment)
-        
+
         return mel
-    
-    
+
     def whisperoutput(self, segment):
         with self.whisper_lock:
             mel = self.preprocess_segment(segment)
-            options = whisper.DecodingOptions(fp16=False, language="en")
+
+            # GPU-only: use fp16
+            options = whisper.DecodingOptions(
+                fp16=True,
+                language="en"
+            )
             result = whisper.decode(self.model, mel, options)
             return result.text
-    
+
     def find_nearest_here(self, start_index, end_index):
         end_stop = False
-        #start_index = start_index - math.ceil(self.samples_overlap/1024)
+        # start_index = start_index - math.ceil(self.samples_overlap/1024)
         while True:
             start = None
             end = None
-            #print([msg_idx for msg_idx, _ in self.recorded_audio])
             print(f"Searching for here between {start_index} and {end_index}")
             for i, (msg_idx, chunk) in enumerate(self.recorded_audio):
                 if start_index == msg_idx:
@@ -129,35 +145,34 @@ class transcriber:
                 print("kunne ikke finde")
                 print(f"start: {start_index}, end: {end_index}")
                 return None
-            specified_data = self.recorded_audio[start : end + 1]
-            segment = np.concatenate([chunk for _, chunk in specified_data])
-            
-            #debug_fname = f"debug_segment_{start_index}_{end_index}.wav"
-            #print("Saving debug wav:", debug_fname)
-            #write(debug_fname, self.samplerate, segment.astype(np.int16))
 
-            
+            specified_data = self.recorded_audio[start: end + 1]
+            segment = np.concatenate([chunk for _, chunk in specified_data])
+
+            # debug_fname = f"debug_segment_{start_index}_{end_index}.wav"
+            # print("Saving debug wav:", debug_fname)
+            # write(debug_fname, self.samplerate, segment.astype(np.int16))
+
             text = self.whisperoutput(segment)
             text = text.strip().lower().replace(".", "")
             print(text)
-            
+
             if not end_stop:
                 if "here" in text.split():
-                    start_index += 1 # you could also just drop 1024 samples from segment for speed
+                    # you could also just drop 1024 samples from segment for speed
+                    start_index += 1
                 else:
                     start_index -= 1
-                    end_stop = True  
+                    end_stop = True
             else:
                 if "here" in text.split():
                     end_index -= 1
                 else:
                     start_index += 1
                     break
-        
+
         here_index = (start_index + end_index) / 2
-        return here_index    
-        
-        pass
+        return here_index
 
     def transcribe_stream(self):
         buffer = np.zeros(0, dtype=np.int16)
@@ -168,30 +183,28 @@ class transcriber:
             # Pull audio into buffer
             while not self.input_queue.empty():
                 message_index, new_chunk = self.input_queue.get()
-                
+
                 with self.lock:
                     if message_index < self.start_index:
                         self.start_index = message_index
                     if message_index > self.end_index:
                         self.end_index = message_index
-                #print(f"Updated indices: start={self.start_index}, end={self.end_index}")
-                
-                #stamp_queue.put(message_index)
-                
+                # print(f"Updated indices: start={self.start_index}, end={self.end_index}")
+
+                # stamp_queue.put(message_index)
+
                 self.recorded_audio.append((message_index, new_chunk))
                 buffer = np.append(buffer, new_chunk)
-                
+
             while len(buffer) >= self.samples_per_chunk:
                 segment = buffer[:self.samples_per_chunk]
-                
+
                 result = self.whisperoutput(segment)
-                
-        
-                #print("Raw transcription result:", result.text)
+
                 # Handle transcription output
-                result_after_append =self.append_without_overlap(result)
+                result_after_append = self.append_without_overlap(result)
                 self.output_queue.put(result_after_append)
-                
+
                 # Slide buffer window (keep overlap)
                 buffer = buffer[step:]
             stamp_queue.empty()
@@ -203,7 +216,8 @@ class transcriber:
         while texts == []:
             while not self.output_queue.empty():
                 texts.append(self.output_queue.get())
-            time.sleep(0.01) # kan jeg bare blokkere her????
+            time.sleep(0.01)  # kan jeg bare blokkere her????
+
         with self.lock:
             start_index = self.start_index
             end_index = self.end_index
@@ -211,7 +225,4 @@ class transcriber:
             self.end_index = float('-inf')
             print(f"Current indices: start={start_index}, end={end_index}")
 
-            
             return start_index, end_index, " ".join(texts)
-        
-
