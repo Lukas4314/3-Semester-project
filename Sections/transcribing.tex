@@ -13,11 +13,14 @@
 
 Whisper follows a transformer architecture, a deep learning model that uses attention mechanisms to focus on specific parts of the input data. Conversely to convulutional neural networks (CNNs) that process data in a sequential manner, transformers can process the entire input simultaneously, whilst performing the attention mechanisms. The usage of whisper follows the approach shown in \cref{fig:whisper_approach} 
 
-\begin{figure}[H]
+\begin{figure}[H]\label{fig:whisper_approach}
     \centering
     \includegraphics[width=0.7\linewidth]{Pictures/whisper_approach.png}
     \caption{Whisper approach\cite{whisper_github}}
-    \label{fig:whisper_approach}
 \end{figure}
 
-Firstly the log-mel spectrogram is processed by a CNN resulting in sequence of embeddings, which are then passed to the transformer.\cite{huggingface_whisper} The transformer then consists of a series of encoder blocks each with self attention and MLP layers. The output of this series is then fed into a series of decoder blocks in a process known as cross attention, where the decoder blocks besides having self attention and MLP layers also has a cross attention layer that takes the original output of the encoder series as input
+Firstly the log-mel spectrogram is processed by a CNN resulting in sequence of embeddings, which are then passed to the transformer.\cite{huggingface_whisper} The transformer then consists of a series of encoder blocks each with self attention and MLP layers. The output of this series is then fed into a series of decoder blocks in a process known as cross attention, where the decoder blocks besides having self attention and MLP layers also has a cross attention layer that takes the original output of the encoder series as input.
+
+The model is used for transcription both for the purpose of identifying commands and focussing the stream for the sound localisation. As the identificaion part is processing a larger data stream at a time it is done on a separate thread.
+
+As multiple threads need to interact with the model simultaneously, a mutex lock is setup using the thread.lock\(\) function from the threading library. This ensures that only one thread can access the model at a time.
