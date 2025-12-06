@@ -10,6 +10,9 @@
 
 %4. The Mel-spectrogram is converted into a logarithmic scale of the magnitudes, because humans hear a sound twice as loud only if the sound is 10 times more powerful.
 
+Before transcribing the recorded audio into text, the audio data is preprocessed into a log-mel spectrogram. A log-mel spectrogram is the logarithmic representation of a mel-spectrogram. The standard amount of mel channels used in the Whisper model is 80 mel channels. The mel scale is a perceptual scale of pitches judged by listeners to be equal in distance from one another. 
+
+
 
 Whisper follows a transformer architecture, a deep learning model that uses attention mechanisms to focus on specific parts of the input data. Conversely to convulutional neural networks (CNNs) that process data in a sequential manner, transformers can process the entire input simultaneously, whilst performing the attention mechanisms. The usage of whisper follows the approach shown in \cref{fig:whisper_approach} 
 
