@@ -155,9 +155,7 @@ class transcriber:
                     break
         
         here_index = (start_index + end_index) / 2
-        return here_index    
-        
-        pass
+        return here_index
 
     def transcribe_stream(self):
         buffer = np.zeros(0, dtype=np.int16)

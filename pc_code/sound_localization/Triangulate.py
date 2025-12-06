@@ -1,4 +1,4 @@
-import pc_code.sound_localization.gccPhat as gcc
+import gccPhat as gcc
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -70,7 +70,6 @@ def find_sound_origin(mic_positions, tdoa_estimates, speed_of_sound=343.0):
     return best_point, best_score
         
 if __name__ == "__main__":
-    import random
     """
     # I now want to test multiple points and find an average difference 
     points = [(random.uniform(0, 4), random.uniform(0, 4), random.uniform(0, 3)) for _ in range(10)]
