@@ -1,2 +1,0 @@
-MQTT (ift. hvordan man kunne bruge andre protokoller til real time data transfer)
-Template based voice recognition
