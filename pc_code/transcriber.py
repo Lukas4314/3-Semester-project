@@ -11,7 +11,7 @@ import wave
 import torch
 import torchaudio
 from consts import SAMPLE_RATE
-import math
+from math import floor
 #for debbing
 import os
 from scipy.io.wavfile import write
@@ -113,7 +113,11 @@ class transcriber:
             return result.text
     
     def find_nearest_here(self, start_index, end_index):
-        end_stop = False
+        end_found = False
+        satisfied = False
+        factor = 0.8
+
+
         #start_index = start_index - math.ceil(self.samples_overlap/1024)
         while True:
             start = None
@@ -140,25 +144,30 @@ class transcriber:
             text = self.whisperoutput(segment)
             text = text.strip().lower().replace(".", "")
             print(text)
-            
-            if not end_stop:
-                if "here" in text.split():
-                    start_index += 1 # you could also just drop 1024 samples from segment for speed
+            if not end_found:
+                if "here" in text.split() and satisfied == False:
+                    end_index = start_index + (end_index - start_index) * factor # If we find here, we choose a lower factor
+                    end_index = floor(end_index)
+                    factor -= 0.1
+                elif "here" in text.split() and satisfied == True:
+                    end_found = True
+                    factor = 0.1
+                    satisfied = False
                 else:
-                    start_index -= 1
-                    end_stop = True  
+                    end_index += 2
+                    satisfied = True
             else:
-                if "here" in text.split():
-                    end_index -= 1
+                if "here" in text.split() and satisfied == False:
+                    start_index += (end_index - start_index) * factor
+                    start_index = floor(start_index)
+                    factor += 0.1
+                elif "here" in text.split() and satisfied == True:
+                    self.output_queue.queue.clear()
+                    return floor((start_index + end_index) / 2)
                 else:
-                    start_index += 1
-                    break
-        
-        here_index = (start_index + end_index) / 2
-        return here_index    
-        
-        pass
-
+                    start_index -= 2
+                    satisfied = True
+    
     def transcribe_stream(self):
         buffer = np.zeros(0, dtype=np.int16)
         step = self.samples_per_chunk - self.samples_overlap
