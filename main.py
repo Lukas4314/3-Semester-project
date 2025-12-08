@@ -25,7 +25,9 @@ def main():
 
     mqtt_interface_aud0.listen_into_2_outputs(audio_queue0, audio_queue1)
     mqtt_interface_aud1.listen_and_clone_into_2_outputs(audio_queue2, audio_queue2_clone)
+    print("Making transcriber instance")
     transcriber_instance = transcriber(audio_queue2_clone)
+    print("transcriber instance made")
     
     
     try:

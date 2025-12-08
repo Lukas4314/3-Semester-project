@@ -1,5 +1,14 @@
+from pc_code.transcriber import transcriber
+import queue
 
-
-
-arr = [1, 2, 3, 4, 5, 6]
-print(arr[2:])
+class test:
+    def __init__(self, queue):
+        print("Test initialized with queue:")
+"""
+class transcriber:
+	def __init__(self, queue):
+		print("idk")
+  """
+  
+queue_test = queue.Queue()
+transcriber = transcriber(queue_test)
