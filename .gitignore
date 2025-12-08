@@ -1,4 +1,8 @@
 venv
+.venv
+env
+.env
+
 *__pycache__
 ESP32/.pio/
 boardForESP/boardForESP-backups
@@ -9,3 +13,5 @@ ESP32/.vscode/.browse.c_cpp.db*
 ESP32/.vscode/c_cpp_properties.json
 ESP32/.vscode/launch.json
 ESP32/.vscode/ipch
+ESP32/.vscode/extensions.json
+ESP32/.vscode/settings.json
