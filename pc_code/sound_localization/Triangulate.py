@@ -68,6 +68,18 @@ def find_sound_origin(mic_positions, tdoa_estimates, speed_of_sound=343.0):
             best_score = score
             best_point = point
     return best_point, best_score
+
+def triangulate_from_sound(mic0_data, mic1_data, mic2_data, fs=16000):
+    # Calculate TDOA estimates using GCC-PHAT
+    tdoa_01 = gcc.gcc_phat(mic1_data, mic0_data, fs)  # mic1 - mic0
+    tdoa_02 = gcc.gcc_phat(mic2_data, mic0_data, fs)  # mic2 - mic0
+    tdoa_12 = gcc.gcc_phat(mic2_data, mic1_data, fs)  # mic2 - mic1
+    tdoa_estimates = [tdoa_01, tdoa_02, tdoa_12]
+    mic_positions = microphone_placement()
+
+    best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)
+
+    return best_point, best_score
         
 if __name__ == "__main__":
     """

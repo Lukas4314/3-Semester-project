@@ -1,5 +1,5 @@
 from mqqtInterface import MQTTInterface
-from pc_code.sound_localization.Triangulate import tringulate_from_sound
+from pc_code.sound_localization.Triangulate import triangulate_from_sound
 import time
 import threading
 import numpy as np
@@ -94,7 +94,7 @@ class TurtleController:
         mic2_data = np.concatenate(mic2_data)
         mic3_data = np.concatenate(mic3_data)        
         
-        best_point = tringulate_from_sound(mic1_data, mic2_data, mic3_data)
+        best_point = triangulate_from_sound(mic1_data, mic2_data, mic3_data)
         angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
         distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
         
