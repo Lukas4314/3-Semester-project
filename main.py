@@ -1,0 +1,74 @@
+import string
+import sounddevice as sd
+import queue
+import time
+from mqqtInterface import MQTTInterface
+from pc_code.turtleController import TurtleController
+from pc_code.stringToCommand import string_to_command
+from pc_code.transcriber import transcriber
+from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD1, MQTT_TOPIC_AUD0, RED, RED_END
+
+
+
+def main():
+    mqtt_interface_vel = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL)
+    mqtt_interface_aud0 = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD0)
+    mqtt_interface_aud1 = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD1)
+    turtleController = TurtleController(mqtt_interface_vel)
+
+
+    audio_queue0 = queue.Queue()
+    audio_queue1 = queue.Queue()
+    audio_queue2 = queue.Queue()
+    audio_queue2_clone = queue.Queue()
+    
+
+    mqtt_interface_aud0.listen_into_2_outputs(audio_queue0, audio_queue1)
+    mqtt_interface_aud1.listen_and_clone_into_2_outputs(audio_queue2, audio_queue2_clone)
+    transcriber_instance = transcriber(audio_queue2_clone)
+    
+    
+    try:
+        analysisstring = ""
+        while True:
+            start_index, end_index, new_transcription = transcriber_instance.getNewTranscription()
+            if new_transcription != "":
+                print(f"Transcribed so far:", analysisstring + RED + new_transcription + RED_END)
+                analysisstring += new_transcription + " "
+                
+            else:
+                time.sleep(0.01)
+                continue
+
+            command = string_to_command(analysisstring.strip())
+            
+            if command is not None:
+                
+                if command["action"] == "come here":
+                    best_index = transcriber_instance.find_nearest_here(start_index, end_index)
+                    turtleController.go_to_human(best_index)
+                    continue
+            
+            
+                print("Recognized command:", command)
+                analysisstring = ""  # Reset after a valid command
+                turtleController.execute_command(command["action"], command["direction"], command["distance"])
+                    
+    except KeyboardInterrupt:
+        print("Exiting program.")
+        mqtt_interface_aud0.client.loop_stop()
+        mqtt_interface_aud1.client.loop_stop()
+        mqtt_interface_vel.client.loop_stop()
+
+
+        mqtt_interface_aud0.client.disconnect()
+        mqtt_interface_aud1.client.disconnect()
+        mqtt_interface_vel.client.disconnect()        
+        
+        #transcriber_instance.save_audio_to_wav()
+        mqtt_interface_aud0.save_to_wav("audio_aud0.wav")
+        mqtt_interface_aud1.save_to_wav("audio_aud1.wav")
+
+if __name__ == "__main__":
+
+    main()
