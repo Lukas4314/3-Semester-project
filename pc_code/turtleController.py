@@ -79,7 +79,9 @@ class TurtleController:
             message_index, new_chunk = self.queue1.get()
             if start_index <= message_index <= end_index:
                 mic1_data.append(new_chunk)
-                
+            else:
+                #print(f"index: {message_index} not in range {start_index} to {end_index}")
+                pass
         while not self.queue2.empty():
             message_index, new_chunk = self.queue2.get()
             if start_index <= message_index <= end_index:
@@ -89,14 +91,18 @@ class TurtleController:
             message_index, new_chunk = self.queue3.get()
             if start_index <= message_index <= end_index:
                 mic3_data.append(new_chunk)
-                
-        mic1_data = np.concatenate(mic1_data)
-        mic2_data = np.concatenate(mic2_data)
-        mic3_data = np.concatenate(mic3_data)        
         
-        best_point = triangulate_from_sound(mic1_data, mic2_data, mic3_data)
+        if len(mic1_data) >= 1:
+            mic1_data = np.concatenate(mic1_data)
+            mic2_data = np.concatenate(mic2_data)
+            mic3_data = np.concatenate(mic3_data)        
+        
+        best_point, best_score = triangulate_from_sound(mic1_data, mic2_data, mic3_data)
+        print(f"Best point: {best_point}, Best score: {best_score}")
         angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
         distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
+        
+        print(f"Sound located at angle {angle} degrees and distance {distance} meters")
         
         self.turn_counter_clockwise(angle)
         time.sleep(0.5)

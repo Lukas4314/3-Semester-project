@@ -1,4 +1,4 @@
-import gccPhat as gcc
+import pc_code.sound_localization.gccPhat as gcc
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 
 def microphone_placement():
     mic_positions = np.array([
-        [0.0, 0.0, 0.0],    # Mic 0
-        [0.2, 0.0, 0.0],    # Mic 1
-        [0.1, 0.1732, 0.0]  # Mic 2
+        [0.0, -0.1155, 0.0],    # Mic 0
+        [-0.1, 0.057, 0.0],     # Mic 1
+        [0.1, 0.057, 0.0]      # Mic 2
     ])
     return mic_positions
 
@@ -69,11 +69,11 @@ def find_sound_origin(mic_positions, tdoa_estimates, speed_of_sound=343.0):
             best_point = point
     return best_point, best_score
 
-def triangulate_from_sound(mic0_data, mic1_data, mic2_data, fs=16000):
+def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
     # Calculate TDOA estimates using GCC-PHAT
-    tdoa_01 = gcc.gcc_phat(mic1_data, mic0_data, fs)  # mic1 - mic0
-    tdoa_02 = gcc.gcc_phat(mic2_data, mic0_data, fs)  # mic2 - mic0
-    tdoa_12 = gcc.gcc_phat(mic2_data, mic1_data, fs)  # mic2 - mic1
+    tdoa_01 = gcc.PHAT_GCC_TDOA(mic1_data, mic0_data)  # mic1 - mic0
+    tdoa_02 = gcc.PHAT_GCC_TDOA(mic2_data, mic0_data)  # mic2 - mic0
+    tdoa_12 = gcc.PHAT_GCC_TDOA(mic2_data, mic1_data)  # mic2 - mic1
     tdoa_estimates = [tdoa_01, tdoa_02, tdoa_12]
     mic_positions = microphone_placement()
 

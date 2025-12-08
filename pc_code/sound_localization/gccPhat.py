@@ -11,14 +11,15 @@ import time
 from matplotlib import pyplot as plt
 import scipy.signal
 import scipy.io.wavfile as wavfile
+from consts import SAMPLE_RATE
 # 35.7
 # 28.8
 
 
 # 1. Take the FFT of all three signals.
-def FFT(testarray):
+def FFT(testarray, debug):
     N = len(testarray)
-    fft_freqs = np.fft.fftfreq(N, d=1/44100)
+    fft_freqs = np.fft.fftfreq(N, d=1/SAMPLE_RATE)
     fft_vals = np.fft.fft(testarray)
     pos_mask = fft_freqs >= 0
     plt.figure(figsize=(10,5))
@@ -33,11 +34,10 @@ def FFT(testarray):
 # 1.5 Apply telephone band filter
 def filter_telephone_band(fftarray):
     N = len(fftarray)
-    samplerate = 44100
     lowcut = 300
     highcut = 3400
 
-    fft_freqs = np.fft.fftfreq(N, d=1/samplerate)
+    fft_freqs = np.fft.fftfreq(N, d=1/SAMPLE_RATE)
     filter_mask = ((np.abs(fft_freqs) >= lowcut) & (np.abs(fft_freqs) <= highcut)).astype(float)
     fft_filtered = fftarray * filter_mask 
     pos_mask = fft_freqs >= 0 
@@ -163,7 +163,7 @@ def create_delayed_signals(base_signal, delays_samples, signal_length):
 if __name__ == "__main__":
     print("=== TEST 1: Basic delay verification ===")
     filename = "output.wav"  
-    samplerate, data = wavfile.read(filename)
+    SAMPLE_RATE, data = wavfile.read(filename)
     base = data[0:1000]
     signal0 = base
     signal1 = np.roll(base, 5)

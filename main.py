@@ -14,7 +14,6 @@ def main():
     mqtt_interface_vel = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL)
     mqtt_interface_aud0 = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD0)
     mqtt_interface_aud1 = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD1)
-    turtleController = TurtleController(mqtt_interface_vel)
 
 
     audio_queue0 = queue.Queue()
@@ -22,6 +21,7 @@ def main():
     audio_queue2 = queue.Queue()
     audio_queue2_clone = queue.Queue()
     
+    turtleController = TurtleController(mqtt_interface_vel, audio_queue0, audio_queue1, audio_queue2)
 
     mqtt_interface_aud0.listen_into_2_outputs(audio_queue0, audio_queue1)
     mqtt_interface_aud1.listen_and_clone_into_2_outputs(audio_queue2, audio_queue2_clone)
@@ -46,7 +46,7 @@ def main():
                 
                 if command["action"] == "come here":
                     best_index = transcriber_instance.find_nearest_here(start_index, end_index)
-                    turtleController.go_to_human(best_index)
+                    turtleController.go_to_human(start_index = best_index, end_index = best_index)
                     continue
             
             
@@ -63,7 +63,7 @@ def main():
 
         mqtt_interface_aud0.client.disconnect()
         mqtt_interface_aud1.client.disconnect()
-        mqtt_interface_vel.client.disconnect()        
+        mqtt_interface_vel.client.disconnect()
         
         #transcriber_instance.save_audio_to_wav()
         mqtt_interface_aud0.save_to_wav("audio_aud0.wav")

@@ -11,7 +11,7 @@ import wave
 import torch
 import torchaudio
 from consts import SAMPLE_RATE
-from math import floor
+from math import floor, ceil
 #for debbing
 import os
 from scipy.io.wavfile import write
@@ -31,11 +31,12 @@ class transcriber:
         self.output_queue = queue.Queue()
         self.last_string = ""
         self.recorded_audio = []  # To accumulate audio data
-        threading.Thread(target=self.transcribe_stream, daemon=True).start()
         self.lock = threading.Lock()
         self.whisper_lock = threading.Lock()
         self.start_index = float('inf')
         self.end_index = float('-inf')
+        print(f"Start_index initialized to {self.start_index}, end_index initialized to {self.end_index}")
+        threading.Thread(target=self.transcribe_stream, daemon=True).start()
 
         
         
@@ -115,56 +116,71 @@ class transcriber:
     def find_nearest_here(self, start_index, end_index):
         end_found = False
         satisfied = False
-        factor = 0.8
+        factor = 0.25
+        fine_tuning_cut_size = 1 #after "here" found we 
+        context_buffer = 10  # to avoid cutting too close to the word (later cutted out again)
         start = None
         end = None
+        start_index = start_index - ceil(self.samples_overlap/1024)
+        offset = None
         print(f"Searching for here between {start_index} and {end_index}")
         for i, (msg_idx, chunk) in enumerate(self.recorded_audio):
             if start_index == msg_idx:
+                print(f"found start at index {i}")
                 start = i
             if end_index == msg_idx:
+                print(f"found end at index {i}")
                 end = i
+        
+        
         if start is None or end is None:
             print("kunne ikke finde")
             print(f"start: {start_index}, end: {end_index}")
             return None
+        
+        
+        offset = end_index - end
 
-        #start_index = start_index - math.ceil(self.samples_overlap/1024)
+        print(f"Initial start: {start}, end: {end}")
+        count = 0
+        
+        
         while True:
-            print(f"Searching for here between {start} and {end}")
+            count += 1
+            print(f"Searching for here between {start} and {end} - iteration {count}")
             specified_data = self.recorded_audio[start : end + 1]
             segment = np.concatenate([chunk for _, chunk in specified_data])
             
-            #debug_fname = f"debug_segment_{start_index}_{end_index}.wav"
-            #print("Saving debug wav:", debug_fname)
-            #write(debug_fname, self.samplerate, segment.astype(np.int16))
+            debug_fname = f"debug_segment_iteration_{count}_interval_{start}_{end}.wav"
+            print("Saving debug wav:", debug_fname)
+            write(os.path.join("debug_segments", debug_fname), self.samplerate, segment.astype(np.int16))
+            # Remove-Item "debug_segments\*" -Recurse -Force
 
-            
             text = self.whisperoutput(segment)
             text = text.strip().lower().replace(".", "")
             print(text)
             if not end_found:
                 if "here" in text.split() and satisfied == False:
-                    end = start_index + (end_index - start_index) * factor # If we find here, we choose a lower factor
+                    end -= ((end - start) * factor) 
                     end = floor(end)
-                    factor -= 0.1
                 elif "here" in text.split() and satisfied == True:
                     end_found = True
-                    factor = 0.1
+                    end += context_buffer
                     satisfied = False
                 else:
-                    end += 2
+                    end += fine_tuning_cut_size
                     satisfied = True
             else:
                 if "here" in text.split() and satisfied == False:
-                    start += (end_index - start_index) * factor
+                    start += (end - start) * factor
                     start = floor(start)
-                    factor += 0.1
                 elif "here" in text.split() and satisfied == True:
                     self.output_queue.queue.clear()
-                    return floor((start + end) / 2)
+                    end -= context_buffer
+                    print("Final here found between indices:", start, "and", end, "offset:", offset)
+                    return floor((start + end) / 2) + offset
                 else:
-                    start -= 2
+                    start -= fine_tuning_cut_size
                     satisfied = True
     
     def transcribe_stream(self):
