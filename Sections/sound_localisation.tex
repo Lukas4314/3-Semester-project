@@ -1,6 +1,16 @@
 \section{Sound Localisation}
+\label{SEC:sound_localisation}
 Kilde indtil videre:
 https://en.wikipedia.org/wiki/Cross-correlation#Cross-correlation\_of\_deterministic\_signals
 
-\title{GCC-PHAT}
+\subsection{GCC-PHAT}
 GCC-PHAT (General-Cross-Correlation Phase Transform) is an algorithm that caulculates the TDOA (Time Delay Of Arrival) of a signal in relation to the reference signal. This is used to calculate where the signal is coming from by finding the phase shift between multiple different microphones spaced by a known distance and multiply the phase shift with the speed of sound.
+
+In order to calculate the TDOA of a signal, the signal must be converted to frequency domain which is done by using FFT (Fast Fourier Transform). Then the signal can be compared to the reference signal by multiplying the signal with the complex conjugate of the reference signal. After this the signal is normalized 
+
+Here a weighting can also be applied depending on what GCC-PHAT is used for. In this project a weight of 1 (no weight) is applied and a small number is added to ensure division by 0 never happens. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone 0 and 1, 0 and 2 and 1 and 2). 
+
+Another type of cross correlation that was considered was xcorr, which is standard cross correlation, however xcorr is not suitable for noisy environments since it doesnt normalize the magnitude of the signal. Xcorr essentially only matches the total energy match instead of emphasising where the phase differences are most consistent across all frequnecies in the signal like GCC-PHAT. 
+
+\subsection{Triangulation}
+When the TDOA has been calculated using GCC-PHAT, the sample offset between the microphones can be converted to time by first dividing by the sample rate and then multiplying by the speed of sound (343 m/s). By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid (10x10x2 meter) is designed with a space of 10 cm between each point making the error margin a maximum of $\sqrt{5^2 + 5^2 + 5^2} = 8.66$ cm. For each point in the grid the expected TDOA is calculated and compared to the measured TDOA. Then the point with the best fit is chosen as the calculated position of the sound source.
