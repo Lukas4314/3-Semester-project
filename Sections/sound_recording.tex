@@ -1,1 +1,26 @@
 \section{Sound Recording}
+For soundrecording 3 I2S Mems microphones are used, as they have the possibility to share the same clock ensuring that the samples are taking at the same time which later can be compared to find the phase between the signals. Since the microphones uses I2S, an interface to interact with the micropgones are needed, but unfortunally the Raspberry Pi only has one I2S interface. A single I2S Interface can be used to handle 2 microphones, by using botht the left and right channels which are normally used for stereo sound. To be able to use more than 2 microphones a ESP32 is used, as it has 2 I2S interfaces, allowing it to handle up to 4 microphones, but in this case only 3 are used, resulting in 1 stereo and 1 mono. The ESP32 also has the ability to use wifi and therefore can use MQTT to send the recorded audio directly to the computer, where processing can be done.
+The I2S protocol requires 4 lines:
+SCK: Serial clock, used to synchronize the data transmission.
+WS: Word select, used to choose whether the left or right channels is being transmitted.
+SD: Serial data, the actual audio data being transmitted.
+
+These 3 channels are required for the I2S communication. 3 additional wires are used for the microphones which inclues 3v3, GND and a L/R pin which is used to choose whether the microphone uses the left or right channel.
+
+Configuring one of the I2S interfaces on the ESP32 to be master and the other to be slave, the clock lines can be connected, that being SCK and WS, allowing both  interfaces to use the same clock. This ensures that the samples are taken at the same time, allowing for phase comparison between all 3 microphones.
+
+When the microphones sends data to the specified data pins on the ESP32, the data is written directly into a DMA (Direct memory access) buffer, allowing for efficient data transfer without the need for CPU intervention. The ESP32 has a DMA controller which handles the transfer into the buffer.
+By supplying multiple DMA buffer to a I2S interface, the data can be streamed into one of the DMA buffers, while the CPU reads the previous buffers, and sends the data via MQTT to the computer.
+
+The resolution of the microphones can be set, and for this use case is set to 16 bits, meaning that each sample is represented by 2 bytes. When the master output its clock, the transmitters beings the microphones, listens to the WS line, and depending on whether it is configured as left or right outputs the most significant bit first, followed by the remaining bits.
+The protocol can be seen in \cref{fig:I2S_protocol}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Pictures/I2S_protocol.png}
+    \caption{I2S protocol (temp link: https://www.nxp.com/docs/en/user-manual/UM11732.pdf)
+    \label{fig:I2S_protocol}
+}
+\end{figure}
+
+By having a higher samplerate would increase the amount of samples which can be used to determine the phase difference between the signals, and resulting in more precise calculations, but would also increase the amount of data needing to be processed by the ESP32. If the ESP32 is not fast enough to proccess the data and send it to the computer before the next data arrives, the DMA buffers would overflow resulting in the loss of data. The loss of data would correspond to the size of the buffer, so in our case it would be 1024 samples. A smaller samplerate would reduce the amount of data needing to be processed, but would also reduce the precision of the phase calculations. Since 3 microphones are used on 2 different I2S interfaces the ESP32 ability to procces all microphones and send them over MQTT is the limiting factor. A samplerate of 22050 Hz is used, as by trial and error ensured that no data was lost.
+16 DMA buffers is also assigned to each I2S interface, with the size of each buffer being 1024 samples, resulting in a total buffer size of 32 KB pr I2S interface. allowing in some fluctuations in processing time before data is lost.
