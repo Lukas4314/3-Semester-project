@@ -1,14 +1,16 @@
 import pc_code.sound_localization.gccPhat as gcc
+from pc_code.sound_localization.gccPhatByMatlab import gccphat_matlab
+import pc_code.sound_localization.smallestIntegral as smallestIntegral
 import numpy as np
 import matplotlib.pyplot as plt
-
+from consts import SHOULD_PLOT, SAMPLE_RATE
 # Triangulate by searching a 3D grid for the best match to TDOA estimates
 
 def microphone_placement():
     mic_positions = np.array([
         [0.0, -0.1155, 0.0],    # Mic 0
         [-0.1, 0.057, 0.0],     # Mic 1
-        [0.1, 0.057, 0.0]      # Mic 2
+        [0.1, 0.057, 0.0]       # Mic 2
     ])
     return mic_positions
 
@@ -69,11 +71,65 @@ def find_sound_origin(mic_positions, tdoa_estimates, speed_of_sound=343.0):
             best_point = point
     return best_point, best_score
 
+def plot_microphone_data(mic_0, mic_1, mic_2, name="microphone_signals"):
+    # Plotting all three microphone signals for visualization in same plot for comparison with different colors
+    plt.figure(figsize=(12, 6))
+    plt.plot(mic_0, label='Microphone 0', alpha=0.7)
+    plt.plot(mic_1, label='Microphone 1', alpha=0.7)
+    plt.plot(mic_2, label='Microphone 2', alpha=0.7)
+    plt.title('Microphone Signals')
+    plt.legend(loc='upper right')
+    plt.savefig(f"{name}.png")
+    if SHOULD_PLOT:
+        plt.show()
+
+
 def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
+    
+    plot_microphone_data(mic0_data, mic1_data, mic2_data)
+    
+    cutoff = 2000
+    fs = SAMPLE_RATE
+    filtered_mic0_data = smallestIntegral.apply_lowpass_filter(mic0_data, cutoff, fs)
+    filtered_mic1_data = smallestIntegral.apply_lowpass_filter(mic1_data, cutoff, fs)
+    filtered_mic2_data = smallestIntegral.apply_lowpass_filter(mic2_data, cutoff, fs)
+    plot_microphone_data(filtered_mic0_data, filtered_mic1_data, filtered_mic2_data, name="filtered_microphone_signals")
+    
+    
+    with open("mic0_data.txt", "w") as f:
+        f.write("[")
+        for item in mic0_data:
+            f.write(f"{item}, ")
+        f.write("]")
+    with open("mic1_data.txt", "w") as f:
+        f.write("[")
+        for item in mic1_data:
+            f.write(f"{item}, ")
+        f.write("]")
+    with open("mic2_data.txt", "w") as f:
+        f.write("[")
+        for item in mic2_data:
+            f.write(f"{item}, ")
+        f.write("]")
+            
+    
+    
     # Calculate TDOA estimates using GCC-PHAT
-    tdoa_01 = gcc.PHAT_GCC_TDOA(mic1_data, mic0_data)  # mic1 - mic0
-    tdoa_02 = gcc.PHAT_GCC_TDOA(mic2_data, mic0_data)  # mic2 - mic0
-    tdoa_12 = gcc.PHAT_GCC_TDOA(mic2_data, mic1_data)  # mic2 - mic1
+    #tdoa_01 = gcc.PHAT_GCC_TDOA(mic0_data, mic1_data)  # If positive, mic1 is after mic0
+    #tdoa_02 = gcc.PHAT_GCC_TDOA(mic0_data, mic2_data)  # If positive, mic2 is after mic0
+    #tdoa_12 = gcc.PHAT_GCC_TDOA(mic1_data, mic2_data)  # If positive, mic2 is after mic1
+    
+    tdoa_01, _, _ = gccphat_matlab(mic0_data, mic1_data)
+    tdoa_02, _, _ = gccphat_matlab(mic0_data, mic2_data)
+    tdoa_12, _, _ = gccphat_matlab(mic1_data, mic2_data)
+    
+    integral_tdoa_01 = smallestIntegral.get_TDOA(filtered_mic0_data, filtered_mic1_data, name="integral_tdoa_01")
+    integral_tdoa_02 = smallestIntegral.get_TDOA(filtered_mic0_data, filtered_mic2_data, name="integral_tdoa_02")
+    integral_tdoa_12 = smallestIntegral.get_TDOA(filtered_mic1_data, filtered_mic2_data, name="integral_tdoa_12")
+    
+    print(f"Integral TDOA Estimates: {integral_tdoa_01}, {integral_tdoa_02}, {integral_tdoa_12}")
+    
+    print(f"TDOA Estimates: {tdoa_01}, {tdoa_02}, {tdoa_12}")
     tdoa_estimates = [tdoa_01, tdoa_02, tdoa_12]
     mic_positions = microphone_placement()
 
@@ -81,24 +137,10 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
 
     return best_point, best_score
         
-if __name__ == "__main__":
-    """
-    # I now want to test multiple points and find an average difference 
-    points = [(random.uniform(0, 4), random.uniform(0, 4), random.uniform(0, 3)) for _ in range(10)]
-    
-    tdoa_estimates = [np.linalg.norm(points - [0.2,0,0])/343 - np.linalg.norm(points - [0,0,0])/343, np.linalg.norm(points - [0.1,0.1732,0])/343 - np.linalg.norm(points - [0,0,0])/343, np.linalg.norm(points - [0.1,0.1732,0])/343 - np.linalg.norm(points - [0.2,0,0])/343]
+def test123():
     mic_positions = microphone_placement()
-    grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa_estimates)
-
-    print("Calculating...")
-    best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)
-
-    print("best_point:", best_point, "best_score:", best_score)
-    """
-    
-    point = np.array([1.9738428371, 0.881273731, 1.776132172])  # Example true position
-    tdoa_estimates = [np.linalg.norm(point - [0.2,0,0])/343-np.linalg.norm(point - [0,0,0])/343, np.linalg.norm(point - [0.1,0.1732,0])/343-np.linalg.norm(point - [0,0,0])/343, np.linalg.norm(point - [0.1,0.1732,0])/343-np.linalg.norm(point - [0.2,0,0])/343]
-    mic_positions = microphone_placement()
+    point = np.array([-1.9738428371, -0.881273731, 1.776132172])  # Example true position
+    tdoa_estimates = [np.linalg.norm(point - mic_positions[1])/343-np.linalg.norm(point - mic_positions[0])/343, np.linalg.norm(point - mic_positions[2])/343-np.linalg.norm(point - mic_positions[0])/343, np.linalg.norm(point - mic_positions[2])/343-np.linalg.norm(point - mic_positions[1])/343]
     grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa_estimates)
 
     print("Calculating...")

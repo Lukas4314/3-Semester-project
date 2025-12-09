@@ -15,3 +15,5 @@ ESP32/.vscode/launch.json
 ESP32/.vscode/ipch
 ESP32/.vscode/extensions.json
 ESP32/.vscode/settings.json
+*.wav
+*.txt

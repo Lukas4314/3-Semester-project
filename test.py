@@ -1,14 +1,5 @@
 from pc_code.transcriber import transcriber
-import queue
+from pc_code.sound_localization.Triangulate import test123
+import numpy as np
 
-class test:
-    def __init__(self, queue):
-        print("Test initialized with queue:")
-"""
-class transcriber:
-	def __init__(self, queue):
-		print("idk")
-  """
-  
-queue_test = queue.Queue()
-transcriber = transcriber(queue_test)
+test123()

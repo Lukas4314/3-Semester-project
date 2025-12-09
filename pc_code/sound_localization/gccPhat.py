@@ -18,12 +18,11 @@ from consts import SAMPLE_RATE, SHOULD_PLOT
 
 # 1. Take the FFT of all three signals.
 def FFT(testarray):
-    N = len(testarray)
-    fft_freqs = np.fft.fftfreq(N, d=1/SAMPLE_RATE)
-    fft_vals = np.fft.fft(testarray)
-    pos_mask = fft_freqs >= 0
-
     if SHOULD_PLOT == True:
+        N = len(testarray)
+        fft_freqs = np.fft.fftfreq(N, d=1/SAMPLE_RATE)
+        fft_vals = np.fft.fft(testarray)
+        pos_mask = fft_freqs >= 0
         plt.figure(figsize=(10,5))
         plt.plot(fft_freqs[pos_mask], fft_vals[pos_mask])
         plt.title("Frekvensdomæne - FFT af signal")
@@ -31,7 +30,7 @@ def FFT(testarray):
         plt.ylabel("Amplitude")
         plt.grid(True)
         plt.show()
-    return np.fft.fft(testarray)
+    return np.fft.fft(testarray)#, n=2*len(testarray))
 
 # 1.5 Apply telephone band filter
 def filter_telephone_band(fftarray):
@@ -53,7 +52,7 @@ def filter_telephone_band(fftarray):
         plt.tight_layout()
         plt.show()
     
-    return fftarray * filter_mask #outot is the filterd fftarray
+    return fftarray * filter_mask #output is the filterd fftarray
 
 # 2. Calculate the cross-correlation spectrum between pairs of signals.
 def GCC(fft1, fft2):
@@ -99,8 +98,8 @@ def PHAT_GCC_TDOA(signal1, signal2):
     """
     fft1 = FFT(signal1)
     fft2 = FFT(signal2)
-    fft1 = filter_telephone_band(fft1)
-    fft2 = filter_telephone_band(fft2)
+    #fft1 = filter_telephone_band(fft1)
+    #fft2 = filter_telephone_band(fft2)
     R = GCC(fft1, fft2)
     R_phat = phat_weight(R)
     if SHOULD_PLOT == True:
