@@ -36,7 +36,7 @@ def FFT(testarray):
 def filter_telephone_band(fftarray):
     N = len(fftarray)
     lowcut = 300
-    highcut = 3400
+    highcut = 1000
 
     fft_freqs = np.fft.fftfreq(N, d=1/SAMPLE_RATE)
     filter_mask = ((np.abs(fft_freqs) >= lowcut) & (np.abs(fft_freqs) <= highcut)).astype(float)
@@ -102,6 +102,28 @@ def PHAT_GCC_TDOA(signal1, signal2):
     #fft2 = filter_telephone_band(fft2)
     R = GCC(fft1, fft2)
     R_phat = phat_weight(R)
+    
+    
+    
+    if not hasattr(PHAT_GCC_TDOA, "counter"):
+        PHAT_GCC_TDOA.counter = 0
+        
+    fig = plt.figure()
+    plt.plot(np.abs(R_phat))
+    plt.title("GCC-PHAT Magnitude Spectrum")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Magnitude")
+    plt.savefig(f"gcc_phat_magnitude_spectrum{PHAT_GCC_TDOA.counter}.png")
+    
+    fig = plt.figure()
+    plt.plot(np.angle(R_phat))
+    plt.title("GCC-PHAT Phase Spectrum")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Phase (radians)")
+    plt.savefig(f"gcc_phat_phase_spectrum{PHAT_GCC_TDOA.counter}.png")
+    
+    PHAT_GCC_TDOA.counter += 1
+    
     if SHOULD_PLOT == True:
         plt.plot(R_phat)
         plt.title("GCC-PHAT spectrum")

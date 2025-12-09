@@ -115,13 +115,71 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
     
     
     # Calculate TDOA estimates using GCC-PHAT
-    #tdoa_01 = gcc.PHAT_GCC_TDOA(mic0_data, mic1_data)  # If positive, mic1 is after mic0
-    #tdoa_02 = gcc.PHAT_GCC_TDOA(mic0_data, mic2_data)  # If positive, mic2 is after mic0
-    #tdoa_12 = gcc.PHAT_GCC_TDOA(mic1_data, mic2_data)  # If positive, mic2 is after mic1
+    tdoa_01 = gcc.PHAT_GCC_TDOA(mic0_data, mic1_data)  # If positive, mic1 is after mic0
+    tdoa_02 = gcc.PHAT_GCC_TDOA(mic0_data, mic2_data)  # If positive, mic2 is after mic0
+    tdoa_12 = gcc.PHAT_GCC_TDOA(mic1_data, mic2_data)  # If positive, mic2 is after mic1
     
-    tdoa_01, _, _ = gccphat_matlab(mic0_data, mic1_data)
-    tdoa_02, _, _ = gccphat_matlab(mic0_data, mic2_data)
-    tdoa_12, _, _ = gccphat_matlab(mic1_data, mic2_data)
+    allowed_max_tdoa = 80
+    
+    
+    good_tdoa_01 = None
+    good_tdoa_02 = None
+    good_tdoa_12 = None
+    
+    tdoa_01, r_01, lags_01 = gccphat_matlab(mic0_data, mic1_data)
+    tdoa_02, r_02, lags_02 = gccphat_matlab(mic0_data, mic2_data)
+    tdoa_12, r_12, lags_12 = gccphat_matlab(mic1_data, mic2_data)
+    # 01
+    r_temp = r_01.copy()
+    for _ in range(len(lags_01)):
+
+        idx = np.argmax(np.abs(r_temp))
+        tau = lags_01[idx]
+
+        if abs(tau) < allowed_max_tdoa:
+            good_tdoa_01 = tau
+            break
+
+        # zero out the peak that caused the invalid tau
+        r_temp[idx] = 0
+
+
+    # 02
+    r_temp = r_02.copy()
+    for _ in range(len(lags_02)):
+
+        idx = np.argmax(np.abs(r_temp))
+        tau = lags_02[idx]
+
+        if abs(tau) < allowed_max_tdoa:
+            good_tdoa_02 = tau
+            break
+
+        r_temp[idx] = 0
+
+
+    # 12
+    r_temp = r_12.copy()
+    for _ in range(len(lags_12)):
+
+        idx = np.argmax(np.abs(r_temp))
+        tau = lags_12[idx]
+
+        if abs(tau) < allowed_max_tdoa:
+            good_tdoa_12 = tau
+            break
+
+        r_temp[idx] = 0
+
+
+    print(f"Previous TDOA Estimates: {tdoa_01}, {tdoa_02}, {tdoa_12}")
+    print(f"Good TDOA Estimates: {good_tdoa_01}, {good_tdoa_02}, {good_tdoa_12}")
+    tdoa_01 = good_tdoa_01
+    tdoa_02 = good_tdoa_02
+    tdoa_12 = good_tdoa_12
+    
+    
+    
     
     integral_tdoa_01 = smallestIntegral.get_TDOA(filtered_mic0_data, filtered_mic1_data, name="integral_tdoa_01")
     integral_tdoa_02 = smallestIntegral.get_TDOA(filtered_mic0_data, filtered_mic2_data, name="integral_tdoa_02")
@@ -130,6 +188,30 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
     print(f"Integral TDOA Estimates: {integral_tdoa_01}, {integral_tdoa_02}, {integral_tdoa_12}")
     
     print(f"TDOA Estimates: {tdoa_01}, {tdoa_02}, {tdoa_12}")
+    
+    # Printing which micophones are closer based on TDOA signs
+    if (tdoa_01 < 0):
+        print("Mic 0 is before Mic 1")
+    elif (tdoa_01 > 0):
+        print("Mic 1 is before Mic 0")
+    else:
+        print("Mic 0 and Mic 1 are at the same time")
+    
+    if (tdoa_02 < 0):
+        print("Mic 0 is before Mic 2")
+    elif (tdoa_02 > 0):
+        print("Mic 2 is before Mic 0")
+    else:
+        print("Mic 0 and Mic 2 are at the same time")
+
+    if (tdoa_12 < 0):
+        print("Mic 1 is before Mic 2")
+    elif (tdoa_12 > 0):
+        print("Mic 2 is before Mic 1")
+    else:
+        print("Mic 1 and Mic 2 are at the same time")
+    
+    
     tdoa_estimates = [tdoa_01, tdoa_02, tdoa_12]
     mic_positions = microphone_placement()
 

@@ -49,7 +49,7 @@ def main():
                     best_index = transcriber_instance.find_nearest_here(start_index, end_index)
                     offset  = 2
                     start_buffer = 0
-                    end_buffer = 3
+                    end_buffer = 0
                     turtleController.go_to_human(start_index = best_index - start_buffer + offset, end_index = best_index + end_buffer + offset)
                     raise Exception("Stopping for now")
                     continue

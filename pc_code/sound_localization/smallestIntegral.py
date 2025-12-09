@@ -12,7 +12,7 @@ def apply_lowpass_filter(sig, cutoff_freq, fs):
     return filtered_sig
 
 
-def get_TDOA(sig, refsig, search_area = 13, name="integralTDOA"):
+def get_TDOA(sig, refsig, search_area = 60, name="integralTDOA"):
     # Pad signals to avoid looping around
     
     scores = {}
