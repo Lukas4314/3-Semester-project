@@ -19,7 +19,7 @@ Whisper follows a transformer architecture, a deep learning model that uses atte
 \begin{figure}[H]\label{fig:whisper_approach}
     \centering
     \includegraphics[width=0.7\linewidth]{Pictures/whisper_approach.png}
-    \caption{Whisper approach\cite{whisper_github}}
+    %\caption{Whisper approach\cite{whisper_github}}
 \end{figure}
 
 Firstly the log-mel spectrogram is processed by a CNN resulting in sequence of embeddings, which are then passed to the transformer.\cite{huggingface_whisper} The transformer then consists of a series of encoder blocks each with self attention and MLP layers. The output of this series is then fed into a series of decoder blocks in a process known as cross attention, where the decoder blocks besides having self attention and MLP layers also has a cross attention layer that takes the original output of the encoder series as input.
