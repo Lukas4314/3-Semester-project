@@ -1,2 +1,25 @@
 mqtt reciever noden som lyter til topicen der får robtten til at køre
-    /home/pi/rb3_ws/src/mqtt_2_cmd_pkg/mqtt_2_cmd_pkg/mqtt_2_cmdvel_node.py
+/home/pi/rb3_ws/src/mqtt_2_cmd_pkg/mqtt_2_cmd_pkg/mqtt_2_cmdvel_node.py
+This script creates a ROS2 node that listens to an MQTT topic for velocity commands
+and republishes them as TwistStamped messages on the ROS2 cmd_vel topic.
+Essentially, it acts as a bridge between MQTT and ROS2.
+
+/home/pi/turtlebot3_ws/src/turtlebot3/turtlebot3_node/src/turtlebot3.cpp
+subscribes to cmd_vel and sends motor commands via a sdkwrapper
+
+/home/pi/turtlebot3_ws/src/turtlebot3/turtlebot3_node/src/dynamixel_sdk_wrapper.cpp
+DynamixelSDKWrapper is a helper class that wraps the official
+Dynamixel SDK, which is a communication library for Dynamixel-style devices.
+The OpenCR board exposes its internal sensors and motor
+control registers using the Dynamixel Protocol 2.0, so the wrapper handles all this for you.
+Think of it as the translator between: ROS2 on the Raspberry Pi  ↔ OpenCR microcontroller firmware
+
+
+
+
+/home/pi/turtlebot3_ws/src/turtlebot3/turtlebot3_node/src/node_main.cpp
+
+
+
+/home/pi/code_ws/src/rb3_package/rb3_package/rb3_node.py
+script that publish keyboard commands to cmd_vel

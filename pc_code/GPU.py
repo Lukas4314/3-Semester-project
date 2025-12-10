@@ -11,13 +11,13 @@ import wave
 import torch
 import torchaudio
 from consts import SAMPLE_RATE
-import math
+from math import floor
 # for debugging
 import os
 from scipy.io.wavfile import write
 
 
-class transcriber:
+class transcriberGPU:
     def __init__(self, input_queue):
         # Enforce GPU-only
         if not torch.cuda.is_available():
@@ -130,50 +130,61 @@ class transcriber:
             return result.text
 
     def find_nearest_here(self, start_index, end_index):
-        end_stop = False
-        # start_index = start_index - math.ceil(self.samples_overlap/1024)
+        end_found = False
+        satisfied = False
+        factor = 0.8
+        start = None
+        end = None
+        print(f"Searching for here between {start_index} and {end_index}")
+        for i, (msg_idx, chunk) in enumerate(self.recorded_audio):
+            if start_index == msg_idx:
+                start = i
+            if end_index == msg_idx:
+                end = i
+        if start is None or end is None:
+            print("kunne ikke finde")
+            print(f"start: {start_index}, end: {end_index}")
+            return None
+
+        #start_index = start_index - math.ceil(self.samples_overlap/1024)
         while True:
-            start = None
-            end = None
-            print(f"Searching for here between {start_index} and {end_index}")
-            for i, (msg_idx, chunk) in enumerate(self.recorded_audio):
-                if start_index == msg_idx:
-                    start = i
-                if end_index == msg_idx:
-                    end = i
-            if start is None or end is None:
-                print("kunne ikke finde")
-                print(f"start: {start_index}, end: {end_index}")
-                return None
-
-            specified_data = self.recorded_audio[start: end + 1]
+            print(f"Searching for here between {start} and {end}")
+            specified_data = self.recorded_audio[start : end + 1]
             segment = np.concatenate([chunk for _, chunk in specified_data])
+            
+            #debug_fname = f"debug_segment_{start_index}_{end_index}.wav"
+            #print("Saving debug wav:", debug_fname)
+            #write(debug_fname, self.samplerate, segment.astype(np.int16))
 
-            # debug_fname = f"debug_segment_{start_index}_{end_index}.wav"
-            # print("Saving debug wav:", debug_fname)
-            # write(debug_fname, self.samplerate, segment.astype(np.int16))
-
+            
             text = self.whisperoutput(segment)
             text = text.strip().lower().replace(".", "")
             print(text)
-
-            if not end_stop:
-                if "here" in text.split():
-                    # you could also just drop 1024 samples from segment for speed
-                    start_index += 1
+            if not end_found:
+                if "here" in text.split() and satisfied == False:
+                    end = start_index + (end_index - start_index) * factor # If we find here, we choose a lower factor
+                    end = floor(end)
+                    factor -= 0.1
+                elif "here" in text.split() and satisfied == True:
+                    end_found = True
+                    factor = 0.1
+                    satisfied = False
                 else:
-                    start_index -= 1
-                    end_stop = True
+                    end += 2
+                    satisfied = True
             else:
-                if "here" in text.split():
-                    end_index -= 1
+                if "here" in text.split() and satisfied == False:
+                    start += (end_index - start_index) * factor
+                    start = floor(start)
+                    factor += 0.1
+                elif "here" in text.split() and satisfied == True:
+                    self.output_queue.queue.clear()
+                    return floor((start + end) / 2)
                 else:
-                    start_index += 1
-                    break
-
-        here_index = (start_index + end_index) / 2
-        return here_index
-
+                    start -= 2
+                    satisfied = True
+ 
+ 
     def transcribe_stream(self):
         buffer = np.zeros(0, dtype=np.int16)
         step = self.samples_per_chunk - self.samples_overlap

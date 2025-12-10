@@ -11,6 +11,7 @@ from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD1, MQTT
 
 
 def main():
+    # Remove-Item "debug_segments\*" -Recurse -Force
     mqtt_interface_vel = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL)
     mqtt_interface_aud0 = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD0)
     mqtt_interface_aud1 = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD1)
@@ -46,7 +47,11 @@ def main():
                 
                 if command["action"] == "come here":
                     best_index = transcriber_instance.find_nearest_here(start_index, end_index)
-                    turtleController.go_to_human(start_index = best_index, end_index = best_index)
+                    offset  = 2
+                    start_buffer = 0
+                    end_buffer = 0
+                    turtleController.go_to_human(start_index = best_index - start_buffer + offset, end_index = best_index + end_buffer + offset)
+                    raise Exception("Stopping for now")
                     continue
             
             
