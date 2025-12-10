@@ -1,1 +1,10 @@
 \section{Problem Analysis}
+For transcription of voice commands, a reliable and accurate speech recognition system is required. For this an AI solution is prefered due to the complexity and variability of human speech. OpenAI's Whisper model is chosen for this task, as it has the required capabilities and is open source, allowing for easy integration and customization. 
+
+For sound localisation, a method to determine the direction of the sound source is needed. This requires multiple microphones with a known distance between them. By comparing signals and finding the phase difference between them, the direction of the sound source can be calculated. For this the GCC-PHAT (Generalized Cross-Correlation with Phase Transform) algorithm is chosen, as it will offer robust performance in noisy environments. Using the speed of sound the position can then be calculated by triangulating from the phase differences.
+
+As sound localisation needs multiple microphones, a platform with the capabilities to handle multiple microphones is required. The Raspberry Pi cannot handle more than one stereo channel of I2S audio, so an ESP32 microcontroller will be needed to interface with the microphones and send the audio data as it has 2 stereo I2S interfaces, totalling 4 mono channels. 
+
+Whilst Raspberry Pi and ESP32 are both on the robot, neither have the computational power to run the Whisper model in real-time. Therefore a seperate PC will be needed to handle the transcription and sound localisation processing.
+
+Communication between the ESP32, the pc and the Raspberry Pi will be handled using MQTT, a lightweight Pub-Sub messaging protocol as it was already in use for command transfer to the robot. While dedicated audio streaming protocols like RTP, RTSP or WebRTC exist, MQTT's simplicity and low overhead make it suitable for this project's needs. Furthermore the current bottleneck is the processing power of the ESP32 which as the publisher will not be able to stream at a higher rate than the MQTT protocol, the router or the host pc can handle.
