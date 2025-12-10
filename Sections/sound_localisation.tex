@@ -3,17 +3,24 @@
 Kilde indtil videre:
 https://en.wikipedia.org/wiki/Cross-correlation#Cross-correlation\_of\_deterministic\_signals
 \subsection{locating time of command}
+Before calculating the position of the sound source, the exact sample where the command was said must be found, to avoid accidentally calculating the position of random noise. To keep track of samples, the ESP32 gives every sample an ID number, which is also sent through MQTT alongside the data.
+
+But since Whisper does not operate in the time domain, it is not possible to link a Whisper output with an ID number in the time domain. Therefore, the first and last ID number is saved for every segment sent to Whisper, making it possible to link a Whisper segment with an array of samples.
+
+To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is “here,” which is usually around 10 samples. Then, the sample located in the middle of these 10 samples is chosen as the best possible sample to calculate the location of origin.
+
+
 
 
 
 \subsection{GCC-PHAT}
-GCC-PHAT (General-Cross-Correlation Phase Transform) is an algorithm that caulculates the TDOA (Time Delay Of Arrival) of a signal in relation to the reference signal. This is used to calculate where the signal is coming from by finding the phase shift between 2 different microphones spaced by a known distance and multiply the phase shift with the speed of sound.
+GCC-PHAT (General-Cross-Correlation Phase Transform) is an algorithm that caulculates the TDOA (Time Delay Of Arrival) of a signal in relation to a reference signal. This is used to calculate where the signal is coming from by finding the phase shift between 2 different microphones spaced by a known distance and multiply the phase shift with the speed of sound.
 
-In order to calculate the TDOA of a signal, the signal must be converted to frequency domain which is done by using FFT (Fast Fourier Transform). Then the signal can be compared to the reference signal by multiplying the signal with the complex conjugate of the reference signal. After this the signal is normalized.
+In order to calculate the TDOA of a signal, the signal must be converted to frequency domain which is done by using FFT (Fast Fourier Transform). Then the signal can be compared to a reference signal by multiplying the signal with the complex conjugate of the reference signal. This is because multiplying a signal with the the complex conjugate of another signal gives the phase difference between the two signals, as represented by the difference in the imaginary part. The phase difference can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. Next the difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
 
-Here a weighting can also be applied depending on what GCC-PHAT is used for. In this project a weight of 1 (no weight) is applied and a small number is added to ensure division by 0 never happens. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone 0 and 1, 0 and 2 and 1 and 2). 
+Depending on what GCC-PHAT is used for a weighting can also be applied depending. In this project however, a weight of 1 (no weight, except for $\epsilon = 1 \cdot 10^{-8}$ is added to avoid division by 0) is applied. This is because the human voice has the full range of frequencies that the microphones can pick up.
 
-Another type of cross correlation that was considered was xcorr, which is standard cross correlation, however xcorr is not suitable for noisy environments since it doesnt normalize the magnitude of the signal. Xcorr essentially only matches the total energy match instead of emphasising where the phase differences are most consistent across all frequnecies in the signal like GCC-PHAT. 
+The standard cross correlation is called xcorr, which only compares the magnitude of the signals which can vary a lot depending on the environment. GCC-PHAT in turn compares the phase difference between the signals by normalizing the amplitudes for all frequencies. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. For this reason GCC-PHAT is used for sound localisation in this project.
 
 \subsection{Triangulation}
-When the TDOA has been calculated using GCC-PHAT, the sample offset between the microphones can be converted to time by first dividing by the sample rate and then multiplying by the speed of sound ($343 m/s$). By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid ($10\times10\times2$ meter) is designed with a space of 10 cm between each point making the error margin a maximum of $\sqrt{5^2 + 5^2 + 5^2} = 8.66$ cm. For each point in the grid the expected TDOA is calculated and compared to the measured TDOA. Then the point with the best fit is chosen as the calculated position of the sound source.
+By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 10 cm between each point. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit is chosen as the calculated position of the sound source.

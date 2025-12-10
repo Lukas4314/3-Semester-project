@@ -1,7 +1,5 @@
 \section{identifying commands}
-(I think this should be placed after the whisper section)
-
-When whisper returns a string of what has been said, the commands need to be extracted from the text so the robot can interpret what action has to be taken. This is done by processing the text i.e. removing special characters like: ",.!", lowercase all characters, searching for keywords, homophones (hear and here), or other words that sound similar (30 and further). All number words under 11 are also converted to numbers (one becomes 1), as well as units are converted to numbers (centimeter becomes a factor of 0.01) since we use SI-units.
+When whisper returns a string of what has been said, the commands need to be extracted from the text so the robot can interpret what action has to be taken. This is done by processing the text i.e. lowercasing all characters, removing special characters (like: ",.!") and ensuring homophones (hear and here), or other words that sound similar (30 and further). These keywords were found through testing with the different voices and pronounciations the people in the group have. All number words under 11 are also converted to numbers (one becomes 1), as well as units are converted to numbers (centimeter becomes a factor of 0.01) since we use SI-units.
 
 The extracted command-words are split into different sections: action, direction, distance and unit. An action has to match a direction (drive and forward match, however turn and forward do not). Additionally, distance has to match the unit, driving a certain distance is measured in meters, while turning is measured in radians (all other matching units are converted).
 
