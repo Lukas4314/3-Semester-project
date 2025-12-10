@@ -1,8 +1,18 @@
 \section{System Setup}
 
-the system is build around a mobile robot platform, which is equipped with a
-microphone array of 3 indepentedt microphones, where one is used for speach to
-text using whipser and the other two are used for sound localisation.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\linewidth]{Pictures/systemsetup.png}
+	\caption{Hardware and comminication overview}
+	\label{fig:Hardware_and_comminication_overview}
+\end{figure}
+The system has three major components: the PC, the Raspberry Pi, and the ESP32, which can be seen in \cref{fig:Hardware_and_comminication_overview}. To easily communicate between devices, an MQTT broker is set up on the Raspberry Pi. MQTT (Message Queuing Telemetry Transport) is a lightweight messaging protocol running on the network layers and uses a publish–subscribe model, which is convenient for multiple devices to communicate with each other on the same network.
 
-\subsection{Hardware and comminication}
-The system 
+To locate the sound source and record audio, an ESP32 microcontroller is used. It is mounted on top of the Turtlebot, and the three microphones are mounted in a triangular formation around the ESP32 with a distance of 44.5 cm from the base-frame zero point. The ESP32 is connected to the microphones via the I2S protocol, which allows for high-quality audio data transfer. The ESP32 is also connected to the WiFi network, allowing it to publish recorded audio data to the PC through the MQTT broker on the Raspberry Pi.
+
+On the Raspberry Pi, ROS2 is pre-integrated with the Turtlebot, allowing easy control of the low-level hardware. The Raspberry Pi runs a ROS2 node that translates MQTT messages from the PC and publishes them on a ROS2 topic, which the Turtlebot node subscribes to. This enables the PC to send movement commands to the Turtlebot via MQTT. The Turtlebot node then converts those commands into motor commands and sends them via UART to the OpenCR board, which handles the low-level motor control.
+
+The PC is used exclusively for heavy processing, including sound localization and speech-to-text. The PC takes audio segments of 1024 data points from the ESP32 via MQTT, processes them, and then sends movement commands to the Turtlebot through MQTT.
+
+
+
