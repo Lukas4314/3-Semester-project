@@ -33,10 +33,10 @@ def calculate_score(a01, a02, a12, measured_d1, measured_d2, measured_d3):
     score += (a12 - measured_d3) ** 2
     return score
 
-def create_grid(search_range=4.0, grid_size=0.1):
+def create_grid(search_range=10.0, grid_size=0.1):
     x_vals = np.arange(-search_range, search_range, grid_size)
     y_vals = np.arange(-search_range, search_range, grid_size)
-    z_vals = np.arange(0, 2.0, grid_size)  # Assume ground level to 3m height
+    z_vals = np.arange(0, 2.0, grid_size)  # Assume ground level to 2m height
     grid_points = []
     for x in x_vals:
         for y in y_vals:
@@ -45,9 +45,9 @@ def create_grid(search_range=4.0, grid_size=0.1):
     return grid_points
 
 def find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_sound=343.0):
-    measured_d1 = tdoa_estimates[0] * speed_of_sound  # mic1 - mic0
-    measured_d2 = tdoa_estimates[1] * speed_of_sound  # mic2 - mic0
-    measured_d3 = tdoa_estimates[2] * speed_of_sound  # mic2 - mic1
+    measured_d1 = tdoa_estimates[0]/ SAMPLE_RATE * speed_of_sound  # mic1 - mic0
+    measured_d2 = tdoa_estimates[1]/ SAMPLE_RATE * speed_of_sound  # mic2 - mic0
+    measured_d3 = tdoa_estimates[2]/ SAMPLE_RATE * speed_of_sound  # mic2 - mic1
 
     grid_points = create_grid()
     grid_points_scores = []
