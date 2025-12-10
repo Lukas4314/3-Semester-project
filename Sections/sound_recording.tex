@@ -17,10 +17,22 @@ The protocol can be seen in \cref{fig:I2S_protocol}.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\linewidth]{Pictures/I2S_protocol.png}
-    \caption{I2S protocol (temp link: https://www.nxp.com/docs/en/user-manual/UM11732.pdf)
+    \caption{I2S protocol (temp link: https://www.nxp.com/docs/en/user-manual/UM11732.pdf)}
     \label{fig:I2S_protocol}
-}
+
 \end{figure}
 
 By having a higher samplerate would increase the amount of samples which can be used to determine the phase difference between the signals, and resulting in more precise calculations, but would also increase the amount of data needing to be processed by the ESP32. If the ESP32 is not fast enough to proccess the data and send it to the computer before the next data arrives, the DMA buffers would overflow resulting in the loss of data. The loss of data would correspond to the size of the buffer, so in our case it would be 1024 samples. A smaller samplerate would reduce the amount of data needing to be processed, but would also reduce the precision of the phase calculations. Since 3 microphones are used on 2 different I2S interfaces the ESP32 ability to procces all microphones and send them over MQTT is the limiting factor. A samplerate of 22050 Hz is used, as by trial and error ensured that no data was lost.
 16 DMA buffers is also assigned to each I2S interface, with the size of each buffer being 1024 samples, resulting in a total buffer size of 32 KB pr I2S interface. allowing in some fluctuations in processing time before data is lost.
+Along with sending the raw audio data over MQTT, a simple counter is being sent along it to keep track of the order of the samples, ensuring that all audio segments are stamped with the correct time when being processed later on the computer.
+
+
+\subsection{Electronics}
+The wirering diagram can be seen in \cref{fig:ESP32_electronic}, where the microphones are connected to the I2S interfaces on the ESP32. The microphones are powered by the 3v3 pin on the ESP32, and GND is connected to common ground. The L/R pins are used to choose whether the microphone uses the left or right channel, where microphone 1 and 2 are set to left and right respectively, and microphone 3 is set to right as it is the only one on the second I2S interface.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Pictures/ESP32_electronic.png}
+    \caption{Electrical diagram of ESP32 and microphones}
+    \label{fig:ESP32_electronic}
+\end{figure}
+
