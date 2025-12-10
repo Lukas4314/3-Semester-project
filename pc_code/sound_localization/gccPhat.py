@@ -17,7 +17,7 @@ from consts import SAMPLE_RATE
 
 
 # 1. Take the FFT of all three signals.
-def FFT(testarray, debug):
+def FFT(testarray):
     N = len(testarray)
     fft_freqs = np.fft.fftfreq(N, d=1/SAMPLE_RATE)
     fft_vals = np.fft.fft(testarray)

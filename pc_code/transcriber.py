@@ -69,6 +69,7 @@ class transcriber:
         for i in range(1, max_overlap + 1):
             if self.last_string.endswith(new[:i]):
                 overlap_length = i
+            
 
         self.last_string = new
         
@@ -186,7 +187,6 @@ class transcriber:
     def transcribe_stream(self):
         buffer = np.zeros(0, dtype=np.int16)
         step = self.samples_per_chunk - self.samples_overlap
-        stamp_queue = queue.Queue()
 
         while True:
             # Pull audio into buffer
@@ -218,7 +218,6 @@ class transcriber:
                 
                 # Slide buffer window (keep overlap)
                 buffer = buffer[step:]
-            stamp_queue.empty()
             time.sleep(0.1)
 
     def getNewTranscription(self):
