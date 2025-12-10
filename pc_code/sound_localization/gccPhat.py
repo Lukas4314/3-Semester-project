@@ -96,31 +96,46 @@ def PHAT_GCC_TDOA(signal1, signal2):
     Calculate TDOA between signal1 and signal2.
     Returns: tdoa in samples where positive value means signal2 arrives AFTER signal1
     """
+    if not hasattr(PHAT_GCC_TDOA, "counter"):
+        PHAT_GCC_TDOA.counter = 0
+        
     fft1 = FFT(signal1)
     fft2 = FFT(signal2)
     #fft1 = filter_telephone_band(fft1)
     #fft2 = filter_telephone_band(fft2)
     R = GCC(fft1, fft2)
+    
     R_phat = phat_weight(R)
     
     
-    
-    if not hasattr(PHAT_GCC_TDOA, "counter"):
-        PHAT_GCC_TDOA.counter = 0
-        
     fig = plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.plot(np.abs(R))
+    plt.title("GCC-PHAT Magnitude Spectrum")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Magnitude")
+    
+    plt.subplot(2, 1, 2)
+    plt.plot(np.angle(R))
+    plt.title("GCC-PHAT Phase Spectrum")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Phase (radians)")
+    plt.savefig(f"gcc_phat_before_weight{PHAT_GCC_TDOA.counter}.png")    
+    
+    
+    fig = plt.figure()
+    plt.subplot(2, 1, 1)
     plt.plot(np.abs(R_phat))
     plt.title("GCC-PHAT Magnitude Spectrum")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Magnitude")
-    plt.savefig(f"gcc_phat_magnitude_spectrum{PHAT_GCC_TDOA.counter}.png")
     
-    fig = plt.figure()
+    plt.subplot(2, 1, 2)
     plt.plot(np.angle(R_phat))
     plt.title("GCC-PHAT Phase Spectrum")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Phase (radians)")
-    plt.savefig(f"gcc_phat_phase_spectrum{PHAT_GCC_TDOA.counter}.png")
+    plt.savefig(f"gcc_phat_after_weight{PHAT_GCC_TDOA.counter}.png")
     
     PHAT_GCC_TDOA.counter += 1
     
