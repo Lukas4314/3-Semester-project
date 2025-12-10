@@ -89,6 +89,7 @@ def peak_lag(corr):
 
 # 6. Calculate the TDOA from the location of the peak (after considering lag) in the cross-correlation function.
 def TDOA(cross_corr):
+    # To clear confusion: lag means the signal is delayed, so the sign is flipped here so the TDOA is positive when signal2 arrives after signal1.
     return -peak_lag(cross_corr)
 
 def PHAT_GCC_TDOA(signal1, signal2):
@@ -135,7 +136,7 @@ def PHAT_GCC_TDOA(signal1, signal2):
 
 def verify_signals(signal1, signal2, expected_lag, tolerance=2):
     """Verify that signals have the expected delay relationship"""
-    actual_lag = PHAT_GCC_TDOA(signal1, signal2, debug=True)
+    actual_lag = PHAT_GCC_TDOA(signal1, signal2)
     
     print(f"VERIFICATION:")
     print(f"  Expected lag: {expected_lag} samples")
@@ -185,7 +186,8 @@ def create_delayed_signals(base_signal, delays_samples, signal_length):
     
     return signals
 
-if __name__ == "__main__":
+def test_gcc_phat():
+    """
     print("=== TEST 1: Basic delay verification ===")
     filename = "output.wav"  
     SAMPLE_RATE, data = wavfile.read(filename)
@@ -200,3 +202,130 @@ if __name__ == "__main__":
     print(tdoa02)
     tdoa12 = PHAT_GCC_TDOA(signal1, signal2)
     print(tdoa12)
+    """
+
+    
+    # Simple test with known delays
+    signal_length = 44100  # 1 second
+    base_signal = np.random.randn(signal_length)
+    
+    # Test case 1: signal2 delayed by 10 samples relative to signal1
+    test_signal1 = base_signal.copy()
+    test_signal2 = np.roll(base_signal, 10)
+    test_signal2[:10] = 0  # Clear wrap-around
+    
+    verify_signals(test_signal1, test_signal2, 10)
+    
+    # Test case 2: signal2 advanced by 5 samples relative to signal1
+    test_signal1 = np.roll(base_signal, 5)
+    test_signal1[:5] = 0
+    test_signal2 = base_signal.copy()
+    
+    verify_signals(test_signal1, test_signal2, -5)
+    
+    print("=== TEST 2: Three microphone simulation ===")
+    # Simulate three microphones with a sound source
+    sampling_rate = 44100
+    duration = 0.1  # seconds
+    signal_length = int(sampling_rate * duration)
+    
+    # Create a more realistic signal (chirp + noise)
+    t = np.linspace(0, duration, signal_length)
+    base_signal = np.sin(2 * np.pi * 1000 * t) * np.exp(-100 * t)  # Decaying chirp
+    base_signal += 0.1 * np.random.randn(signal_length)  # Add noise
+    
+    # Define true delays in samples (simulating sound arriving at different times)
+    # Let's say sound arrives at: mic0 at 100 samples, mic1 at 110 samples, mic2 at 105 samples
+    true_delays = np.array([100, 110, 105])  # in samples
+    
+    # Create signals with these delays
+    signals = create_delayed_signals(base_signal, true_delays, signal_length)
+    
+    print("True delays (samples):")
+    print(f"  Mic0: {true_delays[0]}, Mic1: {true_delays[1]}, Mic2: {true_delays[2]}")
+    print("True TDOAs (signal_j - signal_i):")
+    print(f"  TDOA_01 (mic1 - mic0): {true_delays[1] - true_delays[0]}")
+    print(f"  TDOA_02 (mic2 - mic0): {true_delays[2] - true_delays[0]}")
+    print(f"  TDOA_12 (mic2 - mic1): {true_delays[2] - true_delays[1]}")
+    print()
+    
+    # Measure TDOAs
+    print("Measured TDOAs:")
+    tdoa_01 = PHAT_GCC_TDOA(signals[0], signals[1])  # mic1 vs mic0
+    tdoa_02 = PHAT_GCC_TDOA(signals[0], signals[2])  # mic2 vs mic0
+    tdoa_12 = PHAT_GCC_TDOA(signals[1], signals[2])  # mic2 vs mic1
+    
+    print("=== SUMMARY ===")
+    print("Pair       | Expected | Measured | Error")
+    print("-----------|----------|----------|------")
+    print(f"Mic1-Mic0  | {true_delays[1]-true_delays[0]:8} | {tdoa_01:8} | {abs(tdoa_01 - (true_delays[1]-true_delays[0])):5}")
+    print(f"Mic2-Mic0  | {true_delays[2]-true_delays[0]:8} | {tdoa_02:8} | {abs(tdoa_02 - (true_delays[2]-true_delays[0])):5}")
+    print(f"Mic2-Mic1  | {true_delays[2]-true_delays[1]:8} | {tdoa_12:8} | {abs(tdoa_12 - (true_delays[2]-true_delays[1])):5}")
+    
+    # Verify the signs make physical sense
+    print("\n=== PHYSICAL INTERPRETATION ===")
+    if tdoa_01 > 0:
+        print(f"Mic1 arrives {tdoa_01} samples AFTER Mic0")
+    else:
+        print(f"Mic1 arrives {abs(tdoa_01)} samples BEFORE Mic0")
+        
+    if tdoa_02 > 0:
+        print(f"Mic2 arrives {tdoa_02} samples AFTER Mic0")
+    else:
+        print(f"Mic2 arrives {abs(tdoa_02)} samples BEFORE Mic0")
+        
+    if tdoa_12 > 0:
+        print(f"Mic2 arrives {tdoa_12} samples AFTER Mic1")
+    else:
+        print(f"Mic2 arrives {abs(tdoa_12)} samples BEFORE Mic1")
+        
+    print("\n\n =======================================================================")
+    print ("\n=== TEST 3: Telephone band filtered signals ===")
+    print("True delays (samples):")
+    print(f"  Mic0: {true_delays[0]}, Mic1: {true_delays[1]}, Mic2: {true_delays[2]}")
+    print("True TDOAs (signal_j - signal_i):")
+    print(f"  TDOA_01 (mic1 - mic0): {true_delays[1] - true_delays[0]}")
+    print(f"  TDOA_02 (mic2 - mic0): {true_delays[2] - true_delays[0]}")
+    print(f"  TDOA_12 (mic2 - mic1): {true_delays[2] - true_delays[1]}")
+    print()
+
+"""
+if __name__ == "__main__":
+    # First I need to fast fourier transform three signal given by arrays.
+    test_array1 = np.random.randn(5*44100)
+    test_array2 = np.roll(test_array1.copy(), 5)
+    test_array3 = np.roll(test_array1.copy(), 10)
+
+    beforetime = time.time()
+    fft_result1 = FFT(test_array1)
+    fft_result2 = FFT(test_array2)
+    fft_result3 = FFT(test_array3)
+
+    afterprint = time.time()
+    # print(afterprint-aftertime)
+
+    # Next I calculate the cross-correlation in frequency domain. For three microphones, I have three pairs.
+    R_12 = GCC(fft_result1, fft_result2)
+    R_23 = GCC(fft_result2, fft_result3)
+    R_13 = GCC(fft_result1, fft_result3)
+
+    # Next I multiply by the PHAT weighting function.
+    R_12_phat = phat_weight(R_12)
+    R_23_phat = phat_weight(R_23)
+    R_13_phat = phat_weight(R_13)
+
+    # Next I take the IFFT to get the cross-correlation functions.
+    cross_corr_12 = IFFT(R_12_phat)
+    cross_corr_23 = IFFT(R_23_phat)
+    cross_corr_13 = IFFT(R_13_phat)
+
+    endtime = time.time()
+
+    # Finally, I find the peak in the cross-correlation functions to estimate the time delays.
+    tdoa_12 = TDOA(cross_corr_12)
+    tdoa_23 = TDOA(cross_corr_23)
+    tdoa_13 = TDOA(cross_corr_13)
+    print("TDOA between mic 1 and 2:", tdoa_12)
+    print("TDOA between mic 2 and 3:", tdoa_23)
+    print("TDOA between mic 1 and 3:", tdoa_13)
+"""
