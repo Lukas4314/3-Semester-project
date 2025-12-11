@@ -5,13 +5,11 @@ from pc_code.sound_localization.Triangulate import test123, triangulate_from_sou
 import numpy as np
 from scipy.io.wavfile import write
 import re
+from consts import SAMPLE_RATE
 
 
 
 
-
-
-sample_rate = 144000
 
 I2S0 = np.array([])
 I2S1 = np.array([])
@@ -42,7 +40,7 @@ mic_2 = I2S0[1::2]
 mic_3 = I2S1
 
 # Fake dummy data
-t = np.linspace(0, 5, 5 * sample_rate, endpoint=False)
+t = np.linspace(0, 5, 5 * SAMPLE_RATE, endpoint=False)
 mic_1 = np.sin(t * 440 * 2 * np.pi)  + np.sin(t * 4677 * 2 * np.pi) + np.sin(t * 43 * 2 * np.pi) + np.sin(t * 4543 * 2 * np.pi) + np.sin(t * 880 * 2 * np.pi) + np.sin(t * 990 * 2 * np.pi) + np.sin(t * 1100 * 2 * np.pi)
 mic_2 = np.roll(mic_1, 20)  # Shifted version of mic_1
 mic_3 = np.roll(mic_1, 10)  # Shifted version
