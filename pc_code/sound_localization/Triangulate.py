@@ -70,14 +70,16 @@ def find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_so
 def find_sound_origin(mic_positions, tdoa_estimates, speed_of_sound=343.0):
     grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_sound)
 
-    best_score = float('inf')
-    best_point = None
+    sorted_grid_points_scores = sorted(grid_points_scores, key=lambda x: x[1])
 
-    for point, score in grid_points_scores:
-        if score < best_score:
-            best_score = score
-            best_point = point
-    return best_point, best_score
+    for point, score in sorted_grid_points_scores:
+        x, y, z = point
+        dist = np.sqrt(x**2 + y**2)
+        if dist > 0.5:  # Ignore points too close to the microphones
+            return point, score
+    print("All points too close to microphones, returning best point anyway.")
+    return sorted_grid_points_scores[0], sorted_grid_points_scores[0][1]
+
 
 def plot_microphone_data(mic_0, mic_1, mic_2, name="microphone_signals"):
     # Plotting all three microphone signals for visualization in same plot for comparison with different colors

@@ -29,16 +29,19 @@ public:
     );
 
 
+    volatile bool overflow_flag;
+
 
     bool begin();
 
     size_t readSamples(void* data, size_t maxBytes);
 
+    uint8_t get_id() const { return id; }
+    uint8_t counterOffset = 0;
+
+
 private:
-
-
-
-
+    i2s_event_callbacks_t cbs;
     i2s_port_t port;
     i2s_role_t role;
     i2s_data_bit_width_t dataBitWidth;
@@ -52,5 +55,4 @@ private:
     uint32_t sampleRate;
     uint8_t id;
 
-    static bool i2s_rx_queue_overflow_callback(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx);
 };

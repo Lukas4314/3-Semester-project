@@ -3,6 +3,11 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
+extern "C" {
+    #include "esp_rom_sys.h"
+}
+
+
 
 I2sInterface::I2sInterface(
     i2s_port_t port,
@@ -28,6 +33,18 @@ I2sInterface::I2sInterface(
                   id(id)
 {
 }
+
+
+IRAM_ATTR static bool i2s_rx_queue_overflow_callback(i2s_chan_handle_t handle,
+                                                     i2s_event_data_t *event,
+                                                     void *user_ctx)
+{
+    I2sInterface* iface = (I2sInterface*)user_ctx;
+    iface->counterOffset++;
+    return false;
+}
+
+
 
 bool I2sInterface::begin()
 {
@@ -57,14 +74,14 @@ bool I2sInterface::begin()
         return false;
     }
 
-    i2s_event_callbacks_t cbs = {
-        .on_recv = NULL,
-        .on_recv_q_ovf = i2s_rx_queue_overflow_callback,
-        .on_sent = NULL,
-        .on_send_q_ovf = NULL,
-    };
-    //ESP_ERROR_CHECK(i2s_channel_register_event_callback(rx_chan, &cbs, this));
+    // Register event callbacks
+    cbs.on_recv = NULL;
+    cbs.on_recv_q_ovf = i2s_rx_queue_overflow_callback;
+    cbs.on_sent = NULL;
+    cbs.on_send_q_ovf = NULL;
 
+    ESP_ERROR_CHECK(i2s_channel_register_event_callback(rx_chan, &cbs, this));
+    
 
 
     err = i2s_channel_init_std_mode(rx_chan, &stdConfig);
@@ -90,9 +107,3 @@ size_t I2sInterface::readSamples(void *data, size_t maxBytes)
     return bytesRead;
 }
 
-bool I2sInterface::i2s_rx_queue_overflow_callback(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx)
-{
-    // Print the overflow along with the id of the I2sInterface
-    printf("I2S RX queue overflow detected in %d!\n", ((I2sInterface *)user_ctx)->id);
-    return false;
-}

@@ -16,7 +16,6 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 
-
 MqttInterface::MqttInterface(const char *ssid, const char *password, const char *broker, uint16_t port)
     : _ssid(ssid), _password(password), _broker(broker), _port(port) {}
 
@@ -36,30 +35,36 @@ void MqttInterface::begin()
 
 bool MqttInterface::publish(const char *topic, const int16_t *buffer, size_t length)
 {
-    if (esp_mqtt_client_publish(_client, topic, (const char *)buffer, length, 0, 0) == -1)
+    int msg_id = esp_mqtt_client_publish(_client, topic, (const char *)buffer, length, 0, 0);
+    if (msg_id == -1 || msg_id == -2)
     {
+        if (msg_id == -1)
+        {
+            printf("MQTT publish failed: Out of memory\n");
+        }
+        else if (msg_id == -2)
+        {
+            printf("MQTT publish failed: Full outbox\n");
+        }
         printf("Failed to publish to topic %s\n", topic);
         return false;
     }
     return true;
 }
 
-
-
-
-void MqttInterface::wifi_event_handler(void* arg,
+void MqttInterface::wifi_event_handler(void *arg,
                                        esp_event_base_t event_base,
                                        int32_t event_id,
-                                       void* event_data)
+                                       void *event_data)
 {
-    MqttInterface* self = static_cast<MqttInterface*>(arg);
+    MqttInterface *self = static_cast<MqttInterface *>(arg);
 
-    if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
+    {
         printf("EVENT HANDLER: GOT IP -> setting bit\n");
         xEventGroupSetBits(self->wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
-
 
 void MqttInterface::connectWiFi()
 {
@@ -68,7 +73,8 @@ void MqttInterface::connectWiFi()
     // --- NVS ---
     esp_err_t ret = nvs_flash_init();
     printf("NVS flash init returned: %d\n", ret);
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ESP_ERROR_CHECK(nvs_flash_init());
     }
@@ -79,7 +85,6 @@ void MqttInterface::connectWiFi()
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
 
-
     printf("WiFi driver initializing...\n");
 
     // Create EventGroup BEFORE events happen
@@ -89,7 +94,6 @@ void MqttInterface::connectWiFi()
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-
     printf("WiFi driver initialized.\n");
     // Event handlers
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
@@ -97,14 +101,12 @@ void MqttInterface::connectWiFi()
         IP_EVENT_STA_GOT_IP,
         &MqttInterface::wifi_event_handler,
         this,
-        nullptr
-    ));
+        nullptr));
 
     // --- WiFi Config ---
     wifi_config_t wifi_config = {};
-    strncpy((char*)wifi_config.sta.ssid, _ssid, sizeof(wifi_config.sta.ssid));
-    strncpy((char*)wifi_config.sta.password, _password, sizeof(wifi_config.sta.password));
-
+    strncpy((char *)wifi_config.sta.ssid, _ssid, sizeof(wifi_config.sta.ssid));
+    strncpy((char *)wifi_config.sta.password, _password, sizeof(wifi_config.sta.password));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
@@ -121,8 +123,7 @@ void MqttInterface::connectWiFi()
         WIFI_CONNECTED_BIT,
         pdFALSE,
         pdFALSE,
-        portMAX_DELAY
-    );
+        portMAX_DELAY);
 
     printf("WiFi READY.\n");
 }

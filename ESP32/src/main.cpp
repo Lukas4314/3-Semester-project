@@ -38,7 +38,7 @@
 #define MIC3_DO I2S1_DIN // Data output from microphone to input for I2S1
 
 
-#define SAMPLERATE 144000
+#define SAMPLERATE 44100
 
 
 //Create I2S interface objects
@@ -52,7 +52,7 @@ I2sInterface i2s1(I2S_NUM_1, I2S1_BCLK, I2S1_LRCLK, -1, I2S1_DIN,
                   I2S_BITS_PER_SAMPLE_16BIT,
                   I2S_CHANNEL_FMT_ONLY_LEFT, SAMPLERATE);
 
-MqttInterface mqtt("Havefun", "Havefun2", "10.250.34.201");
+//MqttInterface mqtt("Havefun", "Havefun2", "10.250.34.201");
 
 
 void setup() {
@@ -87,8 +87,8 @@ void setup() {
     } else {
         Serial.println("Failed to initialize I2S1");
     }
-    mqtt.begin();
-    mqtt.overrideMaxBufferSize(1024 * 4 + 512); // Increase MQTT buffer to 1024 * 4 bytes for 2 channels and stereo + some extra margin
+    //mqtt.begin();
+    //mqtt.overrideMaxBufferSize(1024 * 4 + 512); // Increase MQTT buffer to 1024 * 4 bytes for 2 channels and stereo + some extra margin
 
 }
 
@@ -99,7 +99,7 @@ void setup() {
 
 void loop() {
     //mqtt.loop();
-    const int numSamples = 1024*4;
+    const int numSamples = 1024*8;
 
     // Reserve space for: [counter(4 bytes)] + audio samples
     static int16_t buffer0[numSamples * 2 + 2]; 
@@ -131,7 +131,7 @@ void loop() {
 
     counter++;
 
-    if (counter == 2){
+    if (counter == 20){
         Serial.println("Buffer0:");
         for (int i = 0; i < sizeof(buffer0)/sizeof(buffer0[0]); i++){
             Serial.print(buffer0[i]);

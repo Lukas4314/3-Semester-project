@@ -112,7 +112,7 @@ def PHAT_GCC_TDOA(signal1, signal2):
 	filtered_fft2 = filter_telephone_band(fft2)
 	R = GCC(filtered_fft1, filtered_fft2)
 	
-	R_phat = phat_weight(R, weight = 0.5)
+	R_phat = phat_weight(R, weight = 0.8)
 	"""
 	fig = plt.figure()
 	plt.subplot(2, 1, 1)
@@ -151,6 +151,24 @@ def PHAT_GCC_TDOA(signal1, signal2):
 	tdoa = TDOA(cross_corr)
 	
 	if SHOULD_PLOT:
+    
+		frequency_axis = np.linspace(0, SAMPLE_RATE, len(fft1))
+
+		# ------------------------------
+		# 0. Original Signals
+		# ------------------------------
+		fig = plt.figure(figsize=(10,5))
+		time_axis = np.arange(len(signal1)) / SAMPLE_RATE
+		plt.plot(time_axis, signal1, label="Signal 1", alpha=0.7)
+		plt.plot(time_axis, signal2, label="Signal 2", alpha=0.7)
+		plt.title("Original Time-Domain Signals")
+		plt.xlabel("Time (s)")
+		plt.ylabel("Amplitude")
+		plt.legend()
+		plt.grid(True)
+		plt.tight_layout()
+		#plt.show()
+
 
 
 		# ------------------------------
@@ -159,15 +177,15 @@ def PHAT_GCC_TDOA(signal1, signal2):
 		fig = plt.figure(figsize=(10,8))
 
 		plt.subplot(2,1,1)
-		plt.plot(np.abs(fft1))
+		plt.plot(frequency_axis, np.abs(fft1))
 		plt.title("Signal 1 FFT Magnitude")
-		plt.xlabel("Frequency Bin")
+		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
 
 		plt.subplot(2,1,2)
-		plt.plot(np.abs(fft2))
+		plt.plot(frequency_axis, np.abs(fft2))
 		plt.title("Signal 2 FFT Magnitude")
-		plt.xlabel("Frequency Bin")
+		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
 
 		plt.tight_layout()
@@ -180,15 +198,15 @@ def PHAT_GCC_TDOA(signal1, signal2):
 		fig = plt.figure(figsize=(10,8))
 
 		plt.subplot(2,1,1)
-		plt.plot(np.abs(filtered_fft1))
+		plt.plot(frequency_axis, np.abs(filtered_fft1))
 		plt.title("Filtered FFT (Signal 1)")
-		plt.xlabel("Frequency Bin")
+		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
 
 		plt.subplot(2,1,2)
-		plt.plot(np.abs(filtered_fft2))
+		plt.plot(frequency_axis, np.abs(filtered_fft2))
 		plt.title("Filtered FFT (Signal 2)")
-		plt.xlabel("Frequency Bin")
+		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
 
 		plt.tight_layout()
@@ -201,15 +219,15 @@ def PHAT_GCC_TDOA(signal1, signal2):
 		fig = plt.figure(figsize=(10,8))
 
 		plt.subplot(2,1,1)
-		plt.plot(np.abs(R))
+		plt.plot(frequency_axis, np.abs(R))
 		plt.title("GCC Magnitude (Before PHAT)")
-		plt.xlabel("Frequency Bin")
+		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
 
 		plt.subplot(2,1,2)
-		plt.plot(np.angle(R))
+		plt.plot(frequency_axis, np.angle(R))
 		plt.title("GCC Phase (Before PHAT)")
-		plt.xlabel("Frequency Bin")
+		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Phase (rad)")
 
 		plt.tight_layout()
@@ -222,15 +240,15 @@ def PHAT_GCC_TDOA(signal1, signal2):
 		fig = plt.figure(figsize=(10,8))
 
 		plt.subplot(2,1,1)
-		plt.plot(np.abs(R_phat))
+		plt.plot(frequency_axis, np.abs(R_phat))
 		plt.title("GCC-PHAT Magnitude (After Weighting)")
-		plt.xlabel("Frequency Bin")
+		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
 
 		plt.subplot(2,1,2)
-		plt.plot(np.angle(R_phat))
+		plt.plot(frequency_axis, np.angle(R_phat))
 		plt.title("GCC-PHAT Phase (After Weighting)")
-		plt.xlabel("Frequency Bin")
+		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Phase (rad)")
 
 		plt.tight_layout()
