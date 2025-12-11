@@ -14,5 +14,11 @@ On the Raspberry Pi, ROS2 is pre-integrated with the Turtlebot, allowing easy co
 
 The PC is used exclusively for heavy processing, including sound localization and speech-to-text. The PC takes audio segments of 1024 data points from the ESP32 via MQTT, processes them, and then sends movement commands to the Turtlebot through MQTT.
 
+% The overall system architecture allows for efficient communication and processing, enabling the Turtlebot to respond to voice commands and localize sound sources effectively.
 
+% The system architecture spans multiple layers, 
+
+% The lowest layer consists of the hardware components, including the Esperion mems microphones as well as the motors onboard the turtlebot. Onboard the ESP32 the microphones are interfaced using the I2S protocol, allowing for high-quality syncronised audio data transfer. Here the ESP32 acting as the control layer handles the raw audio data and sends it via MQTT to the PC for processing. Onboard the pc the audio is processed for the application layer, where the localization and command identifying is done.
+
+% The Onboard movement control accepts a speed and the program outputs a distance, an execution layer process translates the commands from the application layer into speed commands, 
 
