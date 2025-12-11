@@ -17,9 +17,26 @@ To find the best possible sample in the array of 80 samples, Whisper is continuo
 \subsection{GCC-PHAT}
 GCC-PHAT (General-Cross-Correlation Phase Transform) is an algorithm that caulculates the TDOA (Time Delay Of Arrival) of a signal in relation to a reference signal. This is used to calculate where the signal is coming from by finding the phase shift between 2 different microphones spaced by a known distance and multiply the phase shift with the speed of sound.
 
-In order to calculate the TDOA of a signal, the signal must be converted to frequency domain which is done by using FFT (Fast Fourier Transform). Then the signal can be compared to a reference signal by multiplying the signal with the complex conjugate of the reference signal. This is because multiplying a signal with the the complex conjugate of another signal gives the phase difference between the two signals, as represented by the difference in the imaginary part. The phase difference can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. Next the difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
+In order to calculate the TDOA of a signal, the signal must be converted to frequency domain which is done by using FFT (Fast Fourier Transform). When the signal is in the frequency domain, it will be represented by a real part and an imaginary part. The real part (the amplitude) represents how strong a certain frequency is in the signal, while the imaginary part (the phase) represents the time shift of that frequency in the signal.
 
-Depending on what GCC-PHAT is used for a weighting can also be applied depending. In this project however, a weight of 1 (no weight, except for $\epsilon = 1 \cdot 10^{-8}$ is added to avoid division by 0) is applied. This is because the human voice has the full range of frequencies that the microphones can pick up.
+\begin{equation}
+    e^{i\phi} = \cos(\phi) + i \sin(\phi)
+\end{equation}
+
+The phase is relative to a reference cosine wave that starts at its maximum at time 0.
+
+The signal can be compared to a reference signal by multiplying the signal with the complex conjugate of the reference signal. This is because multiplying the reference signal with complex conjugate of another signal gives the phase difference between the two signals, as represented by the difference in the imaginary part:
+
+\begin{equation}
+    X_1(f) \cdot X_2^*(f) = (A_1 \cdot e^{i \cdot \phi_1}) * (A_2 \cdot e^{-i \phi_2}) = (A_1 A_2) e^{i(\phi_1 - \phi_2)}
+\end{equation}
+
+Where $X_1(f)$ is the reference signal, $X_2^*(f)$ is the complex conjugate of the other signal, $A_1$ and $A_2$ are the amplitudes of the signals and $\phi_1$ and $\phi_2$ are the phases of the signals.
+
+
+The phase difference can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. Next the difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
+
+Depending on what GCC-PHAT is used for a weighting can also be applied. In this project however, a weight of 1 (no weight, except for $\epsilon = 1 \cdot 10^{-8}$ is added to avoid division by 0) is applied. This is because the human voice has the full range of frequencies that the microphones can pick up.
 
 The standard cross correlation is called xcorr, which only compares the magnitude of the signals which can vary a lot depending on the environment. GCC-PHAT in turn compares the phase difference between the signals by normalizing the amplitudes for all frequencies. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. For this reason GCC-PHAT is used for sound localisation in this project.
 
