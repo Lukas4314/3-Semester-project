@@ -17,11 +17,11 @@ To find the best possible sample in the array of 80 samples, Whisper is continuo
 \subsection{GCC-PHAT}
 GCC-PHAT (General-Cross-Correlation Phase Transform) is an algorithm that caulculates the TDOA (Time Delay Of Arrival) of a signal in relation to a reference signal. This is used to calculate where the signal is coming from by finding the phase shift between 2 different microphones spaced by a known distance and multiply the phase shift with the speed of sound.
 
-In order to calculate the TDOA of a signal, the signal must be converted to frequency domain which is done by using FFT (Fast Fourier Transform). When the signal is in the frequency domain, it will be represented by a real part and an imaginary part. The real part (the amplitude) represents how strong a certain frequency is in the signal, while the imaginary part (the phase) represents the time shift of that frequency in the signal.
 
-\begin{equation}
-    e^{i\phi} = \cos(\phi) + i \sin(\phi)
-\end{equation}
+In order to calculate the TDOA of a signal, the signal must first be converted to the frequency domain. Therefore, a very precise band-pass filter can easily be applied without wasting computing time, since we are already in the frequency domain. The chosen structure of the filter is based on the telephone speech band, which is 300--3400~Hz, because that’s where human speech is most represented. To apply the filter, the frequency of every FFT bin is calculated with \( f_k = \frac{k\, f_s}{N} \) and set to zero if it is not inside the telephone speech band. Filtering out frequencies other than human speech will increase the likelihood of GCC\_PHAT calculating the TDOA of a human speaking instead of the TDOA of some noise.
+
+
+
 
 The phase is relative to a reference cosine wave that starts at its maximum at time 0.
 
