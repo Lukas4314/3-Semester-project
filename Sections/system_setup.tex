@@ -2,17 +2,19 @@
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=1\linewidth]{Pictures/systemsetup.png}
+	\includegraphics[width=1\linewidth]{Pictures/systemSetupDiagramMermaid.png}
 	\caption{Hardware and comminication overview}
 	\label{fig:Hardware_and_comminication_overview}
 \end{figure}
-The system has three major components: the PC, the Raspberry Pi, and the ESP32, which can be seen in \cref{fig:Hardware_and_comminication_overview}. To easily communicate between devices, an MQTT broker is set up on the Raspberry Pi. MQTT (Message Queuing Telemetry Transport) is a lightweight messaging protocol running on the network layers and uses a publish–subscribe model, which is convenient for multiple devices to communicate with each other on the same network.
 
-To locate the sound source and record audio, an ESP32 microcontroller is used. It is mounted on top of the Turtlebot, and the three microphones are mounted in a triangular formation around the ESP32 with a distance of 44.5 cm from the base-frame zero point. The ESP32 is connected to the microphones via the I2S protocol, which allows for high-quality audio data transfer. The ESP32 is also connected to the WiFi network, allowing it to publish recorded audio data to the PC through the MQTT broker on the Raspberry Pi.
 
-On the Raspberry Pi, ROS2 is pre-integrated with the Turtlebot, allowing easy control of the low-level hardware. The Raspberry Pi runs a ROS2 node that translates MQTT messages from the PC and publishes them on a ROS2 topic, which the Turtlebot node subscribes to. This enables the PC to send movement commands to the Turtlebot via MQTT. The Turtlebot node then converts those commands into motor commands and sends them via UART to the OpenCR board, which handles the low-level motor control.
+%The system has three major components: the PC, the Raspberry Pi, and the ESP32, which can be seen in \cref{fig:Hardware_and_comminication_overview}. To easily communicate between devices, an MQTT broker is set up on the Raspberry Pi. MQTT (Message Queuing Telemetry Transport) is a lightweight messaging protocol running on the network layers and uses a publish–subscribe model, which is convenient for multiple devices to communicate with each other on the same network.
 
-The PC is used exclusively for heavy processing, including sound localization and speech-to-text. The PC takes audio segments of 1024 data points from the ESP32 via MQTT, processes them, and then sends movement commands to the Turtlebot through MQTT.
+%To locate the sound source and record audio, an ESP32 microcontroller is used. It is mounted on top of the Turtlebot, and the three microphones are mounted in a triangular formation around the ESP32 with a distance of 44.5 cm from the base-frame zero point. The ESP32 is connected to the microphones via the I2S protocol, which allows for high-quality audio data transfer. The ESP32 is also connected to the WiFi network, allowing it to publish recorded audio data to the PC through the MQTT broker on the Raspberry Pi.
+
+%On the Raspberry Pi, ROS2 is pre-integrated with the Turtlebot, allowing easy control of the low-level hardware. The Raspberry Pi runs a ROS2 node that translates MQTT messages from the PC and publishes them on a ROS2 topic, which the Turtlebot node subscribes to. This enables the PC to send movement commands to the Turtlebot via MQTT. The Turtlebot node then converts those commands into motor commands and sends them via UART to the OpenCR board, which handles the low-level motor control.
+
+%The PC is used exclusively for heavy processing, including sound localization and speech-to-text. The PC takes audio segments of 1024 data points from the ESP32 via MQTT, processes them, and then sends movement commands to the Turtlebot through MQTT.
 
 % The overall system architecture allows for efficient communication and processing, enabling the Turtlebot to respond to voice commands and localize sound sources effectively.
 
@@ -22,3 +24,13 @@ The PC is used exclusively for heavy processing, including sound localization an
 
 % The Onboard movement control accepts a speed and the program outputs a distance, an execution layer process translates the commands from the application layer into speed commands, 
 
+
+%Layered explanation
+
+The system architecture spans multiple layers, as illustrated in \cref{fig:Hardware_and_comminication_overview}.
+
+The lowest layer, Layer 1, consists of the physical hardware components and communication protocols. Here a backend communications protocol of MQTT is used to facilitate communication between the three devices. Onboard the ESP32, the three microphones are interfaced using the I2S protocol, sharing 2 stereo channels for high-quality synchronized audio data. The ESP32 timestamps the audio data and publishes it via MQTT to the PC for processing. Onboard the Raspberry Pi, a MQTT-ROS bridge translates velocity commands from the PC into ROS2 messages that the Turtlebot can interpret. The Turtlebot's onboard OpenCR board handles low-level motor control based on these messages. 
+
+The second layer, Layer 2, is responsible for data processing. On the PC, the audio data from the three microphones is processed for sound localization using the GCC-PHAT algorithm, whilst one datastream is duplicated for transcription using OpenAI's Whisper model.
+
+The highest layer, Layer 3, handles command identification and execution. The transcribed data from the Whisper model is analyzed continuesly for commands. When a command is identified, a corrosponding action is determined based on the protocol logic, positional commands are then translated to velocity commands that are sent to the Turtlebot via MQTT for execution. If the command ``come here'' is given, the source of the sound is triangulated from the GCC-PHAT output, and a corrosponding turn and drive command is calculated to move the Turtlebot to the speaker's position. The command is then sent to the Turtlebot via MQTT for execution.

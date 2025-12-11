@@ -1,0 +1,39 @@
+flowchart TD
+    subgraph L1[<b>Layer 1: Physical & Comms</b>]
+        direction LR
+        subgraph Dev1[ESP32]
+            ESP_Mic[Microphone & I2S]
+            ESP_Prep[Timestamp & Packetize]
+            ESP_Client[Mosquitto Client]
+        end
+        Broker[MQTT Broker]
+        PC_Client[Mosquitto Client]
+        subgraph Dev2[Raspberry Pi]
+            PI_Client[Mosquitto Client]
+            PI_Bridge[MQTT-ROS Bridge]
+            PI_MC[Motor Controller]
+            PI_Mot[Motor Interface]
+        end
+        ESP_Mic --> ESP_Prep --> ESP_Client --> Broker
+        Broker --> PI_Client --> PI_Bridge --> PI_MC --> PI_Mot
+    end
+
+    subgraph L2[<b>Layer 2: Data Processing</b>]
+        
+        Whisper[Whisper Model]
+        Localize[Sound Localization<br>GCC-PHAT]
+        PC_Client -- Audio Data --> Whisper
+        PC_Client -- Audio Data --> Localize
+    end
+
+    subgraph L3[<b>Layer 3: Execution</b>]
+        Fusion[Command identification & Validation]
+        Logic[Protocol Logic]
+        Whisper -->|"Text"| Fusion
+        Localize -->|"Direction"| Fusion
+        Fusion -->|"Validated Command"| Logic
+        Logic -->|"Velocity Cmd"| PC_Client
+    end
+
+    Broker -- Audio Data --> PC_Client
+    PC_Client -- Velocity Cmd --> Broker
