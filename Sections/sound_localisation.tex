@@ -3,12 +3,13 @@
 Kilde indtil videre:
 https://en.wikipedia.org/wiki/Cross-correlation#Cross-correlation\_of\_deterministic\_signals
 \subsection{locating time of command}
+
+%husk og ændre 80 sampels til det rigtige tal
 Before calculating the position of the sound source, the exact sample where the command was said must be found, to avoid accidentally calculating the position of random noise. To keep track of samples, the ESP32 gives every sample an ID number, which is also sent through MQTT alongside the data.
 
 But since Whisper does not operate in the time domain, it is not possible to link a Whisper output with an ID number in the time domain. Therefore, the first and last ID number is saved for every segment sent to Whisper, making it possible to link a Whisper segment with an array of samples.
 
 To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is “here,” which is usually around 10 samples. Then, the sample located in the middle of these 10 samples is chosen as the best possible sample to calculate the location of origin.
-
 
 
 
