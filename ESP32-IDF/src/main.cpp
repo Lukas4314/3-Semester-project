@@ -1,5 +1,6 @@
 #include "I2sInterface.hpp"
-
+#include "MqttInterface.hpp"
+#include "esp_timer.h"
 
 // === Pin definitions ===
 
@@ -36,11 +37,20 @@
 #define MIC3_DO I2S1_DIN // Data output from microphone to input for I2S1
 
 
+#define SAMPLE_RATE 44100
+
+
 I2sInterface i2s0;
 I2sInterface i2s1;
+MqttInterface mqtt("Havefun", "Havefun2", "mqtt://10.250.34.201");  // construct directly
 
 void setup(){
 
+    mqtt.begin();
+
+    printf("Initialized MQTT interface...\n");
+
+    
     // Set the pins to the correct l/r channel for each mic
     gpio_set_direction(MIC1_SEL_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(MIC2_SEL_PIN, GPIO_MODE_OUTPUT);
@@ -49,6 +59,7 @@ void setup(){
     gpio_set_level(MIC1_SEL_PIN, MIC1_SEL_VALUE);
     gpio_set_level(MIC2_SEL_PIN, MIC2_SEL_VALUE);
     gpio_set_level(MIC3_SEL_PIN, MIC3_SEL_VALUE);
+
 
 
 
@@ -62,7 +73,8 @@ void setup(){
         I2S0_LRCLK,    // WS
         I2S0_DIN,    // DATA IN
         I2S_STD_SLOT_BOTH,
-        44100          // Sample Rate
+        SAMPLE_RATE,          // Sample Rate
+        0                    // ID
     );
 
     i2s1 = I2sInterface(
@@ -75,8 +87,12 @@ void setup(){
         I2S1_LRCLK,    // WS
         I2S1_DIN,    // DATA IN
         I2S_STD_SLOT_LEFT,
-        44100          // Sample Rate
+        SAMPLE_RATE,          // Sample Rate
+        1                    // ID
     );
+
+
+    printf("Initializing I2S interfaces...\n");
 
     if(!i2s0.begin()){
         printf("Failed to initialize I2S0");
@@ -91,32 +107,33 @@ void setup(){
 extern "C" void app_main(void)
 {
     setup();
+    printf("Setup complete, entering main loop.\n");
+    uint32_t counter0 = 0;
+    uint32_t counter1 = 0;
 
+ 
     while (true) {
         const uint16_t bufferSize = 1024;
         const size_t bufferSize0 = bufferSize*2; // Multiply by 2 for stereo
         const size_t bufferSize1 = bufferSize;
-        static uint16_t buffer0[bufferSize0];
-        static uint16_t buffer1[bufferSize1];
+
+        static int16_t bufferWithCounter0[bufferSize0 + 2] = { (int16_t)(counter0 & 0xFFFF), (int16_t)((counter0 >> 16) & 0xFFFF) };
+        static int16_t bufferWithCounter1[bufferSize1 + 2] = { (int16_t)(counter1 & 0xFFFF), (int16_t)((counter1 >> 16) & 0xFFFF) };
+
+        static int16_t buffer0[bufferSize0];
+        static int16_t buffer1[bufferSize1];
 
 
-        size_t bytesRead0 = i2s0.readSamples(buffer0, bufferSize0*sizeof(uint16_t));
-        size_t bytesRead1 = i2s1.readSamples(buffer1, bufferSize1*sizeof(uint16_t));
+        size_t bytesRead0 = i2s0.readSamples(buffer0, bufferSize0*sizeof(int16_t));
+        size_t bytesRead1 = i2s1.readSamples(buffer1, bufferSize1*sizeof(int16_t));
 
-        if (bytesRead0 > 0) {
-            printf("Read %d bytes from I2S0\n", bytesRead0);
-        }
-        else{
-            printf("No data from I2S0\n");
-        }
+        memcpy(bufferWithCounter0 + 2, buffer0, bytesRead0);
+        memcpy(bufferWithCounter1 + 2, buffer1, bytesRead1);
 
-        if (bytesRead1 > 0) {
-            printf("Read %d bytes from I2S1\n", bytesRead1);
-        }
-        else{
-            printf("No data from I2S1\n");
-        }
-
-
+        uint64_t start = esp_timer_get_time();  
+        mqtt.publish("I2S0", bufferWithCounter0, bytesRead0 + 4); // +4 for counter
+        mqtt.publish("I2S1", bufferWithCounter1, bytesRead1 + 4); // +4 for counter
+        uint64_t end = esp_timer_get_time();
+        printf("Elapsed: %llu us\n", end - start);
     }
 }

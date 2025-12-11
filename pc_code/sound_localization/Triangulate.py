@@ -7,11 +7,19 @@ from consts import SHOULD_PLOT, SAMPLE_RATE
 # Triangulate by searching a 3D grid for the best match to TDOA estimates
 
 def microphone_placement():
+    #mic_positions = np.array([
+    #    [0.0, -0.1155, 0.0],    # Mic 0
+    #    [-0.1, 0.057, 0.0],     # Mic 1
+    #    [0.1, 0.057, 0.0]       # Mic 2
+    #])
+    
     mic_positions = np.array([
-        [0.0, -0.1155, 0.0],    # Mic 0
-        [-0.1, 0.057, 0.0],     # Mic 1
-        [0.1, 0.057, 0.0]       # Mic 2
+        [0.0, 0.1155, 0.0],    # Mic 0
+        [0.1, -0.057, 0.0],     # Mic 1
+        [-0.1, -0.057, 0.0]       # Mic 2
     ])
+    
+    mic_positions *= 44.5/11.55  # Scale to actual size
     return mic_positions
 
 def get_distance_between_mic_in_point_direction(point, mic_positions):
@@ -96,6 +104,7 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
     plot_microphone_data(filtered_mic0_data, filtered_mic1_data, filtered_mic2_data, name="filtered_microphone_signals")
     
     
+    """
     with open("mic0_data.txt", "w") as f:
         f.write("[")
         for item in mic0_data:
@@ -111,7 +120,7 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
         for item in mic2_data:
             f.write(f"{item}, ")
         f.write("]")
-            
+    """
     
     
     # Calculate TDOA estimates using GCC-PHAT
@@ -119,8 +128,8 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
     tdoa_02 = gcc.PHAT_GCC_TDOA(mic0_data, mic2_data)  # If positive, mic2 is after mic0
     tdoa_12 = gcc.PHAT_GCC_TDOA(mic1_data, mic2_data)  # If positive, mic2 is after mic1
     
-    allowed_max_tdoa = 80
-    
+    """
+    allowed_max_tdoa = 160
     
     good_tdoa_01 = None
     good_tdoa_02 = None
@@ -171,9 +180,11 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
 
         r_temp[idx] = 0
 
-
+    
+    
     print(f"Previous TDOA Estimates: {tdoa_01}, {tdoa_02}, {tdoa_12}")
     print(f"Good TDOA Estimates: {good_tdoa_01}, {good_tdoa_02}, {good_tdoa_12}")
+   
     tdoa_01 = good_tdoa_01
     tdoa_02 = good_tdoa_02
     tdoa_12 = good_tdoa_12
@@ -211,7 +222,7 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
     else:
         print("Mic 1 and Mic 2 are at the same time")
     
-    
+    """
     tdoa_estimates = [tdoa_01, tdoa_02, tdoa_12]
     mic_positions = microphone_placement()
 

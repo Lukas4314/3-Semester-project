@@ -17,3 +17,4 @@ ESP32/.vscode/extensions.json
 ESP32/.vscode/settings.json
 *.wav
 *.txt
+*.png
