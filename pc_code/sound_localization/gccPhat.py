@@ -306,6 +306,70 @@ def create_delayed_signals(base_signal, delays_samples, signal_length):
 	
 	return signals
 
+def visualize_signals_with_delays(signals, tdoa_samples, sample_rate=SAMPLE_RATE):
+	"""
+	Visualize the three signals and their measured delays
+	
+	Parameters:
+	- signals: list of 3 numpy arrays (the actual signals)
+	- tdoa_samples: dict with 'tdoa_01', 'tdoa_02', 'tdoa_12' in samples
+	- sample_rate: sample rate in Hz
+	"""
+	import matplotlib.pyplot as plt
+	
+	fig, axes = plt.subplots(3, 1, figsize=(14, 8))
+	
+	time = np.arange(len(signals[0])) / sample_rate
+	colors = ['blue', 'green', 'purple']
+	
+	# Find the peak of the first signal to use as reference
+	peak_idx_0 = np.argmax(np.abs(signals[0]))
+	peak_time_0 = peak_idx_0 / sample_rate * 1000  # in ms
+	
+	for i, (ax, signal, color) in enumerate(zip(axes, signals, colors)):
+		ax.plot(time * 1000, signal, color=color, linewidth=1.5)
+		ax.set_ylabel(f'Mic {i}', fontsize=12)
+		ax.grid(True, alpha=0.3)
+		ax.set_xlim(0, len(signal) / sample_rate * 1000)
+		
+		# Add red reference line at Mic 0's peak
+		if i == 0:
+			ax.axvline(peak_time_0, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Reference Peak')
+			ax.legend()
+		else:
+			# Add reference line and delayed line
+			ax.axvline(peak_time_0, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Ref (Mic 0)')
+			
+			# Calculate delay for this mic relative to mic 0
+			if i == 1:
+				delay_samples = tdoa_samples['tdoa_01']
+			else:  # i == 2
+				delay_samples = tdoa_samples['tdoa_02']
+			
+			delay_ms = delay_samples / sample_rate * 1000
+			delayed_peak_time = peak_time_0 + delay_ms
+			
+			ax.axvline(delayed_peak_time, color='orange', linestyle='--', linewidth=2, alpha=0.7, label=f'Delayed Peak ({delay_samples} samples)')
+			ax.legend()
+	
+	# Add labels
+	axes[0].set_title('Three Microphone Signals with GCC-PHAT Delays', fontsize=14)
+	axes[2].set_xlabel('Time / ms', fontsize=12)
+	
+	# Add delay information as text
+	delay_text = (f"Measured TDOAs:\n"
+				  f"Mic1 vs Mic0: {tdoa_samples['tdoa_01']} samples ({tdoa_samples['tdoa_01']/sample_rate*1000:.4f} ms)\n"
+				  f"Mic2 vs Mic0: {tdoa_samples['tdoa_02']} samples ({tdoa_samples['tdoa_02']/sample_rate*1000:.4f} ms)\n"
+				  f"Mic2 vs Mic1: {tdoa_samples['tdoa_12']} samples ({tdoa_samples['tdoa_12']/sample_rate*1000:.4f} ms)")
+	
+	fig.text(0.02, 0.98, delay_text, transform=fig.transFigure, 
+			 fontsize=25, verticalalignment='top',
+			 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+	
+	plt.tight_layout()
+	plt.subplots_adjust(top=0.92)
+	plt.show()
+
 def test_gcc_phat():
 	"""
 	print("=== TEST 1: Basic delay verification ===")
@@ -408,6 +472,15 @@ def test_gcc_phat():
 	print(f"  TDOA_02 (mic2 - mic0): {true_delays[2] - true_delays[0]}")
 	print(f"  TDOA_12 (mic2 - mic1): {true_delays[2] - true_delays[1]}")
 	print()
+
+	# Visualize the signals with their delays
+	print("\n=== VISUALIZING SIGNALS WITH DELAYS ===")
+	measured_offsets = {
+		'tdoa_01': tdoa_01,
+		'tdoa_02': tdoa_02,
+		'tdoa_12': tdoa_12
+	}
+	visualize_signals_with_delays(signals, measured_offsets)
 
 """
 if __name__ == "__main__":
