@@ -9,7 +9,7 @@ Before calculating the position of the sound source, the exact sample where the 
 
 But since Whisper does not operate in the time domain, it is not possible to link a Whisper output with an ID number in the time domain. Therefore, the first and last ID number is saved for every segment sent to Whisper, making it possible to link a Whisper segment with an array of samples.
 
-To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is “here,” which is usually around 10 samples. Then, the sample located in the middle of these 10 samples is chosen as the best possible sample to calculate the location of origin.
+To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is “come” which is usually around 2-10 samples. Then, the sample located in the middle of these 10 samples is chosen as the best possible sample to calculate the location of origin.
 
 
 
@@ -19,8 +19,6 @@ GCC-PHAT (General-Cross-Correlation Phase Transform) is an algorithm that caulcu
 
 
 In order to calculate the TDOA of a signal, the signal must first be converted to the frequency domain. Therefore, a very precise band-pass filter can easily be applied without wasting computing time, since we are already in the frequency domain. The chosen structure of the filter is based on the telephone speech band, which is 300--3400~Hz, because that’s where human speech is most represented. To apply the filter, the frequency of every FFT bin is calculated with \( f_k = \frac{k\, f_s}{N} \) and set to zero if it is not inside the telephone speech band. Filtering out frequencies other than human speech will increase the likelihood of GCC\_PHAT calculating the TDOA of a human speaking instead of the TDOA of some noise.
-
-
 
 
 The phase is relative to a reference cosine wave that starts at its maximum at time 0.
