@@ -1,0 +1,19 @@
+flowchart TD
+    subgraph RPI[Raspberry Pi]
+        subgraph L1[<b>Layer 3: Physical/motor control</b>]
+            direction LR
+            PI_Client[Mosquitto Client]
+            PI_Board[OpenCR board]
+            PI_MC[Motor Controller]
+            PI_Mot[Motor Interface]
+        end
+        subgraph L2[<b>Layer 2: Communication</b>]
+            PI_Bridge[MQTT-ROS Bridge]
+            Whisper[Whisper Model]
+            Localize[Sound Localization<br>GCC-PHAT]
+        end
+        subgraph L3[<b>Layer 1: appication layer</b>]
+            PC_Client[Mosquitto Client]
+            Fusion[Command identification & Validation]
+            Logic[Protocol Logic]
+        end
