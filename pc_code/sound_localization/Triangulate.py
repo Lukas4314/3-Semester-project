@@ -8,37 +8,37 @@ from consts import SHOULD_PLOT, SAMPLE_RATE
 
 def microphone_placement():
     #mic_positions = np.array([
-    #    [0.0, -0.1155, 0.0],    # Mic 0
-    #    [-0.1, 0.057, 0.0],     # Mic 1
-    #    [0.1, 0.057, 0.0]       # Mic 2
+    #    [0.0, -0.1155, 0.0],    # Mic 1
+    #    [-0.1, 0.057, 0.0],     # Mic 2
+    #    [0.1, 0.057, 0.0]       # Mic 3
     #])
     
     mic_positions = np.array([
-        [0.0, 0.1155, 0.0],    # Mic 0
-        [0.1, -0.057, 0.0],     # Mic 1
-        [-0.1, -0.057, 0.0]       # Mic 2
+        [0.0, 0.1155, 0.0],    # Mic 1
+        [0.1, -0.057, 0.0],     # Mic 2
+        [-0.1, -0.057, 0.0]       # Mic 3
     ])
     
     mic_positions *= 44.5/11.55  # Scale to actual size
     return mic_positions
 
 def get_distance_between_mic_in_point_direction(point, mic_positions):
-    dist0 = np.linalg.norm(point - mic_positions[0])
-    dist1 = np.linalg.norm(point - mic_positions[1])
-    dist2 = np.linalg.norm(point - mic_positions[2])
+    dist1 = np.linalg.norm(point - mic_positions[0])
+    dist2 = np.linalg.norm(point - mic_positions[1])
+    dist3 = np.linalg.norm(point - mic_positions[2])
 
-    # If 01 is positive, mic1 is further than mic0
-    a01 = dist1 - dist0
-    a02 = dist2 - dist0
-    a12 = dist2 - dist1
+    # If a12 is positive mic2 is closer than mic1
+    a12 = dist1 - dist2
+    a13 = dist1 - dist3
+    a23 = dist2 - dist3
 
-    return a01, a02, a12
+    return a12, a13, a23
 
-def calculate_score(a01, a02, a12, measured_d1, measured_d2, measured_d3):
+def calculate_score(a12, a13, a23, measured_d1, measured_d2, measured_d3):
     score = 0.0
-    score += (a01 - measured_d1) ** 2
-    score += (a02 - measured_d2) ** 2
-    score += (a12 - measured_d3) ** 2
+    score += (a12 - measured_d1) ** 2
+    score += (a13 - measured_d2) ** 2
+    score += (a23 - measured_d3) ** 2
     return score
 
 def create_grid(search_range=10.0, grid_size=0.1):
@@ -53,16 +53,16 @@ def create_grid(search_range=10.0, grid_size=0.1):
     return grid_points
 
 def find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_sound=343.0):
-    measured_d1 = tdoa_estimates[0]/ SAMPLE_RATE * speed_of_sound  # mic1 - mic0
-    measured_d2 = tdoa_estimates[1]/ SAMPLE_RATE * speed_of_sound  # mic2 - mic0
-    measured_d3 = tdoa_estimates[2]/ SAMPLE_RATE * speed_of_sound  # mic2 - mic1
+    measured_d1 = tdoa_estimates[0]/ SAMPLE_RATE * speed_of_sound  # mic1 - mic2
+    measured_d2 = tdoa_estimates[1]/ SAMPLE_RATE * speed_of_sound  # mic1 - mic3
+    measured_d3 = tdoa_estimates[2]/ SAMPLE_RATE * speed_of_sound  # mic2 - mic3
 
     grid_points = create_grid()
     grid_points_scores = []
 
     for point in grid_points:
-        a01, a02, a12 = get_distance_between_mic_in_point_direction(point, mic_positions)
-        score = calculate_score(a01, a02, a12, measured_d1, measured_d2, measured_d3)
+        a12, a13, a23 = get_distance_between_mic_in_point_direction(point, mic_positions)
+        score = calculate_score(a12, a13, a23, measured_d1, measured_d2, measured_d3)
         grid_points_scores.append((point, score))
 
     return grid_points_scores
@@ -81,12 +81,12 @@ def find_sound_origin(mic_positions, tdoa_estimates, speed_of_sound=343.0):
     return sorted_grid_points_scores[0], sorted_grid_points_scores[0][1]
 
 
-def plot_microphone_data(mic_0, mic_1, mic_2, name="microphone_signals"):
+def plot_microphone_data(mic_1, mic_2, mic_3, name="microphone_signals"):
     # Plotting all three microphone signals for visualization in same plot for comparison with different colors
     plt.figure(figsize=(12, 6))
-    plt.plot(mic_0, label='Microphone 0', alpha=0.7)
     plt.plot(mic_1, label='Microphone 1', alpha=0.7)
     plt.plot(mic_2, label='Microphone 2', alpha=0.7)
+    plt.plot(mic_3, label='Microphone 3', alpha=0.7)
     plt.title('Microphone Signals')
     plt.legend(loc='upper right')
     plt.savefig(f"{name}.png")
@@ -94,16 +94,16 @@ def plot_microphone_data(mic_0, mic_1, mic_2, name="microphone_signals"):
         plt.show()
 
 
-def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
+def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
     
-    plot_microphone_data(mic0_data, mic1_data, mic2_data)
+    plot_microphone_data(mic1_data, mic2_data, mic3_data)
     
     cutoff = 2000
     fs = SAMPLE_RATE
-    filtered_mic0_data = smallestIntegral.apply_lowpass_filter(mic0_data, cutoff, fs)
     filtered_mic1_data = smallestIntegral.apply_lowpass_filter(mic1_data, cutoff, fs)
     filtered_mic2_data = smallestIntegral.apply_lowpass_filter(mic2_data, cutoff, fs)
-    plot_microphone_data(filtered_mic0_data, filtered_mic1_data, filtered_mic2_data, name="filtered_microphone_signals")
+    filtered_mic3_data = smallestIntegral.apply_lowpass_filter(mic3_data, cutoff, fs)
+    plot_microphone_data(filtered_mic1_data, filtered_mic2_data, filtered_mic3_data, name="filtered_microphone_signals")
     
     
     """
@@ -126,9 +126,9 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
     
     
     # Calculate TDOA estimates using GCC-PHAT
-    tdoa_01 = gcc.PHAT_GCC_TDOA(mic0_data, mic1_data)  # If positive, mic1 is after mic0
-    tdoa_02 = gcc.PHAT_GCC_TDOA(mic0_data, mic2_data)  # If positive, mic2 is after mic0
     tdoa_12 = gcc.PHAT_GCC_TDOA(mic1_data, mic2_data)  # If positive, mic2 is after mic1
+    tdoa_13 = gcc.PHAT_GCC_TDOA(mic1_data, mic3_data)  # If positive, mic3 is after mic1
+    tdoa_23 = gcc.PHAT_GCC_TDOA(mic2_data, mic3_data)  # If positive, mic3 is after mic2
     
     """
     allowed_max_tdoa = 160
@@ -225,7 +225,7 @@ def triangulate_from_sound(mic0_data, mic1_data, mic2_data):
         print("Mic 1 and Mic 2 are at the same time")
     
     """
-    tdoa_estimates = [tdoa_01, tdoa_02, tdoa_12]
+    tdoa_estimates = [tdoa_12, tdoa_13, tdoa_23]
     mic_positions = microphone_placement()
 
     best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)
