@@ -1,7 +1,7 @@
 \section{Sound Recording}
 For soundrecording 3 I2S Mems microphones are used, as they have the possibility to share the same clock, ensuring that the samples are taken at the same time, which later can be compared to find the phase difference between the signals. Since the microphones use I2S, an interface to interact with the microphones are needed, but unfortunately the Raspberry Pi only has one I2S interface. A single I2S interface can be used to handle 2 microphones, by using both the left and right channels which are normally used for stereo sound. To be able to use more than 2 microphones an ESP32 is used, as it has 2 I2S interfaces, allowing it to handle up to 4 microphones, but in this case only 3 are used, resulting in 1 stereo and 1 mono. The ESP32 also has the ability to use WiFi and therefore can use MQTT to send the recorded audio directly to the computer, where processing can be done.
 The I2S protocol requires 4 lines:
-SCK: Serial Clock, used to synchronize the data transmission.
+SCK: Serial Clock, used to synchronise the data transmission.
 WS: Word Select, used to choose whether the left or right channels is being transmitted.
 SD: Serial Data, the actual audio data being transmitted.
 
