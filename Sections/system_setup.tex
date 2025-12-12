@@ -29,17 +29,17 @@
 
 The system architecture spans multiple layers distributed over 3 devices: an ESP32 microcontroller, a Raspberry Pi onboard the Turtlebot, and a PC for heavy processing. This layered approach allows for efficient handling of data acquisition, processing, and command execution, where the layers only interact with the one above or below them. The architecture is illustrated in \cref{fig:Hardware_and_comminication_overview}.
 
-The lowest layer, Layer 1, consists of the physical hardware components and communication protocols. Here a backend communications protocol of MQTT is used to facilitate communication between the three devices. Onboard the ESP32, the three microphones are interfaced using the I2S protocol, sharing 2 stereo channels for high-quality synchronized audio data. The ESP32 timestamps the audio data and publishes it via MQTT to the PC for processing. Onboard the Raspberry Pi, a MQTT-ROS bridge translates velocity commands from the PC into ROS2 messages that the Turtlebot can interpret. The Turtlebot's onboard OpenCR board handles low-level motor control based on these messages. 
+The lowest layer, Layer 1, consists of the physical hardware components and communication protocols. Here a backend communications protocol of MQTT is used to facilitate communication between the three devices. Onboard the ESP32, the three microphones are interfaced using the I2S protocol, sharing 2 stereo channels for high-quality synchronised audio data. The ESP32 timestamps the audio data and publishes it via MQTT to the PC for processing. Onboard the Raspberry Pi, a MQTT-ROS bridge translates velocity commands from the PC into ROS2 messages that the Turtlebot can interpret. The Turtlebot's onboard OpenCR board handles low-level motor control based on these messages. 
 
-The second layer, Layer 2, is responsible for data processing. On the PC, the audio data from the three microphones is processed for sound localization using the GCC-PHAT algorithm, whilst one datastream is duplicated for transcription using OpenAI's Whisper model.
+The second layer, Layer 2, is responsible for data processing. On the PC, the audio data from the three microphones is processed for sound localisation using the GCC-PHAT algorithm, whilst one datastream is duplicated for transcription using OpenAI's Whisper model.
 
-The highest layer, Layer 3, handles command identification and execution. The transcribed data from the Whisper model is analyzed continuesly for commands. When a command is identified, a corrosponding action is determined based on the protocol logic, positional commands are translated to velocity commands that are sent to the Turtlebot via MQTT for execution. If the command ``come here'' is given, the source of the sound is triangulated from the GCC-PHAT output, and a corrosponding turn and drive command is calculated to move the Turtlebot to the speaker's position. The command is then sent to the Turtlebot via MQTT for execution.
+The highest layer, Layer 3, handles command identification and execution. The transcribed data from the Whisper model is analysed continuously for commands. When a command is identified, a corresponding action is determined based on the protocol logic, positional commands are then translated to velocity commands that are sent to the Turtlebot via MQTT for execution. If the command ``come here'' is given, the source of the sound is triangulated from the GCC-PHAT output, and a corresponding turn and drive command is calculated to move the Turtlebot to the speaker's position. The command is then sent to the Turtlebot via MQTT for execution.
 
 % en ide om layers i vores system @BigMagnus6Tips
-1. Layer – application layer: Whisper, GCC_PHAT, Triangulation, stringtocommand, ESP32_mainfile, Raspberry_MQTT_2_command_pipeline
+1. Layer - application layer: Whisper, GCC\_PHAT, Triangulation, stringtocommand, ESP32\_mainfile, Raspberry\_MQTT\_2\_command\_pipeline
 
-2. Layer – communication layer: MQTT, TCP/IP, UART
+2. Layer - communication layer: MQTT, TCP(Transmission Control Protocol)/IP(Internet Protocol), UART (Universal Asynchronous Receiver-Transmitter)
 
-3. Layer – physical/motor control: OpenCR board, WiFi signals
+3. Layer - physical/motor control: OpenCR (Open-source Control Module for ROS) board, WiFi signals
 
 The core systems lie on the first layer and use the second layer to communicate, which in turn uses the third layer to actually transmit data. All three layers of the software architecture are used on every device. 

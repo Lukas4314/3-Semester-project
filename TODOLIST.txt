@@ -1,8 +1,6 @@
 Test, sound localization, robot commands (hvor præcist kører den, hvor meget afviger den)
 (evt. lave flere kommadoer robotten kan udføre, f.eks. return to home)
 
-Definer use-case
-
 Lav layered software architecture
 
 Diskussion (sound localization, whisper/faster whisper)
