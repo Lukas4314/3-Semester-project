@@ -1,0 +1,59 @@
+flowchart TD
+
+    subgraph "PC"
+        subgraph "Top Layer: Processing and Application"
+            PCA[Transcription]
+            PCB[Sound localization </br> and tracking]
+            PCD[Whisper model]
+            PCE[Localization command execution]
+        end
+        subgraph "Middle Layer: Data Handling and Communication"
+            PCC[Mosquitto client] 
+        end
+
+    end
+
+    subgraph "ESP32"
+        subgraph "Top Layer: Data Preprocessing"
+            ESPA[Time stamping and packetizing]
+        end
+        subgraph "Middle Layer: Data Handling and Communication"
+            ESPB[Mosquitto client]
+        end
+        subgraph "Bottom Layer: Hardware Interfacing"
+            ESPC[Microphones]
+            ESPD[I2s peripheral]
+            ESPC --- ESPD
+        end
+    end
+
+    subgraph "Raspberry Pi"
+        subgraph "Top Layer: Data Aggregation and Forwarding"
+            RPIA[MQTT to ROS bridge]
+        end
+        subgraph "Middle Layer: Data Handling and Communication"
+            RPIB[Mosquitto client]
+            
+            RPIE[Motor controller]
+        end
+        subgraph "Bottom Layer: Hardware interfacing"
+            RPID[Motor Interface]
+            RPIF[Motors]
+        end
+    end
+    RPIC[MQTT broker]
+
+    ESPA -- "Publishes audio data" --> ESPB 
+    ESPB -- "Sends audio data" --> RPIC
+    RPIC <-- "Updates audio and localization data" --> PCC
+    PCC -- "Subscribes to audio data" --> PCB
+    PCC -- "Subscribes to audio data" --> PCA
+    PCA -- "Sends transcriptions" --> PCD
+    PCA -- "Sends localization commands" --> PCE
+    PCE -- "Publishes velocity commands" --> PCC
+    RPIB <-- "Receives velocity commands" --> RPIC
+    RPIB -- "Subscribes to velocity commands" --> RPIA
+    RPIA -- "Forwards velocity commands" --> RPIE
+    RPIE -- "Controls motors" --> RPID
+    RPID -- "Drives" --> RPIF
+    ESPD -- "Captures audio" --> ESPA
