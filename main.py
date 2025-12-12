@@ -57,8 +57,11 @@ def main():
             
                 print("Recognized command:", command)
                 analysisstring = ""  # Reset after a valid command
-                turtleController.execute_command(command["action"], command["direction"], command["distance"])
-                    
+                turtleController.execute_command(
+                command["action"],
+                command.get("direction"),
+                command.get("distance")
+                )   
     except KeyboardInterrupt:
         print("Exiting program.")
         mqtt_interface_aud0.client.loop_stop()
