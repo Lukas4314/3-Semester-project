@@ -7,7 +7,7 @@ flowchart LR
             PI_Board[OpenCR board]
             PI_MC[Motor Controller]
             PI_Mot[Motor Interface]
-            PI_Board --- PI_MC --- PI_Mot
+            PI_Board -- "controls" --- PI_MC -- "PWM signals" --- PI_Mot
         end
         subgraph L2[<b>Layer 3: Communication</b>]
             PI_OPENCR[OpenCR Communication]
@@ -20,9 +20,9 @@ flowchart LR
             PI_Bridge[MQTT-ROS Bridge]
         end
     end
-    PI_OPENCR --- PI_Board
-    PI_Client --- PI_MQTT
-    PI_Bridge --- PI_Client
-    PI_Bridge --- PI_ROS
-    PI_ROS --- PI_OPENCR
+    PI_OPENCR -- "Motor velocity" --- PI_Board
+    PI_Client -- "subscribes" --- PI_MQTT
+    PI_Bridge -- "positional commands" --- PI_Client
+    PI_Bridge -- "publishes" --- PI_ROS
+    PI_ROS -- "subscribes" --- PI_OPENCR
     
