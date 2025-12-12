@@ -71,7 +71,11 @@ void setup() {
     digitalWrite(MIC3_SEL_PIN, MIC3_SEL_VALUE);
 
 
-
+    if (i2s1.begin()) {
+        Serial.println("I2S1 initialized (mono mic3)");
+    } else {
+        Serial.println("Failed to initialize I2S1");
+    }
 
     // Initialize both I2S peripherals
     if (i2s0.begin()) {
@@ -82,11 +86,7 @@ void setup() {
 
     delay(1000);
 
-    if (i2s1.begin()) {
-        Serial.println("I2S1 initialized (mono mic3)");
-    } else {
-        Serial.println("Failed to initialize I2S1");
-    }
+
     //mqtt.begin();
     //mqtt.overrideMaxBufferSize(1024 * 4 + 512); // Increase MQTT buffer to 1024 * 4 bytes for 2 channels and stereo + some extra margin
 

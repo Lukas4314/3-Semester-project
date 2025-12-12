@@ -66,6 +66,39 @@ void MqttInterface::wifi_event_handler(void *arg,
     }
 }
 
+void scanNetworks() {
+    printf("Scanning WiFi networks...\n");
+
+    wifi_scan_config_t scanConf = {};
+    scanConf.ssid = NULL;
+    scanConf.bssid = NULL;
+    scanConf.channel = 0;
+    scanConf.show_hidden = true;
+
+    ESP_ERROR_CHECK(esp_wifi_scan_start(&scanConf, true)); // true = blocking
+
+    uint16_t num_ap = 0;
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&num_ap));
+    printf("Found %d access points:\n", num_ap);
+
+    wifi_ap_record_t *ap_list = (wifi_ap_record_t*)malloc(num_ap * sizeof(wifi_ap_record_t));
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&num_ap, ap_list));
+
+    for (int i = 0; i < num_ap; i++) {
+        printf(
+            "SSID: %-32s | RSSI: %3d | Channel: %2d | Auth: %d\n",
+            ap_list[i].ssid,
+            ap_list[i].rssi,
+            ap_list[i].primary,
+            ap_list[i].authmode
+        );
+    }
+
+    free(ap_list);
+}
+
+
+
 void MqttInterface::connectWiFi()
 {
     printf("Connecting to WiFi SSID: %s\n", _ssid);
@@ -84,6 +117,8 @@ void MqttInterface::connectWiFi()
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
+    esp_log_level_set("wifi", ESP_LOG_VERBOSE);
+
 
     printf("WiFi driver initializing...\n");
 
@@ -105,14 +140,19 @@ void MqttInterface::connectWiFi()
 
     // --- WiFi Config ---
     wifi_config_t wifi_config = {};
-    strncpy((char *)wifi_config.sta.ssid, _ssid, sizeof(wifi_config.sta.ssid));
-    strncpy((char *)wifi_config.sta.password, _password, sizeof(wifi_config.sta.password));
+    strlcpy((char*)wifi_config.sta.ssid, _ssid, sizeof(wifi_config.sta.ssid));
+    strlcpy((char*)wifi_config.sta.password, _password, sizeof(wifi_config.sta.password));
+    
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
     printf("Starting WiFi...\n");
     ESP_ERROR_CHECK(esp_wifi_start());
+
+    scanNetworks();  
+
     printf("WiFi started, now connecting...\n");
     ESP_ERROR_CHECK(esp_wifi_connect());
 

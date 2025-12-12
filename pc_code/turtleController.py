@@ -4,7 +4,8 @@ import time
 import threading
 import numpy as np
 from scipy.io.wavfile import write
-from consts import SAMPLE_RATE
+from consts import SAMPLE_RATE, SHOULD_LOG
+from logger import *
 
 SPEED = 0.2 # meaning when 1 is written it is 1 meter per second
 ANGULAR_SPEED = 1 # meaning when 1 is written it is 1 degree per second
@@ -128,13 +129,22 @@ class TurtleController:
 		if action == "stop":
 			self.executing_thread = threading.Thread(target=self.stop)
 			self.executing_thread.start()
+			if SHOULD_LOG:
+				self.executing_thread.join()
+   
 		elif action == "move":
 			if direction == "forward":
 				self.executing_thread = threading.Thread(target=self.move_forward, args=(distance,))
-				self.executing_thread.start()
 			elif direction == "backward":
 				self.executing_thread = threading.Thread(target=self.move_backward, args=(distance,))
 				self.executing_thread.start()
+			self.executing_thread.start()
+			if SHOULD_LOG:
+				self.executing_thread.join()
+				Logger.set_value(DISTANCE_MOVED, input("How far did it move (in meters)?: "))
+				Logger.set_value(DISTANCE_THOUGH_IT_MOVED, distance)
+
+
 		elif action == "turn":
 			if direction == "left":
 				self.executing_thread = threading.Thread(target=self.turn_counter_clockwise, args=(distance,))
@@ -142,8 +152,10 @@ class TurtleController:
 			elif direction == "right":
 				self.executing_thread = threading.Thread(target=self.turn_clockwise, args=(distance,))
 				self.executing_thread.start()
-		elif action == "come":
-			self.go_to_speaker()
+			if SHOULD_LOG:
+				self.executing_thread.join()
+				Logger.set_value(DISTANCE_MOVED, input("How far did it move (in meters)?: "))
+				Logger.set_value(DISTANCE_THOUGH_IT_MOVED, distance)
 
 
 

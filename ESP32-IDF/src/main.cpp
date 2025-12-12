@@ -41,7 +41,7 @@
 #define SAMPLE_RATE 22050
 
 
-//MqttInterface mqtt("Havefun", "Havefun2", "mqtt://10.250.34.201");  // construct directly
+MqttInterface mqtt("Havefun", "Havefun2", "mqtt://10.250.34.201");  // construct directly
 
 static DRAM_ATTR I2sInterface i2s0;
 static DRAM_ATTR I2sInterface i2s1;
@@ -51,7 +51,7 @@ static DRAM_ATTR I2sInterface i2s1;
 
 void setup(){
 
-    //mqtt.begin();
+    mqtt.begin();
 
     printf("Initialized MQTT interface...\n");
 
@@ -99,14 +99,17 @@ void setup(){
 
     printf("Initializing I2S interfaces...\n");
 
-    if(!i2s0.begin()){
-        printf("Failed to initialize I2S0");
-        while(1);
-    }
+    
     if(!i2s1.begin()){
         printf("Failed to initialize I2S1");
         while(1);
     }
+
+    if(!i2s0.begin()){
+        printf("Failed to initialize I2S0");
+        while(1);
+    }
+
 }
 
 extern "C" void app_main(void)
@@ -116,7 +119,7 @@ extern "C" void app_main(void)
     uint32_t counter0 = 0;
     uint32_t counter1 = 0;
 
- 
+
     while (true) {
         const uint16_t bufferSize = 1024;
         const size_t bufferSize0 = bufferSize*2; // Multiply by 2 for stereo
@@ -143,13 +146,13 @@ extern "C" void app_main(void)
             i2s1.counterOffset = 0;
         }
 
-        printf("test");
+        
         memcpy(bufferWithCounter0 + 2, buffer0, bytesRead0);
         memcpy(bufferWithCounter1 + 2, buffer1, bytesRead1);
 
         //uint64_t start = esp_timer_get_time();  
-        //mqtt.publish("I2S0", bufferWithCounter0, bytesRead0 + 4); // +4 for counter
-        //mqtt.publish("I2S1", bufferWithCounter1, bytesRead1 + 4); // +4 for counter
+        mqtt.publish("I2S0", bufferWithCounter0, bytesRead0 + 4); // +4 for counter
+        mqtt.publish("I2S1", bufferWithCounter1, bytesRead1 + 4); // +4 for counter
         //uint64_t end = esp_timer_get_time();
         //printf("Elapsed: %llu us\n", end - start);
     }

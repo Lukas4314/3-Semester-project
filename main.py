@@ -6,8 +6,8 @@ from mqqtInterface import MQTTInterface
 from pc_code.turtleController import TurtleController
 from pc_code.stringToCommand import string_to_command
 from pc_code.transcriber import transcriber
-from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD1, MQTT_TOPIC_AUD0, RED, RED_END
-
+from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD1, MQTT_TOPIC_AUD0, RED, RED_END, SHOULD_LOG
+from logger import *
 
 
 def main():
@@ -28,6 +28,8 @@ def main():
     mqtt_interface_aud1.listen_and_clone_into_2_outputs(audio_queue2, audio_queue2_clone)
     transcriber_instance = transcriber(audio_queue2_clone)
     
+    if SHOULD_LOG:
+        Logger.initialize(Logger.get_all_logger_keys())
     
     try:
         analysisstring = ""
@@ -51,13 +53,15 @@ def main():
                     start_buffer = 0
                     end_buffer = 0
                     turtleController.go_to_human(start_index = best_index - start_buffer + offset, end_index = best_index + end_buffer + offset)
-                    raise Exception("Stopping for now")
-                    continue
-            
-            
-                print("Recognized command:", command)
-                analysisstring = ""  # Reset after a valid command
-                turtleController.execute_command(command["action"], command["direction"], command["distance"])
+                else:
+                    print("Recognized command:", command)
+                    analysisstring = ""  # Reset after a valid command
+                    turtleController.execute_command(command["action"], command["direction"], command["distance"])
+                
+                if SHOULD_LOG:
+                    Logger.set_value(ATTEMPS_AT_TALKING_BEFORE_REGESTERING, input("How many tries before registering the command? (1 is good, 0 if it is skitzophrenic): "))
+                    Logger.set_value(ACTION, command["action"])
+                    Logger.write_row()
                     
     except KeyboardInterrupt:
         print("Exiting program.")
@@ -73,6 +77,9 @@ def main():
         #transcriber_instance.save_audio_to_wav()
         mqtt_interface_aud0.save_to_wav("audio_aud0.wav")
         mqtt_interface_aud1.save_to_wav("audio_aud1.wav")
+    finally:
+        if SHOULD_LOG:
+            Logger.close()
 
 if __name__ == "__main__":
 

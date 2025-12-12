@@ -108,8 +108,11 @@ def PHAT_GCC_TDOA(signal1, signal2):
 		
 	fft1 = FFT(signal1)
 	fft2 = FFT(signal2)
-	filtered_fft1 = filter_telephone_band(fft1)
-	filtered_fft2 = filter_telephone_band(fft2)
+	#filtered_fft1 = filter_telephone_band(fft1)
+	#filtered_fft2 = filter_telephone_band(fft2)
+	filtered_fft1 = fft1
+	filtered_fft2 = fft2
+	
 	R = GCC(filtered_fft1, filtered_fft2)
 	
 	R_phat = phat_weight(R, weight = 0.8)

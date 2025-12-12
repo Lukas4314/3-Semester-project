@@ -27,10 +27,10 @@ def get_distance_between_mic_in_point_direction(point, mic_positions):
     dist1 = np.linalg.norm(point - mic_positions[1])
     dist2 = np.linalg.norm(point - mic_positions[2])
 
-    # If 01 is positive, mic1 is further than mic0
-    a01 = dist1 - dist0
-    a02 = dist2 - dist0
-    a12 = dist2 - dist1
+    # If 01 is positive, mic1 is closer than mic0 (might be the opposite not sure)
+    a01 = -dist1 + dist0
+    a02 = -dist2 + dist0
+    a12 = -dist2 + dist1
 
     return a01, a02, a12
 
