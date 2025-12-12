@@ -16,7 +16,7 @@ public:
 
     // Publish raw buffer to a topic
     bool publish(const char* topic, const int16_t* buffer, size_t length); // length in bytes
-
+    bool enqueue(const char* topic, const int16_t* buffer, size_t length); // length in bytes
 
 
 private:

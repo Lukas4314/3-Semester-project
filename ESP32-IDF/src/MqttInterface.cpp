@@ -52,6 +52,26 @@ bool MqttInterface::publish(const char *topic, const int16_t *buffer, size_t len
     return true;
 }
 
+
+bool MqttInterface::enqueue(const char *topic, const int16_t *buffer, size_t length)
+{
+    int msg_id = esp_mqtt_client_enqueue(_client, topic, (const char *)buffer, length, 0, 0, true);
+    if (msg_id == -1 || msg_id == -2)
+    {
+        if (msg_id == -1)
+        {
+            printf("MQTT enqueue failed: Out of memory\n");
+        }
+        else if (msg_id == -2)
+        {
+            printf("MQTT enqueue failed: Full outbox\n");
+        }
+        printf("Failed to enqueue to topic %s\n", topic);
+        return false;
+    }
+    return true;
+}
+
 void MqttInterface::wifi_event_handler(void *arg,
                                        esp_event_base_t event_base,
                                        int32_t event_id,

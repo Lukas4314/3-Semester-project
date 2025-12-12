@@ -93,10 +93,6 @@ void setup() {
 }
 
 
-
-
-
-
 void loop() {
     //mqtt.loop();
     const int numSamples = 1024*8;
