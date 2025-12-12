@@ -1,19 +1,28 @@
-flowchart TD
+flowchart LR
     subgraph RPI[Raspberry Pi]
-        subgraph L1[<b>Layer 3: Physical/motor control</b>]
-            direction LR
-            PI_Client[Mosquitto Client]
+        
+        subgraph L1[<b>Layer 4: Physical/motor control</b>]
+            
+            
             PI_Board[OpenCR board]
             PI_MC[Motor Controller]
             PI_Mot[Motor Interface]
+            PI_Board --- PI_MC --- PI_Mot
         end
-        subgraph L2[<b>Layer 2: Communication</b>]
+        subgraph L2[<b>Layer 3: Communication</b>]
+            PI_OPENCR[OpenCR Communication]
+            PI_MQTT[MQTT Broker]
+            PI_ROS[ROS Daemon]
+            PI_Client[Mosquitto Client]
+        end
+        subgraph L3[<b>Layer 2: Processing layer</b>]
+            
             PI_Bridge[MQTT-ROS Bridge]
-            Whisper[Whisper Model]
-            Localize[Sound Localization<br>GCC-PHAT]
         end
-        subgraph L3[<b>Layer 1: appication layer</b>]
-            PC_Client[Mosquitto Client]
-            Fusion[Command identification & Validation]
-            Logic[Protocol Logic]
-        end
+    end
+    PI_OPENCR --- PI_Board
+    PI_Client --- PI_MQTT
+    PI_Bridge --- PI_Client
+    PI_Bridge --- PI_ROS
+    PI_ROS --- PI_OPENCR
+    

@@ -1,0 +1,18 @@
+flowchart TD
+    subgraph PC[Processing computer]
+        subgraph L3[<b>Layer 3: Communication</b>]
+            PC_MQTT[MQTT client]
+        end
+        subgraph L2[<b>Layer 2: Processing layer</b>]
+            PC_Whisper[Whisper model]
+            PC_SL[Sound localization]
+            PC_Triangulation[Triangulation]
+
+        end
+        subgraph L1[<b>Layer 1: Application layer</b>]
+            PC_App[Command interpreting]
+            
+
+        end
+
+    end
