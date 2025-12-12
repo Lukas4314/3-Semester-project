@@ -1,4 +1,4 @@
-\section{identifying commands}
+\section{Identifying commands}
 
 
 When whisper returns a string of what has been said, the commands need to be extracted from the text so the robot can interpret what action has to be taken. This is done by processing the text i.e. lowercasing all characters, removing special characters (like: ",.!") and ensuring homophones (hear and here), or other words that sound similar (30 and further). These keywords were found through testing with the different voices and pronounciations the people in the group have. All number words under 11 are also converted to numbers (one becomes 1), as well as units are converted to numbers (centimeter becomes a factor of 0.01) since we use SI-units.
