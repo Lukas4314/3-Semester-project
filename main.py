@@ -6,7 +6,7 @@ from mqqtInterface import MQTTInterface
 from pc_code.turtleController import TurtleController
 from pc_code.stringToCommand import string_to_command
 from pc_code.transcriber import transcriber
-from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD1, MQTT_TOPIC_AUD0, RED, RED_END, SHOULD_LOG
+from consts import MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL, MQTT_TOPIC_AUD1, MQTT_TOPIC_AUD0, RED, RED_END, SHOULD_LOG, MQTT_TOPIC_BATCH
 from logger import *
 
 
@@ -15,7 +15,7 @@ def main():
     mqtt_interface_vel = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_VEL)
     mqtt_interface_aud0 = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD0)
     mqtt_interface_aud1 = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_AUD1)
-
+    mqtt_interface_aud = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC_BATCH)
 
     audio_queue0 = queue.Queue()
     audio_queue1 = queue.Queue()

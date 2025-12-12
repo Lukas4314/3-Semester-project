@@ -142,6 +142,56 @@ class MQTTInterface:
         self.client.on_message = on_message
         self.client.loop_start()    
     
+    
+    def listen_into_3_outputs(self, output_queue1, output_queue2, output_queue3):
+        def on_message(client, userdata, msg):
+            
+            # number of int16 values
+            count = len(msg.payload) // 2  
+
+            values = struct.unpack('<' + 'h'*count, msg.payload)
+            arr = np.array(values, dtype=np.int16)
+
+            arr1 = arr[0::3]
+            arr2 = arr[1::3]
+            arr3 = arr[2::3]
+
+            print(f"Lengths: {len(arr1)}, {len(arr2)}, {len(arr3)}")
+            
+            bigInt16_1 = arr1[1]
+            smallInt16_1 = arr1[0]
+            arr1 = arr1[2:]
+            
+            bigInt16_2 = arr2[1]
+            smallInt16_2 = arr2[0]
+            arr2 = arr2[2:]
+
+            bigInt16_3 = arr3[1]
+            smallInt16_3 = arr3[0]
+            arr3 = arr3[2:]
+
+            bigInt16 = arr[1]
+            smallInt16 = arr[0]
+            arr = arr[2:]
+
+            # Convert to unsigned 16-bit integers
+            big_u = np.uint16(bigInt16)
+            small_u = np.uint16(smallInt16)
+
+            # Combine into a 32-bit unsigned integer
+            message_index = (int(big_u) << 16) | int(small_u)
+            
+            
+            
+            output_queue1.put((message_index, arr[0::2]))
+            output_queue2.put((message_index, arr[1::2]))
+            self.recorded_data.append(arr[1::2])
+            
+        self.client.subscribe(self.topic)
+        self.client.on_message = on_message
+        self.client.loop_start()    
+    
+    
     def disconnect(self):
         self.publish_command(0.0, 0.0)
         self.client.loop_stop()

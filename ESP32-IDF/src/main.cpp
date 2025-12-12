@@ -24,11 +24,11 @@
 
 #define SAMPLE_RATE 16000
 
+#define NUM_I2S_BUFFERS 10
 #define BUFFER_SIZE 1024
-static int16_t i2s0Buffer[BUFFER_SIZE * 2 + 2]; // stereo + 2 counters
-static int16_t i2s1Buffer[BUFFER_SIZE + 2];     // mono + 2 counters
 
-
+static int16_t i2s0Buffers[NUM_I2S_BUFFERS][BUFFER_SIZE * 2 + 2]; // stereo + 2 counters
+static int16_t i2s1Buffers[NUM_I2S_BUFFERS][BUFFER_SIZE + 2];     // mono + 2 counters
 
 MqttInterface mqtt("Havefun", "Havefun2", "mqtt://10.250.34.201"); // MQTT instance
 
@@ -38,9 +38,11 @@ static DRAM_ATTR I2sInterface i2s1;
 // Queue to send buffers from CPU1 (I2S task) to CPU0 (MQTT task)
 struct I2SBuffer
 {
-    int16_t *data;
-    size_t length;
+    uint8_t index; // which buffer number
+    uint8_t which; // 0 = I2S0, 1 = I2S1
+    size_t length; // length in bytes
 };
+
 QueueHandle_t i2sQueue;
 
 // Setup function: called once on CPU0
@@ -83,108 +85,138 @@ void setup()
     }
 
     // Create queue for passing I2S buffers to MQTT task
-    i2sQueue = xQueueCreate(128, sizeof(I2SBuffer));
+    i2sQueue = xQueueCreate(NUM_I2S_BUFFERS - 1, sizeof(I2SBuffer)); // minus for to make sure
 }
-
-// CPU1 task: reads I2S and prepares buffers
 
 void i2sTask(void *param)
 {
     uint32_t counter0 = 0;
     uint32_t counter1 = 0;
 
-    const size_t bufferSize0 = BUFFER_SIZE * 2; // stereo
-    const size_t bufferSize1 = BUFFER_SIZE;     // mono
+    uint8_t i2s0Idx = 0;
+    uint8_t i2s1Idx = 0;
 
-    int16_t temp0[bufferSize0];
-    int16_t temp1[bufferSize1];
+    const size_t stereoSize = BUFFER_SIZE * 2;
+    const size_t monoSize = BUFFER_SIZE;
+
+    int16_t temp0[stereoSize];
+    int16_t temp1[monoSize];
 
     while (true)
     {
-        // Read samples from I2S peripherals
-        size_t bytesRead0 = i2s0.readSamples(temp0, bufferSize0 * sizeof(int16_t));
-        size_t bytesRead1 = i2s1.readSamples(temp1, bufferSize1 * sizeof(int16_t));
+        size_t bytesRead0 = i2s0.readSamples(temp0, stereoSize * sizeof(int16_t));
+        size_t bytesRead1 = i2s1.readSamples(temp1, monoSize * sizeof(int16_t));
 
-        // Handle I2S counter offsets
-        if (i2s0.counterOffset != 0)
+        size_t samples0 = bytesRead0 / sizeof(int16_t);
+        size_t samples1 = bytesRead1 / sizeof(int16_t);
+
+        if (samples0 != stereoSize || samples1 != monoSize)
         {
-            counter0 += i2s0.counterOffset;
-            printf("I2S0 overflow, total offset: %u\n", i2s0.counterOffset);
+            printf("I2S readSamples returned unexpected number of samples: I2S0=%u, I2S1=%u\n", (unsigned)samples0, (unsigned)samples1);
+        }
+
+        // pick buffer index (safe because queue size == NUM_I2S_BUFFERS)
+        uint8_t buf0 = i2s0Idx;
+        uint8_t buf1 = i2s1Idx;
+
+        i2s0Idx = (i2s0Idx + 1) % NUM_I2S_BUFFERS;
+        i2s1Idx = (i2s1Idx + 1) % NUM_I2S_BUFFERS;
+
+        if (i2s0.counterOffset > 0)
+        {
+            counter0 += i2s0.counterOffset * stereoSize;
+            printf("I2S0 overflow, offset=%u\n", i2s0.counterOffset);
             i2s0.counterOffset = 0;
         }
-        if (i2s1.counterOffset != 0)
+        if (i2s1.counterOffset > 0)
         {
-            counter1 += i2s1.counterOffset;
-            printf("I2S1 overflow, total offset: %u\n", i2s1.counterOffset);
+            counter1 += i2s1.counterOffset * monoSize;
+            printf("I2S1 overflow, offset=%u\n", i2s1.counterOffset);
             i2s1.counterOffset = 0;
         }
 
-        // Convert bytes to sample count
-        size_t numSamples0 = bytesRead0 / sizeof(int16_t);
-        size_t numSamples1 = bytesRead1 / sizeof(int16_t);
+        // Write counters
+        i2s0Buffers[buf0][0] = (int16_t)(counter0 & 0xFFFF);
+        i2s0Buffers[buf0][1] = (int16_t)(counter0 >> 16);
 
+        i2s1Buffers[buf1][0] = (int16_t)(counter1 & 0xFFFF);
+        i2s1Buffers[buf1][1] = (int16_t)(counter1 >> 16);
 
-        if (numSamples0 != BUFFER_SIZE*2 || numSamples1 != BUFFER_SIZE)
+        // Copy actual samples
+        memcpy(i2s0Buffers[buf0] + 2, temp0, bytesRead0);
+        memcpy(i2s1Buffers[buf1] + 2, temp1, bytesRead1);
+
+        // Queue items with index
+        I2SBuffer msg0 = {buf0, 0, (samples0 + 2) * sizeof(int16_t)};
+        I2SBuffer msg1 = {buf1, 1, (samples1 + 2) * sizeof(int16_t)};
+        if (counter0 % 10 == 0)
         {
-            // Incomplete buffer read; skip this iteration
-            printf("Incomplete I2S read: I2S0 samples=%zu, I2S1 samples=%zu\n", numSamples0, numSamples1);
+            if (xQueueSend(i2sQueue, &msg0, 0) != pdTRUE)
+                printf("Drop I2S0 buffer %u\n", buf0);
         }
 
-
-        // Insert counters at the start of the pre-allocated buffers
-        i2s0Buffer[0] = (int16_t)(counter0 & 0xFFFF);
-        i2s0Buffer[1] = (int16_t)((counter0 >> 16) & 0xFFFF);
-        i2s1Buffer[0] = (int16_t)(counter1 & 0xFFFF);
-        i2s1Buffer[1] = (int16_t)((counter1 >> 16) & 0xFFFF);
-
-        // Copy I2S data after counters
-        memcpy(i2s0Buffer + 2, temp0, bytesRead0);
-        memcpy(i2s1Buffer + 2, temp1, bytesRead1);
-
-        // Send to MQTT task via queue (non-blocking)
-        I2SBuffer msg0 = {i2s0Buffer, (numSamples0 + 2) * sizeof(int16_t)};
-        I2SBuffer msg1 = {i2s1Buffer, (numSamples1 + 2) * sizeof(int16_t)};
-
-        if (xQueueSend(i2sQueue, &msg0, 0) != pdTRUE)
-        {
-            // Queue full → drop buffer
-            printf("Dropped I2S0 buffer\n");
-        }
         if (xQueueSend(i2sQueue, &msg1, 0) != pdTRUE)
         {
-            printf("Dropped I2S1 buffer\n");
+            printf("Drop I2S1 buffer %u\n", buf1);
         }
+        counter0++;
+        counter1++;
     }
 }
-
 void mqttTask(void *param)
 {
-    const size_t batchBufferSize = (1024 + 2) * 3 * 3; // space for 9 buffers of 1024 samples + 2 counters
-    int16_t batchBuffer[batchBufferSize];
-    size_t batchOffset = 0;
+    const size_t batchBufferSize0 = (2048 + 2) * 3;
+    const size_t batchBufferSize1 = (1024 + 2) * 3;
+    static int16_t batchBuffer0[batchBufferSize0];
+    static int16_t batchBuffer1[batchBufferSize1];
+
+    size_t batchOffset0 = 0;
+    size_t batchOffset1 = 0;
 
     while (true)
     {
         I2SBuffer msg;
         if (xQueueReceive(i2sQueue, &msg, portMAX_DELAY) == pdTRUE)
         {
-            // Make sure we don't overflow batch buffer
-            if (batchOffset + msg.length / sizeof(int16_t) > batchBufferSize)
+            int16_t *src =
+                (msg.which == 0)
+                    ? i2s0Buffers[msg.index]
+                    : i2s1Buffers[msg.index];
+
+            size_t samples = msg.length / sizeof(int16_t);
+
+            if (msg.which == 0)
             {
-                if (batchOffset > 0)
+                // Flush batch if needed
+                if (batchOffset0 + samples > batchBufferSize0)
                 {
-                    mqtt.publish("I2SBatch", batchBuffer, batchOffset * sizeof(int16_t));
-                    batchOffset = 0;
+                    //mqtt.publish("I2S0", batchBuffer0, batchOffset0 * sizeof(int16_t));
+                    batchOffset0 = 0;
                 }
+
+                memcpy(batchBuffer0 + batchOffset0, src, msg.length);
+                batchOffset0 += samples;
             }
+            else if (msg.which == 1)
+            {
+                // Flush batch if needed
+                if (batchOffset1 + samples > batchBufferSize1)
+                {
+                    mqtt.publish("I2S1", batchBuffer1, batchOffset1 * sizeof(int16_t));
+                    batchOffset1 = 0;
+                }
 
-            // Copy buffer into batch
-            memcpy(batchBuffer + batchOffset, msg.data, msg.length);
-            batchOffset += msg.length / sizeof(int16_t);
-
+                memcpy(batchBuffer1 + batchOffset1, src, msg.length);
+                batchOffset1 += samples;
+            }
+            else
+            {
+                printf("MQTT task received invalid I2SBuffer message\n");
+            }
         }
     }
 }
+
 
 extern "C" void app_main(void)
 {
@@ -192,8 +224,8 @@ extern "C" void app_main(void)
     printf("Setup complete, starting tasks...\n");
 
     // Create I2S task on CPU1
-    xTaskCreatePinnedToCore(i2sTask, "I2S_Task", 8192*2, nullptr, 5, nullptr, 1);
+    xTaskCreatePinnedToCore(i2sTask, "I2S_Task", 8192 * 2, nullptr, 5, nullptr, 1);
 
     // Create MQTT task on CPU0
-    xTaskCreatePinnedToCore(mqttTask, "MQTT_Task", 4096*6, nullptr, 5, nullptr, 0);
+    xTaskCreatePinnedToCore(mqttTask, "MQTT_Task", 4096 * 12, nullptr, 5, nullptr, 0);
 }
