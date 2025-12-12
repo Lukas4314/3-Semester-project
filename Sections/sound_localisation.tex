@@ -1,7 +1,5 @@
 \section{Sound Localisation}
 \label{SEC:sound_localisation}
-Kilde indtil videre:
-https://en.wikipedia.org/wiki/Cross-correlation#Cross-correlation\_of\_deterministic\_signals
 \subsection{Locating time of command}
 
 %husk og ændre 80 sampels til det rigtige tal
@@ -12,7 +10,7 @@ But since Whisper does not operate in the time domain, it is not possible to lin
 To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is “come” which is usually around 2-10 samples. Then, the sample located in the middle of these 10 samples is chosen as the best possible sample to calculate the location of origin.
 
 \subsection{GCC-PHAT}
-GCC-PHAT (Generalised-Cross-Correlation Phase Transform) is an algorithm that calculates the TDOA (Time Delay Of Arrival) of a signal in relation to a reference signal. This is used to calculate where the signal is coming from by finding the time delay between 2 different microphones spaced by a known distance and multiplying the time delay with the speed of sound. The time delay is found by comparing the phase difference for all frequencies between two signals using cross-correlation.
+GCC-PHAT (Generalised-Cross-Correlation Phase Transform) is an algorithm that calculates the TDOA (Time Delay Of Arrival) of a signal in relation to a reference signal \cite{MathWorks_gccphat}. This is used to calculate where the signal is coming from by finding the time delay between 2 different microphones spaced by a known distance and multiplying the time delay with the speed of sound. The time delay is found by comparing the phase difference for all frequencies between two signals using cross-correlation.
 
 In order to calculate the TDOA of a signal, the signal must be converted to frequency domain which is done by using FFT (Fast Fourier Transform). When the signal is in the frequency domain, each frequency is represented by a complex number:
 

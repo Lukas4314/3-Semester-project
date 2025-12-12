@@ -10,7 +10,7 @@ flowchart LR
             PI_Board -- "controls" --- PI_MC -- "PWM signals" --- PI_Mot
         end
         subgraph L2[<b>Layer 3: Communication</b>]
-            PI_OPENCR[OpenCR Communication]
+            PI_OPENCR[Turtlebot3 driver]
             PI_MQTT[MQTT Broker]
             PI_ROS[ROS Daemon]
             PI_Client[Mosquitto Client]
@@ -21,8 +21,12 @@ flowchart LR
         end
     end
     PI_OPENCR -- "Motor velocity" --- PI_Board
-    PI_Client -- "subscribes" --- PI_MQTT
+    PI_Client -- "subscribes Motor velocity" --- PI_MQTT
     PI_Bridge -- "positional commands" --- PI_Client
-    PI_Bridge -- "publishes" --- PI_ROS
-    PI_ROS -- "subscribes" --- PI_OPENCR
+    PI_Bridge -- "publishes <br> Motor velocity" --- PI_ROS
+    PI_ROS -- "subscribes <br> Motor velocity" --- PI_OPENCR
+
+    PI_Bridge -- "subscribes: <br> Joint state" --- PI_ROS
+    PI_ROS -- "publishes: <br> Joint state" --- PI_OPENCR
+    PI_OPENCR -- "Joint state" --- PI_Board
     
