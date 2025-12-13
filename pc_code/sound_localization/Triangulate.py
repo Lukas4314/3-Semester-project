@@ -421,20 +421,50 @@ def test123():
     ax = fig.add_subplot(1,2,1, projection='3d')
     sc = ax.scatter(coords[:,0], coords[:,1], coords[:,2],
                     c=scores, cmap='viridis_r', s=6, marker='o')  # viridis_r so low score = bright
-    ax.scatter(point[0], point[1], point[2], c='red', marker='x', s=80, label='true')
-    ax.scatter(best_point[0], best_point[1], best_point[2], c='white', edgecolors='k', marker='o', s=60, label='best')
+
+    # Origin point and simple axes lines
+    ax.scatter(0, 0, 0, c='black', s=40, marker='o')
+    ax.plot([0, np.max(coords[:,0])], [0, 0], [0, 0], 'k-', alpha=0.3)
+    ax.plot([0, 0], [0, np.max(coords[:,1])], [0, 0], 'k-', alpha=0.3)
+    ax.plot([0, 0], [0, 0], [0, np.max(coords[:,2])], 'k-', alpha=0.3)
+
+    # True and best points
+    ax.scatter(point[0], point[1], point[2], c='red', marker='x', s=80)
+    ax.scatter(best_point[0], best_point[1], best_point[2], c='white', edgecolors='k', marker='o', s=60)
+
+    # Inline labels near points (with small offset for readability)
+    dx = 0.02 * (np.max(coords[:,0]) - np.min(coords[:,0]) + 1e-6)
+    dy = 0.02 * (np.max(coords[:,1]) - np.min(coords[:,1]) + 1e-6)
+    dz = 0.02 * (np.max(coords[:,2]) - np.min(coords[:,2]) + 1e-6)
+    ax.text(point[0] + dx, point[1] + dy, point[2] + dz, "true", color='red', fontsize=10)
+    ax.text(best_point[0] + dx, best_point[1] + dy, best_point[2] + dz, "best", color='black', fontsize=10)
+
     ax.set_xlabel('x (m)'); ax.set_ylabel('y (m)'); ax.set_zlabel('z (m)')
-    ax.legend()
+    # Optional: equalish aspect by box extents
+    ax.set_box_aspect([np.ptp(coords[:,0]) + 1e-6, np.ptp(coords[:,1]) + 1e-6, np.ptp(coords[:,2]) + 1e-6])
+
     cbar = fig.colorbar(sc, ax=ax, shrink=0.6)
     cbar.set_label('score (m^2)')
 
-    # top-down (XY) view colored by score and show best vs true
     ax2 = fig.add_subplot(1,2,2)
     sc2 = ax2.scatter(coords[:,0], coords[:,1], c=scores, cmap='viridis_r', s=6)
-    ax2.scatter(point[0], point[1], c='red', marker='x', s=60, label='true')
-    ax2.scatter(best_point[0], best_point[1], c='white', edgecolors='k', marker='o', s=60, label='best')
+
+    # Origin marker and axes lines
+    ax2.scatter(0, 0, c='black', s=140, marker='o')
+    ax2.axhline(0, color='k', linewidth=0.5, alpha=0.5)
+    ax2.axvline(0, color='k', linewidth=0.5, alpha=0.5)
+
+    # True and best points
+    ax2.scatter(point[0], point[1], c='red', marker='x', s=160)
+    ax2.scatter(best_point[0], best_point[1], c='white', edgecolors='k', marker='o', s=160)
+
+    # Inline labels near points (small offset)
+    dx2 = 0.02 * (np.max(coords[:,0]) - np.min(coords[:,0]) + 1e-6)
+    dy2 = 0.02 * (np.max(coords[:,1]) - np.min(coords[:,1]) + 1e-6)
+    ax2.text(point[0] + dx2, point[1] + dy2, "true", color='red', fontsize=30, ha='left', va='bottom')
+    ax2.text(best_point[0] + dx2, best_point[1] + dy2, "best", color='black', fontsize=30, ha='left', va='top')
+
     ax2.set_xlabel('x (m)'); ax2.set_ylabel('y (m)')
-    ax2.legend()
     fig.colorbar(sc2, ax=ax2, label='score (m^2)')
 
     plt.tight_layout()
