@@ -5,7 +5,7 @@
 
 Communication between the different components in the system is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic). %This ensures a layered architecture where different components only know about the topics they need data from, instead of all other components, allowing for modularity and easy scalability. 
 
-MQTT messages consist of a fixed header, variable header and a payload. The fixed header contains information about the message type and flags, while the variable header contains topic name and packet identifier (if QoS > 0).
+MQTT messages consist of a fixed header, variable header and a payload. The fixed header contains information about the message type and flags, while the variable header contains topic name and packet identifier (if QoS $>$ 0).
 
 Examples for variable header fields for different MQTT message types are shown in the table below:
 
@@ -15,15 +15,17 @@ Examples for variable header fields for different MQTT message types are shown i
         \toprule
         \textbf{Packet Type} & \textbf{Bits (7-4)} & \textbf{Hex} & \textbf{Purpose in the System} \\
         \midrule
-        CONNECT  & 0001 & 0x10 & ESP32 establishing connection to the broker. \\
-        PUBLISH  & 0011 & 0x3\_ & ESP32 sending audio; PC sending commands. \\
-        SUBSCRIBE & 1000 & 0x8\_ & PC subscribing to topics (e.g., \texttt{robot/audio/\#}). \\
-        PINGREQ  & 1100 & 0xC0 & ESP32 keeping the connection alive. \\
+        CONNECT  & 0001 & 0x10 & PC establishing connection to the broker. \\
+        PUBLISH  & 0011 & 0x3\_ & \makecell[l]{Pi sends audio.\\PC sends commands.} \\
+        SUBSCRIBE & 1000 & 0x8\_ & \makecell[l]{Pi subscribes to \texttt{mqtt\_vel} (velocity commands).\\PC subscribes to topics \texttt{I2S0} and \texttt{I2S1} for audio data.} \\
+        PINGREQ  & 1100 & 0xC0 & All clients keep their connections alive. \\
         \bottomrule
     \end{tabular}
     \caption{MQTT control packet types used in the system and their values in the fixed header.}
     \label{tab:mqtt_packet_types}
 \end{table}
+
+The PUBLISH packet type is used for all application data. The last four bits of its fixed header is the QoS (Quality of Service) level and flags in the last four bits (3-0) of its fixed header.
 
 
 The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in the table below:
