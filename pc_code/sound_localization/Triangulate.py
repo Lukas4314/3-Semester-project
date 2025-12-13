@@ -36,9 +36,9 @@ def get_distance_between_mic_in_point_direction(point, mic_positions):
 
 def calculate_score(a12, a13, a23, measured_d1, measured_d2, measured_d3):
     score = 0.0
-    score += (a12 + measured_d1) ** 2
-    score += (a13 + measured_d2) ** 2
-    score += (a23 + measured_d3) ** 2
+    score += (a12 - measured_d1) ** 2
+    score += (a13 - measured_d2) ** 2
+    score += (a23 - measured_d3) ** 2
     return score
 
 def create_grid(search_range=10.0, grid_size=0.1):
@@ -231,11 +231,170 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data, num_chunks=None):
     best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)
 
     return best_point, best_score
+
+def calculate_localization_errors(true_point, estimated_point, mic_positions=None):
+    """
+    Calculate various error metrics between true and estimated sound source positions.
+    
+    Parameters:
+    - true_point: numpy array [x, y, z] of true position
+    - estimated_point: numpy array [x, y, z] of estimated position
+    - mic_positions: optional, for calculating angular error relative to array center
+    
+    Returns:
+    Dictionary with all error metrics
+    """
+    errors = {}
+    
+    # 1. Euclidean distance error (absolute position error)
+    errors['position_error_m'] = np.linalg.norm(estimated_point - true_point)
+    
+    # 2. Individual coordinate errors
+    errors['x_error_m'] = estimated_point[0] - true_point[0]
+    errors['y_error_m'] = estimated_point[1] - true_point[1]
+    errors['z_error_m'] = estimated_point[2] - true_point[2]
+    
+    # 3. Distance from origin (radial distance)
+    true_distance = np.linalg.norm(true_point[:2])  # Ground distance (ignore z)
+    est_distance = np.linalg.norm(estimated_point[:2])
+    errors['radial_distance_error_m'] = est_distance - true_distance
+    errors['true_radial_distance_m'] = true_distance
+    errors['est_radial_distance_m'] = est_distance
+    
+    # 4. Relative error (percentage)
+    if true_distance > 0:
+        errors['radial_distance_error_percent'] = (errors['radial_distance_error_m'] / true_distance) * 100
+    else:
+        errors['radial_distance_error_percent'] = float('inf')
+    
+    # 5. Angular errors (azimuth and elevation)
+    # Azimuth: angle in XY plane (0° = positive X axis, 90° = positive Y axis)
+    true_azimuth = np.degrees(np.arctan2(true_point[1], true_point[0])) % 360
+    est_azimuth = np.degrees(np.arctan2(estimated_point[1], estimated_point[0])) % 360
+    
+    # Azimuth difference (handles wrap-around at 360°)
+    azimuth_diff = abs(est_azimuth - true_azimuth)
+    errors['azimuth_error_deg'] = min(azimuth_diff, 360 - azimuth_diff)
+    errors['true_azimuth_deg'] = true_azimuth
+    errors['est_azimuth_deg'] = est_azimuth
+    
+    # Elevation: angle from horizontal (0° = horizontal, 90° = straight up)
+    true_elevation = np.degrees(np.arctan2(true_point[2], np.linalg.norm(true_point[:2])))
+    est_elevation = np.degrees(np.arctan2(estimated_point[2], np.linalg.norm(estimated_point[:2])))
+    
+    errors['elevation_error_deg'] = abs(est_elevation - true_elevation)
+    errors['true_elevation_deg'] = true_elevation
+    errors['est_elevation_deg'] = est_elevation
+    
+    # 6. Angular error in 3D space (angle between vectors from origin)
+    if np.linalg.norm(true_point) > 0 and np.linalg.norm(estimated_point) > 0:
+        cos_angle = np.dot(true_point, estimated_point) / (np.linalg.norm(true_point) * np.linalg.norm(estimated_point))
+        # Clamp to avoid numerical issues
+        cos_angle = np.clip(cos_angle, -1.0, 1.0)
+        errors['angular_error_3d_deg'] = np.degrees(np.arccos(cos_angle))
+    else:
+        errors['angular_error_3d_deg'] = float('nan')
+    
+    # 7. Error relative to microphone array (if mic_positions provided)
+    if mic_positions is not None:
+        # Calculate array center
+        array_center = np.mean(mic_positions, axis=0)
+        
+        # Vectors from array center to points
+        true_vec = true_point - array_center
+        est_vec = estimated_point - array_center
+        
+        # Distance from array center
+        errors['true_distance_from_array_m'] = np.linalg.norm(true_vec)
+        errors['est_distance_from_array_m'] = np.linalg.norm(est_vec)
+        errors['distance_from_array_error_m'] = errors['est_distance_from_array_m'] - errors['true_distance_from_array_m']
+        
+        # Angular error relative to array
+        if errors['true_distance_from_array_m'] > 0 and errors['est_distance_from_array_m'] > 0:
+            cos_angle_array = np.dot(true_vec, est_vec) / (errors['true_distance_from_array_m'] * errors['est_distance_from_array_m'])
+            cos_angle_array = np.clip(cos_angle_array, -1.0, 1.0)
+            errors['angular_error_from_array_deg'] = np.degrees(np.arccos(cos_angle_array))
+        else:
+            errors['angular_error_from_array_deg'] = float('nan')
+    
+    return errors
+
+def print_errors(true_point, estimated_point, mic_positions=None):
+    """Pretty print all error metrics"""
+    errors = calculate_localization_errors(true_point, estimated_point, mic_positions)
+    
+    print("=" * 60)
+    print("LOCALIZATION ERROR ANALYSIS")
+    print("=" * 60)
+    
+    print(f"\nTrue position:      [{true_point[0]:.3f}, {true_point[1]:.3f}, {true_point[2]:.3f}] m")
+    print(f"Estimated position: [{estimated_point[0]:.3f}, {estimated_point[1]:.3f}, {estimated_point[2]:.3f}] m")
+    
+    print("\n" + "=" * 60)
+    print("POSITION ERRORS")
+    print("=" * 60)
+    print(f"Total position error: {errors['position_error_m']:.3f} m")
+    print(f"X error: {errors['x_error_m']:.3f} m")
+    print(f"Y error: {errors['y_error_m']:.3f} m")
+    print(f"Z error: {errors['z_error_m']:.3f} m")
+    
+    print("\n" + "=" * 60)
+    print("DISTANCE FROM ORIGIN")
+    print("=" * 60)
+    print(f"True radial distance: {errors['true_radial_distance_m']:.3f} m")
+    print(f"Estimated radial distance: {errors['est_radial_distance_m']:.3f} m")
+    print(f"Radial distance error: {errors['radial_distance_error_m']:.3f} m")
+    if 'radial_distance_error_percent' in errors and errors['radial_distance_error_percent'] != float('inf'):
+        print(f"Relative error: {errors['radial_distance_error_percent']:.1f} %")
+    
+    print("\n" + "=" * 60)
+    print("ANGULAR ERRORS (FROM ORIGIN)")
+    print("=" * 60)
+    print(f"True azimuth: {errors['true_azimuth_deg']:.1f}°")
+    print(f"Estimated azimuth: {errors['est_azimuth_deg']:.1f}°")
+    print(f"Azimuth error: {errors['azimuth_error_deg']:.1f}°")
+    print(f"\nTrue elevation: {errors['true_elevation_deg']:.1f}°")
+    print(f"Estimated elevation: {errors['est_elevation_deg']:.1f}°")
+    print(f"Elevation error: {errors['elevation_error_deg']:.1f}°")
+    print(f"\nTotal 3D angular error: {errors['angular_error_3d_deg']:.1f}°")
+    
+    if mic_positions is not None:
+        print("\n" + "=" * 60)
+        print("RELATIVE TO MICROPHONE ARRAY")
+        print("=" * 60)
+        print(f"True distance from array: {errors['true_distance_from_array_m']:.3f} m")
+        print(f"Estimated distance from array: {errors['est_distance_from_array_m']:.3f} m")
+        print(f"Distance error from array: {errors['distance_from_array_error_m']:.3f} m")
+        print(f"Angular error from array: {errors['angular_error_from_array_deg']:.1f}°")
+    
+    print("\n" + "=" * 60)
         
 def test123():
     mic_positions = microphone_placement()
     point = np.array([1.9738428371, 0.881273731, 1.776132172])  # Example true position
-    tdoa_estimates = [np.linalg.norm(point - mic_positions[1])/343-np.linalg.norm(point - mic_positions[0])/343, np.linalg.norm(point - mic_positions[2])/343-np.linalg.norm(point - mic_positions[0])/343, np.linalg.norm(point - mic_positions[2])/343-np.linalg.norm(point - mic_positions[1])/343]
+    tdoa_estimates = [np.linalg.norm(point - mic_positions[0])/343-np.linalg.norm(point - mic_positions[1])/343, np.linalg.norm(point - mic_positions[0])/343-np.linalg.norm(point - mic_positions[2])/343, np.linalg.norm(point - mic_positions[1])/343-np.linalg.norm(point - mic_positions[2])/343]
+    
+    print(f"True point: {point}")
+    print(f"TDOA estimates (seconds): {tdoa_estimates}")
+    
+    # Check several candidate grid points
+    candidates = [
+        np.array([1.8, 0.8, 1.6]),  # What you found
+        np.array([1.9, 0.8, 1.7]),  # Another candidate
+        np.array([2.0, 0.9, 1.8]),  # Another candidate
+        np.array([1.9, 0.9, 1.7]),  # Another candidate
+        np.array([2.0, 0.8, 1.8]),  # Another candidate
+    ]
+    
+    for candidate in candidates:
+        a12, a13, a23 = get_distance_between_mic_in_point_direction(candidate, mic_positions)
+        measured_d1 = tdoa_estimates[0] * 343.0
+        measured_d2 = tdoa_estimates[1] * 343.0
+        measured_d3 = tdoa_estimates[2] * 343.0
+        
+        score = calculate_score(a12, a13, a23, measured_d1, measured_d2, measured_d3)
+        print(f"Candidate {candidate}: score = {score:.10f}")
+    
     grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa_estimates)
 
     print("Calculating...")
@@ -245,6 +404,13 @@ def test123():
     
     # find best point (keep for overlay)
     best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)
+
+     # After getting best_point from your algorithm:
+    print_errors(point, best_point, mic_positions)
+    
+    # Or compare specific points:
+    point_est = np.array([1.8, 0.8, 1.6])
+    print_errors(point, point_est, mic_positions)
 
     # prepare arrays of all grid points and scores
     coords = np.array([p for p, s in grid_points_scores])
