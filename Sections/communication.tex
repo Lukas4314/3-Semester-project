@@ -3,7 +3,7 @@
 % https://mosquitto.org/man/mqtt-7.html <--- cool link
 % https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.pdf <-- also cool
 
-Communication between the different components in the system is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic). %This ensures a layered architecture where different components only know about the topics they need data from, instead of all other components, allowing for modularity and easy scalability. 
+Communication between the different components in the system is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic) \cite{OASIS_MQTT5}. %This ensures a layered architecture where different components only know about the topics they need data from, instead of all other components, allowing for modularity and easy scalability. 
 
 MQTT messages consist of a fixed header, variable header and a payload. The fixed header contains information about the message type and flags, while the variable header contains topic name and packet identifier (if QoS $>$ 0).
 
