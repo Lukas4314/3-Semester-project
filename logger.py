@@ -11,85 +11,85 @@ from pathlib import Path
 # --------------------------------------------------------------
 ACTION = "Action"
 
-ATTEMPS_AT_TALKING_BEFORE_REGESTERING = "AttempsAtTalkingBeforeRegistering"
+ATTEMPTS_AT_TALKING_BEFORE_REGISTERING = "AttemptsAtTalkingBeforeRegistering"
 
 # For basic movement logging
 DISTANCE_MOVED = "DistanceMoved"
-DISTANCE_THOUGH_IT_MOVED = "DistanceThoughItMoved"
+DISTANCE_THOUGHT_IT_MOVED = "DistanceThoughtItMoved"
 ANGLE_ROTATED = "AngleRotated"
-ANGLE_THOUGH_IT_ROTATED = "AngleThoughItRotated"
+ANGLE_THOUGHT_IT_ROTATED = "AngleThoughtItRotated"
 
 
 # For triangulation logging
-TDOA_PHAT_WEIGHT_10_2k_samples_WITH_FILTER = "TDOAPhatWeighting1.0_2k_samples_With_Filter"
-TDOA_PLAT_WEIGHT_09_2k_samples_WITH_FILTER = "TDOAPlatWeighting0.9_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_08_2k_samples_WITH_FILTER = "TDOAPhatWeighting0.8_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_07_2k_samples_WITH_FILTER = "TDOAPhatWeighting0.7_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_06_2k_samples_WITH_FILTER = "TDOAPhatWeighting0.6_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_05_2k_samples_WITH_FILTER = "TDOAPhatWeighting0.5_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_04_2k_samples_WITH_FILTER = "TDOAPhatWeighting0.4_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_03_2k_samples_WITH_FILTER = "TDOAPhatWeighting0.3_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_02_2k_samples_WITH_FILTER = "TDOAPhatWeighting0.2_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_01_2k_samples_WITH_FILTER = "TDOAPhatWeighting0.1_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_00_2k_samples_WITH_FILTER = "TDOAPhatWeighting0.0_2k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_10_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting1.0_2k_samples_Without_Filter"
-TDOA_PLAT_WEIGHT_09_2k_samples_WITHOUT_FILTER = "TDOAPlatWeighting0.9_2k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_08_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.8_2k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_07_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.7_2k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_06_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.6_2k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_05_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.5_2k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_04_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.4_2k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_03_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.3_2k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_02_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.2_2k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_01_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.1_2k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_00_2k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.0_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_10_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting1.0_2k_samples_With_Filter"
+TDOA_PLAT_WEIGHT_09_2K_SAMPLES_WITH_FILTER = "TDOAPlatWeighting0.9_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_08_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.8_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_07_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.7_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_06_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.6_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_05_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.5_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_04_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.4_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_03_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.3_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_02_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.2_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_01_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.1_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_00_2K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.0_2k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_10_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting1.0_2k_samples_Without_Filter"
+TDOA_PLAT_WEIGHT_09_2K_SAMPLES_WITHOUT_FILTER = "TDOAPlatWeighting0.9_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_08_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.8_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_07_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.7_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_06_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.6_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_05_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.5_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_04_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.4_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_03_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.3_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_02_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.2_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_01_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.1_2k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_00_2K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.0_2k_samples_Without_Filter"
 
 
-TDOA_PHAT_WEIGHT_10_4k_samples_WITH_FILTER = "TDOAPhatWeighting1.0_4k_samples_With_Filter"
-TDOA_PLAT_WEIGHT_09_4k_samples_WITH_FILTER = "TDOAPlatWeighting0.9_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_08_4k_samples_WITH_FILTER = "TDOAPhatWeighting0.8_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_07_4k_samples_WITH_FILTER = "TDOAPhatWeighting0.7_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_06_4k_samples_WITH_FILTER = "TDOAPhatWeighting0.6_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_05_4k_samples_WITH_FILTER = "TDOAPhatWeighting0.5_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_04_4k_samples_WITH_FILTER = "TDOAPhatWeighting0.4_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_03_4k_samples_WITH_FILTER = "TDOAPhatWeighting0.3_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_02_4k_samples_WITH_FILTER = "TDOAPhatWeighting0.2_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_01_4k_samples_WITH_FILTER = "TDOAPhatWeighting0.1_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_00_4k_samples_WITH_FILTER = "TDOAPhatWeighting0.0_4k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_10_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting1.0_4k_samples_Without_Filter"
-TDOA_PLAT_WEIGHT_09_4k_samples_WITHOUT_FILTER = "TDOAPlatWeighting0.9_4k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_08_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.8_4k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_07_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.7_4k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_06_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.6_4k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_05_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.5_4k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_04_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.4_4k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_03_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.3_4k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_02_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.2_4k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_01_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.1_4k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_00_4k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.0_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_10_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting1.0_4k_samples_With_Filter"
+TDOA_PLAT_WEIGHT_09_4K_SAMPLES_WITH_FILTER = "TDOAPlatWeighting0.9_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_08_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.8_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_07_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.7_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_06_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.6_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_05_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.5_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_04_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.4_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_03_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.3_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_02_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.2_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_01_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.1_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_00_4K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.0_4k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_10_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting1.0_4k_samples_Without_Filter"
+TDOA_PLAT_WEIGHT_09_4K_SAMPLES_WITHOUT_FILTER = "TDOAPlatWeighting0.9_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_08_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.8_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_07_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.7_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_06_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.6_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_05_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.5_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_04_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.4_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_03_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.3_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_02_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.2_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_01_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.1_4k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_00_4K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.0_4k_samples_Without_Filter"
 
-TDOA_PHAT_WEIGHT_10_8k_samples_WITH_FILTER = "TDOAPhatWeighting1.0_8k_samples_With_Filter"
-TDOA_PLAT_WEIGHT_09_8k_samples_WITH_FILTER = "TDOAPlatWeighting0.9_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_08_8k_samples_WITH_FILTER = "TDOAPhatWeighting0.8_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_07_8k_samples_WITH_FILTER = "TDOAPhatWeighting0.7_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_06_8k_samples_WITH_FILTER = "TDOAPhatWeighting0.6_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_05_8k_samples_WITH_FILTER = "TDOAPhatWeighting0.5_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_04_8k_samples_WITH_FILTER = "TDOAPhatWeighting0.4_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_03_8k_samples_WITH_FILTER = "TDOAPhatWeighting0.3_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_02_8k_samples_WITH_FILTER = "TDOAPhatWeighting0.2_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_01_8k_samples_WITH_FILTER = "TDOAPhatWeighting0.1_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_00_8k_samples_WITH_FILTER = "TDOAPhatWeighting0.0_8k_samples_With_Filter"
-TDOA_PHAT_WEIGHT_10_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting1.0_8k_samples_Without_Filter"
-TDOA_PLAT_WEIGHT_09_8k_samples_WITHOUT_FILTER = "TDOAPlatWeighting0.9_8k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_08_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.8_8k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_07_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.7_8k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_06_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.6_8k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_05_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.5_8k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_04_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.4_8k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_03_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.3_8k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_02_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.2_8k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_01_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.1_8k_samples_Without_Filter"
-TDOA_PHAT_WEIGHT_00_8k_samples_WITHOUT_FILTER = "TDOAPhatWeighting0.0_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_10_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting1.0_8k_samples_With_Filter"
+TDOA_PLAT_WEIGHT_09_8K_SAMPLES_WITH_FILTER = "TDOAPlatWeighting0.9_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_08_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.8_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_07_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.7_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_06_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.6_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_05_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.5_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_04_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.4_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_03_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.3_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_02_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.2_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_01_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.1_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_00_8K_SAMPLES_WITH_FILTER = "TDOAPhatWeighting0.0_8k_samples_With_Filter"
+TDOA_PHAT_WEIGHT_10_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting1.0_8k_samples_Without_Filter"
+TDOA_PLAT_WEIGHT_09_8K_SAMPLES_WITHOUT_FILTER = "TDOAPlatWeighting0.9_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_08_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.8_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_07_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.7_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_06_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.6_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_05_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.5_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_04_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.4_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_03_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.3_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_02_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.2_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_01_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.1_8k_samples_Without_Filter"
+TDOA_PHAT_WEIGHT_00_8K_SAMPLES_WITHOUT_FILTER = "TDOAPhatWeighting0.0_8k_samples_Without_Filter"
 
 
 
@@ -180,85 +180,85 @@ class Logger:
         defaults = {
             
             ACTION : "None",
-            ATTEMPS_AT_TALKING_BEFORE_REGESTERING : "None",
+            ATTEMPTS_AT_TALKING_BEFORE_REGISTERING : "None",
             # For basic movement logging
             DISTANCE_MOVED : "None",
-            DISTANCE_THOUGH_IT_MOVED : "None",
+            DISTANCE_THOUGHT_IT_MOVED : "None",
             ANGLE_ROTATED : "None",
-            ANGLE_THOUGH_IT_ROTATED : "None",
+            ANGLE_THOUGHT_IT_ROTATED : "None",
 
             # For triangulation logging
-            TDOA_PHAT_WEIGHT_10_2k_samples_WITH_FILTER : "None",
-            TDOA_PLAT_WEIGHT_09_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_08_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_07_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_06_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_05_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_04_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_03_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_02_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_01_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_00_2k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_10_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PLAT_WEIGHT_09_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_08_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_07_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_06_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_05_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_04_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_03_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_02_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_01_2k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_00_2k_samples_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_10_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PLAT_WEIGHT_09_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_08_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_07_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_06_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_05_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_04_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_03_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_02_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_01_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_00_2K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_10_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PLAT_WEIGHT_09_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_08_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_07_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_06_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_05_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_04_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_03_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_02_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_01_2K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_00_2K_SAMPLES_WITHOUT_FILTER : "None",
 
 
-            TDOA_PHAT_WEIGHT_10_4k_samples_WITH_FILTER : "None",
-            TDOA_PLAT_WEIGHT_09_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_08_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_07_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_06_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_05_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_04_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_03_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_02_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_01_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_00_4k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_10_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PLAT_WEIGHT_09_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_08_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_07_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_06_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_05_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_04_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_03_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_02_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_01_4k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_00_4k_samples_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_10_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PLAT_WEIGHT_09_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_08_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_07_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_06_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_05_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_04_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_03_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_02_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_01_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_00_4K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_10_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PLAT_WEIGHT_09_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_08_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_07_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_06_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_05_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_04_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_03_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_02_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_01_4K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_00_4K_SAMPLES_WITHOUT_FILTER : "None",
 
 
 
-            TDOA_PHAT_WEIGHT_10_8k_samples_WITH_FILTER : "None",
-            TDOA_PLAT_WEIGHT_09_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_08_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_07_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_06_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_05_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_04_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_03_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_02_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_01_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_00_8k_samples_WITH_FILTER : "None",
-            TDOA_PHAT_WEIGHT_10_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PLAT_WEIGHT_09_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_08_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_07_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_06_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_05_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_04_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_03_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_02_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_01_8k_samples_WITHOUT_FILTER : "None",
-            TDOA_PHAT_WEIGHT_00_8k_samples_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_10_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PLAT_WEIGHT_09_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_08_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_07_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_06_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_05_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_04_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_03_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_02_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_01_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_00_8K_SAMPLES_WITH_FILTER : "None",
+            TDOA_PHAT_WEIGHT_10_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PLAT_WEIGHT_09_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_08_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_07_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_06_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_05_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_04_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_03_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_02_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_01_8K_SAMPLES_WITHOUT_FILTER : "None",
+            TDOA_PHAT_WEIGHT_00_8K_SAMPLES_WITHOUT_FILTER : "None",
 
 
             ACTUAL_TRIANGULATION_ANGLE : "None",
@@ -275,86 +275,86 @@ class Logger:
         return [
             ACTION,
 
-            ATTEMPS_AT_TALKING_BEFORE_REGESTERING,
+            ATTEMPTS_AT_TALKING_BEFORE_REGISTERING,
 
             # For basic movement logging
             DISTANCE_MOVED,
-            DISTANCE_THOUGH_IT_MOVED,
+            DISTANCE_THOUGHT_IT_MOVED,
             ANGLE_ROTATED,
-            ANGLE_THOUGH_IT_ROTATED,
+            ANGLE_THOUGHT_IT_ROTATED,
 
 
             # For triangulation logging
-            TDOA_PHAT_WEIGHT_10_2k_samples_WITH_FILTER,
-            TDOA_PLAT_WEIGHT_09_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_08_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_07_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_06_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_05_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_04_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_03_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_02_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_01_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_00_2k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_10_2k_samples_WITHOUT_FILTER,
-            TDOA_PLAT_WEIGHT_09_2k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_08_2k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_07_2k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_06_2k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_05_2k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_04_2k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_03_2k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_02_2k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_01_2k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_00_2k_samples_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_10_2K_SAMPLES_WITH_FILTER,
+            TDOA_PLAT_WEIGHT_09_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_08_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_07_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_06_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_05_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_04_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_03_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_02_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_01_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_00_2K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_10_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PLAT_WEIGHT_09_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_08_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_07_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_06_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_05_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_04_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_03_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_02_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_01_2K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_00_2K_SAMPLES_WITHOUT_FILTER,
             
             
-            TDOA_PHAT_WEIGHT_10_4k_samples_WITH_FILTER,
-            TDOA_PLAT_WEIGHT_09_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_08_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_07_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_06_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_05_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_04_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_03_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_02_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_01_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_00_4k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_10_4k_samples_WITHOUT_FILTER,
-            TDOA_PLAT_WEIGHT_09_4k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_08_4k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_07_4k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_06_4k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_05_4k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_04_4k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_03_4k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_02_4k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_01_4k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_00_4k_samples_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_10_4K_SAMPLES_WITH_FILTER,
+            TDOA_PLAT_WEIGHT_09_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_08_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_07_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_06_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_05_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_04_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_03_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_02_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_01_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_00_4K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_10_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PLAT_WEIGHT_09_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_08_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_07_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_06_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_05_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_04_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_03_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_02_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_01_4K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_00_4K_SAMPLES_WITHOUT_FILTER,
             
             
-            TDOA_PHAT_WEIGHT_10_8k_samples_WITH_FILTER,
-            TDOA_PLAT_WEIGHT_09_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_08_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_07_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_06_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_05_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_04_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_03_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_02_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_01_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_00_8k_samples_WITH_FILTER,
-            TDOA_PHAT_WEIGHT_10_8k_samples_WITHOUT_FILTER,
-            TDOA_PLAT_WEIGHT_09_8k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_08_8k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_07_8k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_06_8k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_05_8k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_04_8k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_03_8k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_02_8k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_01_8k_samples_WITHOUT_FILTER,
-            TDOA_PHAT_WEIGHT_00_8k_samples_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_10_8K_SAMPLES_WITH_FILTER,
+            TDOA_PLAT_WEIGHT_09_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_08_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_07_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_06_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_05_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_04_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_03_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_02_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_01_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_00_8K_SAMPLES_WITH_FILTER,
+            TDOA_PHAT_WEIGHT_10_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PLAT_WEIGHT_09_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_08_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_07_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_06_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_05_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_04_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_03_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_02_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_01_8K_SAMPLES_WITHOUT_FILTER,
+            TDOA_PHAT_WEIGHT_00_8K_SAMPLES_WITHOUT_FILTER,
             
 
 

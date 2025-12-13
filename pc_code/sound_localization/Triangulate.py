@@ -94,7 +94,7 @@ def plot_microphone_data(mic_1, mic_2, mic_3, name="microphone_signals"):
         plt.show()
 
 
-def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
+def triangulate_from_sound(mic1_data, mic2_data, mic3_data, num_chunks=None):
     
     plot_microphone_data(mic1_data, mic2_data, mic3_data)
     

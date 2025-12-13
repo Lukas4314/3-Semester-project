@@ -11,7 +11,8 @@ import time
 from matplotlib import pyplot as plt
 import scipy.signal
 import scipy.io.wavfile as wavfile
-from consts import SAMPLE_RATE, SHOULD_PLOT
+from consts import SAMPLE_RATE, SHOULD_PLOT, SHOULD_LOG
+import logger
 # 35.7
 # 28.8
 
@@ -64,7 +65,7 @@ def GCC(fft1, fft2):
 	return fft1 * np.conj(fft2)
 
 # 3. Multiply by a PHAT weighting function to normalize the cross-correlation spectrum, here the weighting is 1.
-def phat_weight(R, weight = 1, eps=1e-8):
+def phat_weight(R, weight, eps=1e-8):
 	mag = np.abs(R)
 	mag = np.power(mag, weight)
 	return R / (mag + eps)
@@ -98,24 +99,54 @@ def TDOA(cross_corr):
 	# To clear confusion: lag means the signal is delayed, so the sign is flipped here so the TDOA is positive when signal2 arrives after signal1.
 	return -peak_lag(cross_corr)
 
-def PHAT_GCC_TDOA(signal1, signal2):
+def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False, sample_size=None):
 	"""
 	Calculate TDOA between signal1 and signal2.
 	Returns: tdoa in samples where positive value means signal2 arrives AFTER signal1
 	"""
 	if not hasattr(PHAT_GCC_TDOA, "counter"):
 		PHAT_GCC_TDOA.counter = 0
-		
+
 	fft1 = FFT(signal1)
 	fft2 = FFT(signal2)
-	#filtered_fft1 = filter_telephone_band(fft1)
-	#filtered_fft2 = filter_telephone_band(fft2)
-	filtered_fft1 = fft1
-	filtered_fft2 = fft2
 	
-	R = GCC(filtered_fft1, filtered_fft2)
+	if telephone_band_filter == True:
+		fft1 = filter_telephone_band(fft1)
+		fft2 = filter_telephone_band(fft2)
 	
-	R_phat = phat_weight(R, weight = 0.8)
+	R = GCC(fft1, fft2)
+	
+	if SHOULD_LOG:
+		weights = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+		filter_states = ["WITHOUT_FILTER", "WITH_FILTER"]
+		
+		for filter_state in filter_states:
+			# Apply or skip filter
+			if filter_state == "WITH_FILTER":
+				filtered_fft1 = filter_telephone_band(fft1)
+				filtered_fft2 = filter_telephone_band(fft2)
+			else:
+				filtered_fft1 = fft1
+				filtered_fft2 = fft2
+			
+			R = GCC(filtered_fft1, filtered_fft2)
+			
+			# Test all weights
+			for weight in weights:
+				R_phat = phat_weight(R, weight=weight)
+				cross_corr = IFFT(R_phat)
+				tdoa = TDOA(cross_corr)
+				
+				# Log this combination
+				weight_int = int(weight * 10)
+				const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{sample_size}_SAMPLES_{filter_state}"
+				try:
+					column_key = getattr(logger, const_name)
+					logger.Logger.set_value(column_key, tdoa)
+				except AttributeError:
+					print(f"Warning: Logger constant {const_name} not found")
+
+	R_phat = phat_weight(R, weight=weight)
 	"""
 	fig = plt.figure()
 	plt.subplot(2, 1, 1)
@@ -152,9 +183,9 @@ def PHAT_GCC_TDOA(signal1, signal2):
 	cross_corr = IFFT(R_phat)
 		
 	tdoa = TDOA(cross_corr)
-	
+
 	if SHOULD_PLOT:
-    
+	
 		frequency_axis = np.linspace(0, SAMPLE_RATE, len(fft1))
 
 		# ------------------------------
@@ -201,13 +232,13 @@ def PHAT_GCC_TDOA(signal1, signal2):
 		fig = plt.figure(figsize=(10,8))
 
 		plt.subplot(2,1,1)
-		plt.plot(frequency_axis, np.abs(filtered_fft1))
+		plt.plot(frequency_axis, np.abs(fft1))
 		plt.title("Filtered FFT (Signal 1)")
 		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
 
 		plt.subplot(2,1,2)
-		plt.plot(frequency_axis, np.abs(filtered_fft2))
+		plt.plot(frequency_axis, np.abs(fft2))
 		plt.title("Filtered FFT (Signal 2)")
 		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
@@ -328,186 +359,186 @@ def create_delayed_signals(base_signal, delays_samples, signal_length):
 	return signals
 
 def visualize_signals_with_delays(signals, tdoa_samples, sample_rate=SAMPLE_RATE):
-    """
-    Visualize the three signals and their measured delays
-    
-    Parameters:
-    - signals: list of 3 numpy arrays (the actual signals)
-    - tdoa_samples: dict with 'tdoa_01', 'tdoa_02', 'tdoa_12' in samples
-    - sample_rate: sample rate in Hz
-    """
-    import matplotlib.pyplot as plt
-    
-    fig, axes = plt.subplots(3, 1, figsize=(14, 8))
-    
-    time = np.arange(len(signals[0])) / sample_rate
-    colors = ['blue', 'green', 'purple']
-    
-    # Find the peak of the first signal to use as reference
-    peak_idx_0 = np.argmax(np.abs(signals[0]))
-    peak_time_0 = peak_idx_0 / sample_rate * 1000  # in ms
-    
-    for i, (ax, signal, color) in enumerate(zip(axes, signals, colors)):
-        ax.plot(time * 1000, signal, color=color, linewidth=1.5)
-        ax.set_ylabel(f'Mic {i}', fontsize=12)
-        ax.grid(True, alpha=0.3)
-        ax.set_xlim(0, len(signal) / sample_rate * 1000)
-        
-        # Add red reference line at Mic 0's peak
-        if i == 0:
-            ax.axvline(peak_time_0, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Reference Peak')
-            ax.legend()
-        else:
-            # Add reference line and delayed line
-            ax.axvline(peak_time_0, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Ref (Mic 0)')
-            
-            # Calculate delay for this mic relative to mic 0
-            if i == 1:
-                delay_samples = tdoa_samples['tdoa_01']
-            else:  # i == 2
-                delay_samples = tdoa_samples['tdoa_02']
-            
-            delay_ms = delay_samples / sample_rate * 1000
-            delayed_peak_time = peak_time_0 + delay_ms
-            
-            ax.axvline(delayed_peak_time, color='orange', linestyle='--', linewidth=2, alpha=0.7, label=f'Delayed Peak ({delay_samples} samples)')
-            ax.legend()
-    
-    # Add labels
-    axes[0].set_title('Three Microphone Signals with GCC-PHAT Delays', fontsize=14)
-    axes[2].set_xlabel('Time / ms', fontsize=12)
-    axes[1].set_ylabel('Amplitude', fontsize=12)
-    
-    # Add delay information as text
-    delay_text = (f"Measured TDOAs:\n"
-                  f"Mic1 vs Mic0: {tdoa_samples['tdoa_01']} samples ({tdoa_samples['tdoa_01']/sample_rate*1000:.4f} ms)\n"
-                  f"Mic2 vs Mic0: {tdoa_samples['tdoa_02']} samples ({tdoa_samples['tdoa_02']/sample_rate*1000:.4f} ms)\n"
-                  f"Mic2 vs Mic1: {tdoa_samples['tdoa_12']} samples ({tdoa_samples['tdoa_12']/sample_rate*1000:.4f} ms)")
-    
-    fig.text(0.02, 0.98, delay_text, transform=fig.transFigure, 
-             fontsize=25, verticalalignment='top',
-             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
-    
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.92)
-    plt.show()
+	"""
+	Visualize the three signals and their measured delays
+	
+	Parameters:
+	- signals: list of 3 numpy arrays (the actual signals)
+	- tdoa_samples: dict with 'tdoa_01', 'tdoa_02', 'tdoa_12' in samples
+	- sample_rate: sample rate in Hz
+	"""
+	import matplotlib.pyplot as plt
+	
+	fig, axes = plt.subplots(3, 1, figsize=(14, 8))
+	
+	time = np.arange(len(signals[0])) / sample_rate
+	colors = ['blue', 'green', 'purple']
+	
+	# Find the peak of the first signal to use as reference
+	peak_idx_0 = np.argmax(np.abs(signals[0]))
+	peak_time_0 = peak_idx_0 / sample_rate * 1000  # in ms
+	
+	for i, (ax, signal, color) in enumerate(zip(axes, signals, colors)):
+		ax.plot(time * 1000, signal, color=color, linewidth=1.5)
+		ax.set_ylabel(f'Mic {i}', fontsize=12)
+		ax.grid(True, alpha=0.3)
+		ax.set_xlim(0, len(signal) / sample_rate * 1000)
+		
+		# Add red reference line at Mic 0's peak
+		if i == 0:
+			ax.axvline(peak_time_0, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Reference Peak')
+			ax.legend()
+		else:
+			# Add reference line and delayed line
+			ax.axvline(peak_time_0, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Ref (Mic 0)')
+			
+			# Calculate delay for this mic relative to mic 0
+			if i == 1:
+				delay_samples = tdoa_samples['tdoa_01']
+			else:  # i == 2
+				delay_samples = tdoa_samples['tdoa_02']
+			
+			delay_ms = delay_samples / sample_rate * 1000
+			delayed_peak_time = peak_time_0 + delay_ms
+			
+			ax.axvline(delayed_peak_time, color='orange', linestyle='--', linewidth=2, alpha=0.7, label=f'Delayed Peak ({delay_samples} samples)')
+			ax.legend()
+	
+	# Add labels
+	axes[0].set_title('Three Microphone Signals with GCC-PHAT Delays', fontsize=14)
+	axes[2].set_xlabel('Time / ms', fontsize=12)
+	axes[1].set_ylabel('Amplitude', fontsize=12)
+	
+	# Add delay information as text
+	delay_text = (f"Measured TDOAs:\n"
+				  f"Mic1 vs Mic0: {tdoa_samples['tdoa_01']} samples ({tdoa_samples['tdoa_01']/sample_rate*1000:.4f} ms)\n"
+				  f"Mic2 vs Mic0: {tdoa_samples['tdoa_02']} samples ({tdoa_samples['tdoa_02']/sample_rate*1000:.4f} ms)\n"
+				  f"Mic2 vs Mic1: {tdoa_samples['tdoa_12']} samples ({tdoa_samples['tdoa_12']/sample_rate*1000:.4f} ms)")
+	
+	fig.text(0.02, 0.98, delay_text, transform=fig.transFigure, 
+			 fontsize=25, verticalalignment='top',
+			 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+	
+	plt.tight_layout()
+	plt.subplots_adjust(top=0.92)
+	plt.show()
 
 def PHAT_GCC_TDOA_with_correlation(signal1, signal2):
-    """
-    Calculate TDOA between signal1 and signal2 and return the cross-correlation.
-    Returns: (tdoa in samples, cross_correlation array)
-    where positive TDOA means signal2 arrives AFTER signal1
-    """
-    if not hasattr(PHAT_GCC_TDOA_with_correlation, "counter"):
-        PHAT_GCC_TDOA_with_correlation.counter = 0
-        
-    fft1 = FFT(signal1)
-    fft2 = FFT(signal2)
-    R = GCC(fft1, fft2)
-    R_phat = phat_weight(R)
-    
-    fig = plt.figure()
-    plt.subplot(2, 1, 1)
-    plt.plot(np.abs(R))
-    plt.title("GCC-PHAT Magnitude Spectrum")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Magnitude")
-    
-    plt.subplot(2, 1, 2)
-    plt.plot(np.angle(R))
-    plt.title("GCC-PHAT Phase Spectrum")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Phase (radians)")
-    plt.savefig(f"gcc_phat_before_weight{PHAT_GCC_TDOA_with_correlation.counter}.png")    
-    
-    fig = plt.figure()
-    plt.subplot(2, 1, 1)
-    plt.plot(np.abs(R_phat))
-    plt.title("GCC-PHAT Magnitude Spectrum (After PHAT Weighting)")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Magnitude")
-    
-    plt.subplot(2, 1, 2)
-    plt.plot(np.angle(R_phat))
-    plt.title("GCC-PHAT Phase Spectrum (After PHAT Weighting)")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Phase (radians)")
-    plt.savefig(f"gcc_phat_after_weight{PHAT_GCC_TDOA_with_correlation.counter}.png")
-    
-    PHAT_GCC_TDOA_with_correlation.counter += 1
-    
-    if SHOULD_PLOT == True:
-        plt.plot(R_phat)
-        plt.title("GCC-PHAT spectrum")
-        plt.show()
-    
-    cross_corr = IFFT(R_phat)
-    tdoa = TDOA(cross_corr)
-    
-    return tdoa, cross_corr
+	"""
+	Calculate TDOA between signal1 and signal2 and return the cross-correlation.
+	Returns: (tdoa in samples, cross_correlation array)
+	where positive TDOA means signal2 arrives AFTER signal1
+	"""
+	if not hasattr(PHAT_GCC_TDOA_with_correlation, "counter"):
+		PHAT_GCC_TDOA_with_correlation.counter = 0
+		
+	fft1 = FFT(signal1)
+	fft2 = FFT(signal2)
+	R = GCC(fft1, fft2)
+	R_phat = phat_weight(R)
+	
+	fig = plt.figure()
+	plt.subplot(2, 1, 1)
+	plt.plot(np.abs(R))
+	plt.title("GCC-PHAT Magnitude Spectrum")
+	plt.xlabel("Frequency (Hz)")
+	plt.ylabel("Magnitude")
+	
+	plt.subplot(2, 1, 2)
+	plt.plot(np.angle(R))
+	plt.title("GCC-PHAT Phase Spectrum")
+	plt.xlabel("Frequency (Hz)")
+	plt.ylabel("Phase (radians)")
+	plt.savefig(f"gcc_phat_before_weight{PHAT_GCC_TDOA_with_correlation.counter}.png")    
+	
+	fig = plt.figure()
+	plt.subplot(2, 1, 1)
+	plt.plot(np.abs(R_phat))
+	plt.title("GCC-PHAT Magnitude Spectrum (After PHAT Weighting)")
+	plt.xlabel("Frequency (Hz)")
+	plt.ylabel("Magnitude")
+	
+	plt.subplot(2, 1, 2)
+	plt.plot(np.angle(R_phat))
+	plt.title("GCC-PHAT Phase Spectrum (After PHAT Weighting)")
+	plt.xlabel("Frequency (Hz)")
+	plt.ylabel("Phase (radians)")
+	plt.savefig(f"gcc_phat_after_weight{PHAT_GCC_TDOA_with_correlation.counter}.png")
+	
+	PHAT_GCC_TDOA_with_correlation.counter += 1
+	
+	if SHOULD_PLOT == True:
+		plt.plot(R_phat)
+		plt.title("GCC-PHAT spectrum")
+		plt.show()
+	
+	cross_corr = IFFT(R_phat)
+	tdoa = TDOA(cross_corr)
+	
+	return tdoa, cross_corr
 
 def visualize_cross_correlations(signals, sample_rate=SAMPLE_RATE):
-    """
-    Visualize the cross-correlation functions for all microphone pairs.
-    Shows where the peak (maximum correlation) occurs for each pair.
-    
-    Parameters:
-    - signals: list of 3 numpy arrays (the actual signals)
-    - sample_rate: sample rate in Hz
-    """
-    import matplotlib.pyplot as plt
-    
-    # Calculate cross-correlations for all pairs
-    pairs = [(0, 1), (0, 2), (1, 2)]
-    pair_names = ['Mic0 vs Mic1', 'Mic0 vs Mic2', 'Mic1 vs Mic2']
-    
-    fig, axes = plt.subplots(3, 1, figsize=(14, 10))
-    
-    for (i, j), (ax, pair_name) in zip(pairs, zip(axes, pair_names)):
-        # Get cross-correlation using the full computation
-        fft1 = np.fft.fft(signals[i])
-        fft2 = np.fft.fft(signals[j])
-        R = fft1 * np.conj(fft2)
-        R_phat = phat_weight(R)
-        cross_corr = IFFT(R_phat)
-        cross_corr_real = np.real(cross_corr)
-        
-        # Find peak
-        N = len(cross_corr_real)
-        peak_idx = np.argmax(cross_corr_real)
-        
-        # Convert to signed lag
-        if peak_idx > N // 2:
-            lag = peak_idx - N
-        else:
-            lag = peak_idx
-        
-        # Convert index to time in milliseconds
-        lag_ms = lag / sample_rate * 1000
-        
-        # Create lag axis (centered)
-        lag_samples = np.arange(-N//2, N//2)
-        lag_ms_axis = lag_samples / sample_rate * 1000
-        
-        # Shift cross-correlation for proper lag visualization
-        cross_corr_shifted = np.roll(cross_corr_real, N//2)
-        
-        # Plot
-        ax.plot(lag_ms_axis, cross_corr_shifted, linewidth=2, color='steelblue')
-        ax.axvline(lag_ms, color='red', linestyle='--', linewidth=2, alpha=0.7, label=f'Peak at {lag} samples ({lag_ms:.4f} ms)')
-        ax.axhline(0, color='black', linestyle='-', linewidth=0.5, alpha=0.3)
-        ax.axvline(0, color='gray', linestyle='--', linewidth=1, alpha=0.5)
-        
-        ax.set_ylabel('Correlation', fontsize=12)
-        ax.set_title(f'{pair_name} - Cross-Correlation Function', fontsize=13, fontweight='bold')
-        ax.grid(True, alpha=0.3)
-        ax.legend(fontsize=11)
-    
-    axes[2].set_xlabel('Time Delay / ms', fontsize=12)
-    fig.suptitle('GCC-PHAT Cross-Correlation Output (Peak shows TDOA)', fontsize=14, fontweight='bold')
-    
-    plt.tight_layout()
-    plt.show()
+	"""
+	Visualize the cross-correlation functions for all microphone pairs.
+	Shows where the peak (maximum correlation) occurs for each pair.
+	
+	Parameters:
+	- signals: list of 3 numpy arrays (the actual signals)
+	- sample_rate: sample rate in Hz
+	"""
+	import matplotlib.pyplot as plt
+	
+	# Calculate cross-correlations for all pairs
+	pairs = [(0, 1), (0, 2), (1, 2)]
+	pair_names = ['Mic0 vs Mic1', 'Mic0 vs Mic2', 'Mic1 vs Mic2']
+	
+	fig, axes = plt.subplots(3, 1, figsize=(14, 10))
+	
+	for (i, j), (ax, pair_name) in zip(pairs, zip(axes, pair_names)):
+		# Get cross-correlation using the full computation
+		fft1 = np.fft.fft(signals[i])
+		fft2 = np.fft.fft(signals[j])
+		R = fft1 * np.conj(fft2)
+		R_phat = phat_weight(R)
+		cross_corr = IFFT(R_phat)
+		cross_corr_real = np.real(cross_corr)
+		
+		# Find peak
+		N = len(cross_corr_real)
+		peak_idx = np.argmax(cross_corr_real)
+		
+		# Convert to signed lag
+		if peak_idx > N // 2:
+			lag = peak_idx - N
+		else:
+			lag = peak_idx
+		
+		# Convert index to time in milliseconds
+		lag_ms = lag / sample_rate * 1000
+		
+		# Create lag axis (centered)
+		lag_samples = np.arange(-N//2, N//2)
+		lag_ms_axis = lag_samples / sample_rate * 1000
+		
+		# Shift cross-correlation for proper lag visualization
+		cross_corr_shifted = np.roll(cross_corr_real, N//2)
+		
+		# Plot
+		ax.plot(lag_ms_axis, cross_corr_shifted, linewidth=2, color='steelblue')
+		ax.axvline(lag_ms, color='red', linestyle='--', linewidth=2, alpha=0.7, label=f'Peak at {lag} samples ({lag_ms:.4f} ms)')
+		ax.axhline(0, color='black', linestyle='-', linewidth=0.5, alpha=0.3)
+		ax.axvline(0, color='gray', linestyle='--', linewidth=1, alpha=0.5)
+		
+		ax.set_ylabel('Correlation', fontsize=12)
+		ax.set_title(f'{pair_name} - Cross-Correlation Function', fontsize=13, fontweight='bold')
+		ax.grid(True, alpha=0.3)
+		ax.legend(fontsize=11)
+	
+	axes[2].set_xlabel('Time Delay / ms', fontsize=12)
+	fig.suptitle('GCC-PHAT Cross-Correlation Output (Peak shows TDOA)', fontsize=14, fontweight='bold')
+	
+	plt.tight_layout()
+	plt.show()
 
 def test_gcc_phat():
 	"""

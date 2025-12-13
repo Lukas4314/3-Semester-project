@@ -77,6 +77,11 @@ class TurtleController:
 		mic1_data = []
 		mic2_data = []
 		mic3_data = []
+
+		# Implement the sample size counting for logging here
+		if SHOULD_LOG:
+			chunk_count = end_index - start_index + 1
+			pass
 		
 		while not self.queue1.empty():
 			message_index, new_chunk = self.queue1.get()
@@ -108,10 +113,17 @@ class TurtleController:
 		write("actually_fed_to_gcc2.wav", SAMPLE_RATE, mic2_data.astype(np.int16))
 		write("actually_fed_to_gcc3.wav", SAMPLE_RATE, mic3_data.astype(np.int16))
 		
-		best_point, best_score = triangulate_from_sound(mic1_data, mic2_data, mic3_data)
+		if SHOULD_LOG:
+			best_point, best_score = triangulate_from_sound(mic1_data, mic2_data, mic3_data, num_chunks=chunk_count)
+		else:
+			best_point, best_score = triangulate_from_sound(mic1_data, mic2_data, mic3_data, num_chunks=None)
+		
 		print(f"Best point: {best_point}, Best score: {best_score}")
 		angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
 		distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
+		Logger.set_value(ACTUAL_TRIANGULATION_ANGLE, angle)
+		Logger.set_value(ACTUAL_TRIANGULATION_DISTANCE, distance)
+		Logger.write_row()
 		
 		print(f"Sound located at angle {angle} degrees and distance {distance} meters")
 		
@@ -131,18 +143,21 @@ class TurtleController:
 			self.executing_thread.start()
 			if SHOULD_LOG:
 				self.executing_thread.join()
+				Logger.set_value(ACTION, action)
+				Logger.write_row()
    
 		elif action == "move":
 			if direction == "forward":
 				self.executing_thread = threading.Thread(target=self.move_forward, args=(distance,))
 			elif direction == "backward":
 				self.executing_thread = threading.Thread(target=self.move_backward, args=(distance,))
-				self.executing_thread.start()
 			self.executing_thread.start()
 			if SHOULD_LOG:
 				self.executing_thread.join()
 				Logger.set_value(DISTANCE_MOVED, input("How far did it move (in meters)?: "))
-				Logger.set_value(DISTANCE_THOUGH_IT_MOVED, distance)
+				Logger.set_value(DISTANCE_THOUGHT_IT_MOVED, distance)
+				Logger.set_value(ACTION, action)
+				Logger.write_row()
 
 
 		elif action == "turn":
@@ -154,10 +169,10 @@ class TurtleController:
 				self.executing_thread.start()
 			if SHOULD_LOG:
 				self.executing_thread.join()
-				Logger.set_value(DISTANCE_MOVED, input("How far did it move (in meters)?: "))
-				Logger.set_value(DISTANCE_THOUGH_IT_MOVED, distance)
-
-
+				Logger.set_value(ANGLE_ROTATED, input("How much did it turn (in radians)?: "))
+				Logger.set_value(ANGLE_THOUGHT_IT_ROTATED, distance)
+				Logger.set_value(ACTION, action)
+				Logger.write_row()
 
 if __name__ == "__main__":
 
