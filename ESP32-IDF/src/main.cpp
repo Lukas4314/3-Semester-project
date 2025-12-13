@@ -1,10 +1,17 @@
 #include "I2sInterface.hpp"
-#include "MqttInterface.hpp"
 #include "esp_timer.h"
-#include "esp_memory_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "driver/spi_slave.h"
+#include "esp_log.h"
+
+// SPI pins
+#define SPI_MISO GPIO_NUM_19
+#define SPI_MOSI GPIO_NUM_23
+#define SPI_SCLK GPIO_NUM_18
+#define SPI_CS GPIO_NUM_5
+#define SPI_HOST_VAR SPI2_HOST
 
 // === Pin definitions ===
 #define I2S0_BCLK GPIO_NUM_26
@@ -22,36 +29,69 @@
 #define MIC3_SEL_PIN GPIO_NUM_27
 #define MIC3_SEL_VALUE 0
 
-#define SAMPLE_RATE 16000
+#define DATA_READY_GPIO GPIO_NUM_21 // safe, free
 
+#define SAMPLE_RATE 16000
 #define NUM_I2S_BUFFERS 10
 #define BUFFER_SIZE 1024
 
-static int16_t i2s0Buffers[NUM_I2S_BUFFERS][BUFFER_SIZE * 2 + 2]; // stereo + 2 counters
-static int16_t i2s1Buffers[NUM_I2S_BUFFERS][BUFFER_SIZE + 2];     // mono + 2 counters
+QueueHandle_t i2sQueue;
 
-MqttInterface mqtt("Havefun", "Havefun2", "mqtt://10.250.34.201"); // MQTT instance
+#define BUFFER_SIZE_TOTAL (BUFFER_SIZE * 3 + 4)
+
+static int16_t mic_data[NUM_I2S_BUFFERS][BUFFER_SIZE_TOTAL]; // 3 Mics
+
+// SPI slave buffer for DMA transactions
+
+#define SPI_FRAME_HEADER_0 0xAA
+#define SPI_FRAME_HEADER_1 0x55
+#define SPI_MAX_CHUNK 4096
+
+uint8_t spiHeader[4];
+uint8_t spiSlaveBuf[SPI_MAX_CHUNK];
+uint8_t spiSlaveBuf2[SPI_MAX_CHUNK];
 
 static DRAM_ATTR I2sInterface i2s0;
 static DRAM_ATTR I2sInterface i2s1;
 
-// Queue to send buffers from CPU1 (I2S task) to CPU0 (MQTT task)
+bool ready = false;
+
 struct I2SBuffer
 {
-    uint8_t index; // which buffer number
-    uint8_t which; // 0 = I2S0, 1 = I2S1
-    size_t length; // length in bytes
+    uint8_t index;
+    size_t length; // bytes
 };
 
-QueueHandle_t i2sQueue;
+// Initialize SPI as slave
+bool initSPISlave()
+{
+    spi_bus_config_t buscfg = {};
+    buscfg.miso_io_num = SPI_MISO;
+    buscfg.mosi_io_num = SPI_MOSI;
+    buscfg.sclk_io_num = SPI_SCLK;
+    buscfg.quadhd_io_num = -1;
+    buscfg.quadwp_io_num = -1;
+    buscfg.max_transfer_sz = SPI_MAX_CHUNK;
 
-// Setup function: called once on CPU0
+    spi_slave_interface_config_t slvcfg = {};
+    slvcfg.spics_io_num = SPI_CS;
+    slvcfg.queue_size = 3;
+    slvcfg.mode = 0; // SPI mode 0
+    slvcfg.flags = 0;
+
+    esp_err_t ret = spi_slave_initialize(SPI_HOST_VAR, &buscfg, &slvcfg, 1);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE("SPI", "Slave init failed: %d", ret);
+        return false;
+    }
+    return true;
+}
+
+// Setup function
 void setup()
 {
-    mqtt.begin();
-    printf("Initialized MQTT interface...\n");
-
-    // Set mic select pins
+    // Mic select pins
     gpio_set_direction(MIC1_SEL_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(MIC2_SEL_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(MIC3_SEL_PIN, GPIO_MODE_OUTPUT);
@@ -59,42 +99,56 @@ void setup()
     gpio_set_level(MIC2_SEL_PIN, MIC2_SEL_VALUE);
     gpio_set_level(MIC3_SEL_PIN, MIC3_SEL_VALUE);
 
-    // Initialize I2S interfaces
-    i2s0 = I2sInterface(
-        I2S_NUM_0, I2S_ROLE_MASTER, I2S_DATA_BIT_WIDTH_16BIT,
-        I2S_SLOT_MODE_STEREO, GPIO_NUM_NC, I2S0_BCLK, I2S0_LRCLK, I2S0_DIN,
-        I2S_STD_SLOT_BOTH, SAMPLE_RATE, 0);
+    // Configure as output
+    gpio_config_t io_conf = {};
+    io_conf.pin_bit_mask = 1ULL << DATA_READY_GPIO;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    gpio_config(&io_conf);
+    // Default LOW
+    gpio_set_level(DATA_READY_GPIO, 0);
 
-    i2s1 = I2sInterface(
-        I2S_NUM_1, I2S_ROLE_SLAVE, I2S_DATA_BIT_WIDTH_16BIT,
-        I2S_SLOT_MODE_MONO, GPIO_NUM_NC, I2S1_BCLK, I2S1_LRCLK, I2S1_DIN,
-        I2S_STD_SLOT_LEFT, SAMPLE_RATE, 1);
+    // I2S interfaces
+    i2s0 = I2sInterface(I2S_NUM_0, I2S_ROLE_MASTER, I2S_DATA_BIT_WIDTH_16BIT,
+                        I2S_SLOT_MODE_STEREO, GPIO_NUM_NC, I2S0_BCLK, I2S0_LRCLK, I2S0_DIN,
+                        I2S_STD_SLOT_BOTH, SAMPLE_RATE, 0);
+    i2s1 = I2sInterface(I2S_NUM_1, I2S_ROLE_SLAVE, I2S_DATA_BIT_WIDTH_16BIT,
+                        I2S_SLOT_MODE_MONO, GPIO_NUM_NC, I2S1_BCLK, I2S1_LRCLK, I2S1_DIN,
+                        I2S_STD_SLOT_LEFT, SAMPLE_RATE, 1);
 
-    printf("Initializing I2S interfaces...\n");
+    if (!initSPISlave())
+    {
+        printf("SPI slave init failed\n");
+        while (1)
+            ;
+    }
+
+    i2sQueue = xQueueCreate(NUM_I2S_BUFFERS - 1, sizeof(I2SBuffer));
+
+    printf("Setup complete\n");
+
     if (!i2s1.begin())
     {
-        printf("Failed to initialize I2S1\n");
+        printf("I2S1 init failed\n");
         while (1)
             ;
     }
+
     if (!i2s0.begin())
     {
-        printf("Failed to initialize I2S0\n");
+        printf("I2S init failed\n");
         while (1)
             ;
     }
-
-    // Create queue for passing I2S buffers to MQTT task
-    i2sQueue = xQueueCreate(NUM_I2S_BUFFERS - 1, sizeof(I2SBuffer)); // minus for to make sure
 }
 
+// I2S capture task
 void i2sTask(void *param)
 {
     uint32_t counter0 = 0;
     uint32_t counter1 = 0;
-
     uint8_t i2s0Idx = 0;
-    uint8_t i2s1Idx = 0;
 
     const size_t stereoSize = BUFFER_SIZE * 2;
     const size_t monoSize = BUFFER_SIZE;
@@ -107,125 +161,108 @@ void i2sTask(void *param)
         size_t bytesRead0 = i2s0.readSamples(temp0, stereoSize * sizeof(int16_t));
         size_t bytesRead1 = i2s1.readSamples(temp1, monoSize * sizeof(int16_t));
 
-        size_t samples0 = bytesRead0 / sizeof(int16_t);
-        size_t samples1 = bytesRead1 / sizeof(int16_t);
-
-        if (samples0 != stereoSize || samples1 != monoSize)
+        if (bytesRead0 != stereoSize * sizeof(int16_t))
         {
-            printf("I2S readSamples returned unexpected number of samples: I2S0=%u, I2S1=%u\n", (unsigned)samples0, (unsigned)samples1);
+            printf("I2S0 read size mismatch: %d bytes\n", bytesRead0);
+        }
+        if (bytesRead1 != monoSize * sizeof(int16_t))
+        {
+            printf("I2S1 read size mismatch: %d bytes\n", bytesRead1);
         }
 
-        // pick buffer index (safe because queue size == NUM_I2S_BUFFERS)
         uint8_t buf0 = i2s0Idx;
-        uint8_t buf1 = i2s1Idx;
-
         i2s0Idx = (i2s0Idx + 1) % NUM_I2S_BUFFERS;
-        i2s1Idx = (i2s1Idx + 1) % NUM_I2S_BUFFERS;
 
         if (i2s0.counterOffset > 0)
         {
             counter0 += i2s0.counterOffset * stereoSize;
-            printf("I2S0 overflow, offset=%u\n", i2s0.counterOffset);
+            printf("I2S0 counter offset applied: %d\n", i2s0.counterOffset);
             i2s0.counterOffset = 0;
         }
         if (i2s1.counterOffset > 0)
         {
             counter1 += i2s1.counterOffset * monoSize;
-            printf("I2S1 overflow, offset=%u\n", i2s1.counterOffset);
+            printf("I2S1 counter offset applied: %d\n", i2s1.counterOffset);
             i2s1.counterOffset = 0;
         }
 
-        // Write counters
-        i2s0Buffers[buf0][0] = (int16_t)(counter0 & 0xFFFF);
-        i2s0Buffers[buf0][1] = (int16_t)(counter0 >> 16);
+        // Store counters
+        mic_data[buf0][0] = (int16_t)(counter0 & 0xFFFF);
+        mic_data[buf0][1] = (int16_t)(counter0 >> 16);
+        mic_data[buf0][BUFFER_SIZE * 2 + 2] = (int16_t)(counter1 & 0xFFFF);
+        mic_data[buf0][BUFFER_SIZE * 2 + 3] = (int16_t)(counter1 >> 16);
 
-        i2s1Buffers[buf1][0] = (int16_t)(counter1 & 0xFFFF);
-        i2s1Buffers[buf1][1] = (int16_t)(counter1 >> 16);
+        memcpy(mic_data[buf0] + 2, temp0, bytesRead0);
+        memcpy(mic_data[buf0] + BUFFER_SIZE * 2 + 4, temp1, bytesRead1);
 
-        // Copy actual samples
-        memcpy(i2s0Buffers[buf0] + 2, temp0, bytesRead0);
-        memcpy(i2s1Buffers[buf1] + 2, temp1, bytesRead1);
+        // Queue buffers for SPI task
+        I2SBuffer msg0 = {buf0, (bytesRead0 + 4 + bytesRead1 + 4)}; // 2 counters * 2 bytes
 
-        // Queue items with index
-        I2SBuffer msg0 = {buf0, 0, (samples0 + 2) * sizeof(int16_t)};
-        I2SBuffer msg1 = {buf1, 1, (samples1 + 2) * sizeof(int16_t)};
-        if (counter0 % 10 == 0)
+        uint8_t err = xQueueSend(i2sQueue, &msg0, 0);
+        if (err != pdTRUE)
         {
-            if (xQueueSend(i2sQueue, &msg0, 0) != pdTRUE)
-                printf("Drop I2S0 buffer %u\n", buf0);
+            // Queue full, overflow
+            printf("Queue full, idx dropped: %d\n", buf0);
         }
 
-        if (xQueueSend(i2sQueue, &msg1, 0) != pdTRUE)
-        {
-            printf("Drop I2S1 buffer %u\n", buf1);
-        }
         counter0++;
         counter1++;
     }
 }
-void mqttTask(void *param)
+void spiSlaveTask(void *param)
 {
-    const size_t batchBufferSize0 = (2048 + 2) * 3;
-    const size_t batchBufferSize1 = (1024 + 2) * 3;
-    static int16_t batchBuffer0[batchBufferSize0];
-    static int16_t batchBuffer1[batchBufferSize1];
-
-    size_t batchOffset0 = 0;
-    size_t batchOffset1 = 0;
-
     while (true)
     {
         I2SBuffer msg;
+
         if (xQueueReceive(i2sQueue, &msg, portMAX_DELAY) == pdTRUE)
         {
-            int16_t *src =
-                (msg.which == 0)
-                    ? i2s0Buffers[msg.index]
-                    : i2s1Buffers[msg.index];
 
-            size_t samples = msg.length / sizeof(int16_t);
+            int16_t *src = mic_data[msg.index];
+            uint16_t payload_len = msg.length; // bytes
 
-            if (msg.which == 0)
+            spi_slave_transaction_t t = {};
+            uint32_t remaining = payload_len;
+            // printf("SPI Slave sending buffer idx %d, length %d bytes\n", msg.index, payload_len);
+            uint8_t *byte_src = (uint8_t *)src;
+
+            while (remaining > 0)
             {
-                // Flush batch if needed
-                if (batchOffset0 + samples > batchBufferSize0)
+                uint32_t chunk = remaining > SPI_MAX_CHUNK ? SPI_MAX_CHUNK : remaining;
+
+                memcpy(spiSlaveBuf, byte_src, chunk);
+
+                t.length = chunk * 8;
+                t.tx_buffer = spiSlaveBuf;
+                t.rx_buffer = NULL;
+                // Print the number in the middle of the payload to make sure it is not all 0
+                if (chunk > 3000)
                 {
-                    //mqtt.publish("I2S0", batchBuffer0, batchOffset0 * sizeof(int16_t));
-                    batchOffset0 = 0;
+                    printf("  Sending chunk of %ld bytes, first byte: %d, middle byte: %d, last byte: %d\n",
+                           chunk, spiSlaveBuf[0], spiSlaveBuf[chunk / 2], spiSlaveBuf[chunk - 1]);
                 }
-
-                memcpy(batchBuffer0 + batchOffset0, src, msg.length);
-                batchOffset0 += samples;
-            }
-            else if (msg.which == 1)
-            {
-                // Flush batch if needed
-                if (batchOffset1 + samples > batchBufferSize1)
+                gpio_set_level(DATA_READY_GPIO, 1);
+                uint8_t ret = spi_slave_transmit(SPI_HOST_VAR, &t, portMAX_DELAY);
+                if (ret != ESP_OK)
                 {
-                    mqtt.publish("I2S1", batchBuffer1, batchOffset1 * sizeof(int16_t));
-                    batchOffset1 = 0;
+                    ESP_LOGE("SPI", "Payload transmit failed: %d", ret);
+                    break;
                 }
+                gpio_set_level(DATA_READY_GPIO, 0);
+                vTaskDelay(pdMS_TO_TICKS(1)); // Give some time between chunks
 
-                memcpy(batchBuffer1 + batchOffset1, src, msg.length);
-                batchOffset1 += samples;
-            }
-            else
-            {
-                printf("MQTT task received invalid I2SBuffer message\n");
+                byte_src += chunk;
+                remaining -= chunk;
             }
         }
     }
 }
-
 
 extern "C" void app_main(void)
 {
     setup();
     printf("Setup complete, starting tasks...\n");
 
-    // Create I2S task on CPU1
     xTaskCreatePinnedToCore(i2sTask, "I2S_Task", 8192 * 2, nullptr, 5, nullptr, 1);
-
-    // Create MQTT task on CPU0
-    xTaskCreatePinnedToCore(mqttTask, "MQTT_Task", 4096 * 12, nullptr, 5, nullptr, 0);
+    xTaskCreatePinnedToCore(spiSlaveTask, "SPI_Slave_Task", 4096 * 4, nullptr, 5, nullptr, 0);
 }

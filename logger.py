@@ -107,6 +107,9 @@ class Logger:
     buffer = []
     headers = []
     header_index_map = {}
+    
+    
+    current_samples_size = -1
 
     log_dir = Path("Logs")
 

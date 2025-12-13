@@ -90,4 +90,3 @@ print("Estimated source location (x, y):", best_point)
 print("Estimated angle (degrees):", np.degrees(np.arctan2(best_point[1], best_point[0])))
 
 
-
