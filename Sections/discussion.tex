@@ -1,14 +1,12 @@
 \section{Discussion}
-WE NEED TO DISCUSS:
-1. MQTT (ift. hvordan man kunne bruge andre protokoller til real time data transfer)
-MQTT is used since it already was implemented on the Turtlebot3 for ROS2 communication. However, MQTT is not suited for real-time data transfer...
+\label{SEC:discussion}
+\subsection{MQTT}
+MQTT is used for real-time data transfer for sound localisation, since it already was implemented on the Turtlebot3 for ROS2 communication. However, MQTT is not suited for real-time data transfer since it is a lightweight pub-sub messaging protocol. However, through testing it was found that the required data rate for sending audio data was still lower than the maximum data rate of MQTT.
 
-2. Template based voice recognition
-WE COULD USE MACHINE LEARNING INSTEAD...
+\subsection{AI model vs. Template based voice recognition}
+Instead of using an AI model like Whisper, a template based voice recognition system could have been implemented. This could possibly have made the transcription on the Raspberry Pi possible, however it would potentially make communication with a PC obsolete. A template based system would also be more difficult to expand in the future, as it would require new templates for new commands. Using an AI like Whisper is easier to implement and more flexible. Whisper is also better suited for an environment like a workshop with different sounds and works with any human.
 
-3. Sound localisation method
-WE COULD USE A BETTER ALGORITHM...
-BUT IT WORKS...
+% 3. Sound localisation method. Not really important, since we used GCC-PHAT which is a good method, and it doesn't seem to be an issue.
 
-In practice a 3D grid (10x10x2 meter) is designed with a space of 10 cm between each point making the error margin a maximum of $\sqrt{5^2 + 5^2 + 5^2} = 8.66$ cm. However, this doesn't seem to be a point of concern, since the error is relatively small.
+% In practice the 3D grid (10x10x2 meter) for traingulation is designed with a space of 10 cm between each point making the error margin a maximum of $\sqrt{5^2 + 5^2 + 5^2} = 8.66$ cm. However, this doesn't seem to be a point of concern, since the error is relatively small.
 
