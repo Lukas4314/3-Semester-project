@@ -36,9 +36,9 @@ def get_distance_between_mic_in_point_direction(point, mic_positions):
 
 def calculate_score(a12, a13, a23, measured_d1, measured_d2, measured_d3):
     score = 0.0
-    score += (a12 - measured_d1) ** 2
-    score += (a13 - measured_d2) ** 2
-    score += (a23 - measured_d3) ** 2
+    score += (a12 + measured_d1) ** 2
+    score += (a13 + measured_d2) ** 2
+    score += (a23 + measured_d3) ** 2
     return score
 
 def create_grid(search_range=10.0, grid_size=0.1):
@@ -53,9 +53,9 @@ def create_grid(search_range=10.0, grid_size=0.1):
     return grid_points
 
 def find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_sound=343.0):
-    measured_d1 = tdoa_estimates[0]/ SAMPLE_RATE * speed_of_sound  # mic1 - mic2
-    measured_d2 = tdoa_estimates[1]/ SAMPLE_RATE * speed_of_sound  # mic1 - mic3
-    measured_d3 = tdoa_estimates[2]/ SAMPLE_RATE * speed_of_sound  # mic2 - mic3
+    measured_d1 = tdoa_estimates[0] * speed_of_sound  # mic1 - mic2
+    measured_d2 = tdoa_estimates[1] * speed_of_sound  # mic1 - mic3
+    measured_d3 = tdoa_estimates[2] * speed_of_sound  # mic2 - mic3
 
     grid_points = create_grid()
     grid_points_scores = []
@@ -234,7 +234,7 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data, num_chunks=None):
         
 def test123():
     mic_positions = microphone_placement()
-    point = np.array([-1.9738428371, -0.881273731, 1.776132172])  # Example true position
+    point = np.array([1.9738428371, 0.881273731, 1.776132172])  # Example true position
     tdoa_estimates = [np.linalg.norm(point - mic_positions[1])/343-np.linalg.norm(point - mic_positions[0])/343, np.linalg.norm(point - mic_positions[2])/343-np.linalg.norm(point - mic_positions[0])/343, np.linalg.norm(point - mic_positions[2])/343-np.linalg.norm(point - mic_positions[1])/343]
     grid_points_scores = find_all_possible_sound_positions(mic_positions, tdoa_estimates)
 
