@@ -25,8 +25,15 @@ Examples for variable header fields for different MQTT message types are shown i
     \label{tab:mqtt_packet_types}
 \end{table}
 
-The PUBLISH packet type is used for all application data. The last four bits of its fixed header is the QoS (Quality of Service) level and flags in the last four bits (3-0) of its fixed header.
+The PUBLISH packet type is used for all application data. The last four bits of its fixed header is the QoS (Quality of Service) level. 
 
+A QoS of 0 means the message is delivered a maximum of one time, with no acknowledgment, so if it is lost it will not be retransmitted. 
+
+A QoS of 1 means the message is delivered at least once, with acknowledgment, so if it is lost it will be retransmitted until acknowledged. 
+
+A QoS of 2 means the message is delivered exactly once, with a four-step handshake to ensure no duplicates.
+
+Movement commands are sent with a QoS of 1, to ensure they are received. 
 
 The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in the table below:
 
