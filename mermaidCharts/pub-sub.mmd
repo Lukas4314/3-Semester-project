@@ -1,0 +1,18 @@
+flowchart TD
+    subgraph Topics
+        direction LR
+        Audio[Audio Topic]
+        Positional[Positional Topic]
+
+    end
+    subgraph Clients
+        direction LR
+        ESP32[ESP32 Client]
+        RaspberryPi[Raspberry Pi Client]
+        PC[PC Client]
+    end
+    
+    ESP32[ESP32 Client] -->|Publishes Audio| Audio
+    Positional -->|Subscribes | RaspberryPi[Raspberry Pi]
+    PC[PC client] -->|Publishes Positional commands| Positional
+    Audio -->|Subscribes to Audio| PC
