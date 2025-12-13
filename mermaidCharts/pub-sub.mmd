@@ -1,5 +1,5 @@
 flowchart TD
-    subgraph Topics
+    subgraph MQTT Topics
         direction LR
         Audio[Audio Topic]
         Positional[Positional Topic]
@@ -12,7 +12,7 @@ flowchart TD
         PC[PC Client]
     end
     
-    ESP32[ESP32 Client] -->|Publishes Audio| Audio
-    Positional -->|Subscribes | RaspberryPi[Raspberry Pi]
-    PC[PC client] -->|Publishes Positional commands| Positional
-    Audio -->|Subscribes to Audio| PC
+    ESP32[ESP32 Client] ---|Publishes Audio| Audio
+    PC[PC client] ---|Publishes Positional commands| Positional
+    PC ---|Subscribes to Audio| Audio
+    RaspberryPi[Raspberry Pi] ---|Subscribes | Positional

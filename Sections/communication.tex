@@ -35,3 +35,10 @@ Max is 256 MB for MQTT, even when when using the mosquitto broker.
 Therefore the limiting factor is the MTU (Maximum Transmission Unit) for TCP, which is around 1500 bytes, so MQTT messages should be kept below this size to avoid fragmentation.
 
 All of the MQTT logic is handled by the mosquitto library leveraged in the project. The library abstracts away the low-level details of MQTT message construction and parsing. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{Pictures/pubsub.png}
+    \caption{MQTT topic setup for communication between the ESP32, PC, and Raspberry Pi.}
+    \label{fig:mqtt_topic_setup}
+\end{figure}
