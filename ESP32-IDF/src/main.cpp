@@ -209,6 +209,7 @@ void i2sTask(void *param)
         counter1++;
     }
 }
+
 void spiSlaveTask(void *param)
 {
     while (true)
@@ -217,7 +218,6 @@ void spiSlaveTask(void *param)
 
         if (xQueueReceive(i2sQueue, &msg, portMAX_DELAY) == pdTRUE)
         {
-
             int16_t *src = mic_data[msg.index];
             uint16_t payload_len = msg.length; // bytes
 
@@ -228,6 +228,18 @@ void spiSlaveTask(void *param)
 
             while (remaining > 0)
             {
+
+                spi_slave_transaction_t reciever = {};
+                uint8_t command;
+                reciever.length = 8;          // 1 byte command
+                reciever.tx_buffer = nullptr; // slave does not send yet
+                reciever.rx_buffer = &command;
+                spi_slave_transmit(SPI_HOST_VAR, &reciever, portMAX_DELAY);
+                if (command != 1){
+                    continue;
+                }
+
+
                 uint32_t chunk = remaining > SPI_MAX_CHUNK ? SPI_MAX_CHUNK : remaining;
 
                 memcpy(spiSlaveBuf, byte_src, chunk);
@@ -238,18 +250,16 @@ void spiSlaveTask(void *param)
                 // Print the number in the middle of the payload to make sure it is not all 0
                 if (chunk > 3000)
                 {
-                    printf("  Sending chunk of %ld bytes, first byte: %d, middle byte: %d, last byte: %d\n",
-                           chunk, spiSlaveBuf[0], spiSlaveBuf[chunk / 2], spiSlaveBuf[chunk - 1]);
+                    printf("  Sending chunk of %ld bytes, first byte: %d, second byte: %d, third byte: %d, fourth byte: %d\n",
+                           chunk, spiSlaveBuf[0], spiSlaveBuf[1], spiSlaveBuf[2], spiSlaveBuf[3]);
                 }
-                gpio_set_level(DATA_READY_GPIO, 1);
+
                 uint8_t ret = spi_slave_transmit(SPI_HOST_VAR, &t, portMAX_DELAY);
                 if (ret != ESP_OK)
                 {
                     ESP_LOGE("SPI", "Payload transmit failed: %d", ret);
                     break;
                 }
-                gpio_set_level(DATA_READY_GPIO, 0);
-                vTaskDelay(pdMS_TO_TICKS(1)); // Give some time between chunks
 
                 byte_src += chunk;
                 remaining -= chunk;
@@ -257,6 +267,7 @@ void spiSlaveTask(void *param)
         }
     }
 }
+
 
 extern "C" void app_main(void)
 {
