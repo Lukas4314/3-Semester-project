@@ -35,6 +35,8 @@ A QoS of 2 means the message is delivered exactly once, with a four-step handsha
 
 Movement commands are sent with a QoS of 1, to ensure they are received. 
 
+Audio data is sent with a QoS of ?????
+
 The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in the table below:
 
 Max is 256 MB for MQTT, even when when using the mosquitto broker. 
