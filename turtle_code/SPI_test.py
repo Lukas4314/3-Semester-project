@@ -1,7 +1,8 @@
 import spidev
 import struct
 import time
-
+from RPi import GPIO 
+import queue
 # =======================
 # SPI CONFIG
 # =======================
@@ -10,6 +11,8 @@ SPI_DEVICE = 0
 SPI_SPEED_HZ = 10_000_000
 SPI_MODE = 0
 CHUNK_SIZE = 4096
+
+DATA_READY_PIN = 17 # Pi GPIO connected to ESP32 DATA_READY
 
 # =======================
 # I2S FORMAT
@@ -32,6 +35,28 @@ spi.mode = SPI_MODE
 
 print("SPI master ready (request-per-chunk protocol)")
 
+
+
+
+
+# Queue for non-blocking callback 
+frame_queue = queue.Queue() 
+# # ======================= 
+# # DATA_READY CALLBACK 
+# # ======================= 
+def data_ready_callback(channel): 
+# """Non-blocking callback: just push an event to the queue.""" 
+    frame_queue.put(True) 
+
+# ======================= 
+# LGPIO INITIALIZATION 
+# ======================= 
+# Choose BCM numbering (you can also use GPIO.BOARD) 
+GPIO.setmode(GPIO.BCM) 
+GPIO.setup(DATA_READY_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+GPIO.add_event_detect(DATA_READY_PIN, GPIO.RISING, callback=data_ready_callback)
+
+
 # =======================
 # MAIN LOOP
 # =======================
@@ -41,6 +66,7 @@ try:
         spi.xfer2([0x01])  # request next frame
 
         buf0 = [0x00] * CHUNK_SIZE
+        frame_queue.get(block=True)  # wait for DATA_READY
         buffer0 = spi.xfer2(buf0)  # skip the first byte (response to request)
         print(f"First four bytes of buffer0: {buffer0[:4]}")
 
@@ -48,6 +74,7 @@ try:
         spi.xfer2([0x01])  # request next frame
 
         buf1 = [0x00] * CHUNK_SIZE
+        frame_queue.get(block=True)  # wait for DATA_READY
         buffer1 = spi.xfer2(buf1)  # skip the first byte (response to request)
     
 

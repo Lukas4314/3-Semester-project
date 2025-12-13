@@ -253,13 +253,15 @@ void spiSlaveTask(void *param)
                     printf("  Sending chunk of %ld bytes, first byte: %d, second byte: %d, third byte: %d, fourth byte: %d\n",
                            chunk, spiSlaveBuf[0], spiSlaveBuf[1], spiSlaveBuf[2], spiSlaveBuf[3]);
                 }
-
+                
+                gpio_set_level(DATA_READY_GPIO, 1);
                 uint8_t ret = spi_slave_transmit(SPI_HOST_VAR, &t, portMAX_DELAY);
                 if (ret != ESP_OK)
                 {
                     ESP_LOGE("SPI", "Payload transmit failed: %d", ret);
                     break;
                 }
+                gpio_set_level(DATA_READY_GPIO, 0);
 
                 byte_src += chunk;
                 remaining -= chunk;
