@@ -59,7 +59,7 @@ def main():
                     turtleController.execute_command(command["action"], command["direction"], command["distance"])
                 
                 if SHOULD_LOG:
-                    Logger.set_value(ATTEMPS_AT_TALKING_BEFORE_REGESTERING, input("How many tries before registering the command? (1 is good, 0 if it is skitzophrenic): "))
+                    Logger.set_value(ATTEMPTS_AT_TALKING_BEFORE_REGISTERING, input("How many tries before registering the command? (1 is good, 0 if it is skitzophrenic): "))
                     Logger.set_value(ACTION, command["action"])
                     Logger.write_row()
                     
