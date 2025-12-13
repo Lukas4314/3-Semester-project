@@ -1,4 +1,4 @@
-from mqqtInterface import MQTTInterface
+from mqttInterface import MQTTInterface
 from pc_code.sound_localization.Triangulate import triangulate_from_sound
 import time
 import threading
