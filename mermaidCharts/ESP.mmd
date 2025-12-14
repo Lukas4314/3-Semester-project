@@ -21,7 +21,7 @@ flowchart TD
     end
 
 
-    MQTT_Broker[MQTT Broker] -- "Publishes audio batches" --- ESP_MQTT
+    MQTT_Broker[Mosquitto Broker] -- "Publishes audio batches" --- ESP_MQTT
     ESP_BUFFERREADER -- "Store data" --- ESP_Board
     ESP_Sampling -- "Queues audio batches" --- ESP_MQTT
     ESP_Sampling -- "Audio Data" --- ESP_BUFFERREADER

@@ -2,7 +2,7 @@
 \label{SEC:sound_localisation}
 The sound localisation is done on the processing layer. The goal of the sound localisation is to find the position of the person giving commands. For this GCC-PHAT (Generalised Cross Correlation-Phase Transform) is used to find the TDOA (Time Delay Of Arrival) between each pair of microphones.
 
-\subsection{Locating time of command}
+\subsection{Locating time of command}\label{sec:Locating_time_of_command}
 
 %husk og ændre 80 sampels til det rigtige tal
 Before calculating the position of the sound source, the exact sample where the command was said must be found, to avoid accidentally calculating the position of random noise. To keep track of samples, the ESP32 gives every sample an ID number, which is also sent through MQTT alongside the data.

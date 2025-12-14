@@ -31,7 +31,7 @@ OpenAI's whisper model has been trained on 680,000 hours of multilingual and mul
 
 Importantly OpenAI has tested the large model of whisper in a noisy environment with varying SNRs (signal-to-noise ratios). At an SNR of 0 dB the large model achieved a WER of 17\%, and at a more sensible SNR of 20 dB the WER was below 3\%.\cite{whisper_paper} Both tests running on the LibriSpeech dataset. This shows that the model is capable of functioning well even in noisy environments, and could be expected to perform well in a workshop environment. The larger model was tested on the LibriSpeech dataset with no noise, and achieved a WER of 2.7\%.\cite{whisper_paper} It can be reasonably assumed the base model will perform slightly worse in noisy environments, but still within an acceptable range for this project.
 \subsection{implementation}
-The model is used for transcription both for the purpose of identifying commands and focusing the stream for the sound localisation. The identification part is done on a seperate thread, as it is processing a larger data stream at a time, so as not to interfere with the MQTT subscriber that handles the incoming sound data.
+The model is used for transcription both for the purpose of identifying commands and focusing the stream for the sound localisation, see \cref{sec:Locating_time_of_command}. The identification part is done on a seperate thread, as it is processing a larger data stream at a time, so as not to interfere with the MQTT subscriber that handles the incoming sound data.
 
 As multiple threads need to interact with the whisper model simultaneously, a mutex lock is setup using the thread.lock\(\) function from the threading library. This ensures that only one thread can access the model at a time.
 
