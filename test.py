@@ -8,7 +8,7 @@ import re
 from consts import SAMPLE_RATE
 
 
-use_fake_data = False
+use_fake_data = True
 
 if not use_fake_data:
     I2S0 = np.array([])
@@ -83,7 +83,7 @@ print(gccphat_matlab(mic_2, mic_3)[0])
 
 mic_positions = microphone_placement()
 
-best_point, _ = triangulate_from_sound(mic0_data=mic_1, mic1_data=mic_2, mic2_data=mic_3)
+best_point, _ = triangulate_from_sound(mic1_data=mic_1, mic2_data=mic_2, mic3_data=mic_3)
 #best_point, _ = find_sound_origin(mic_positions, [-105, -359, 192])
 
 print("Estimated source location (x, y):", best_point)
