@@ -8,7 +8,7 @@ import queue
 # =======================
 SPI_BUS = 0
 SPI_DEVICE = 0
-SPI_SPEED_HZ = 10_000_000
+SPI_SPEED_HZ = 5_000_000
 SPI_MODE = 0
 CHUNK_SIZE = 4096
 
@@ -63,21 +63,10 @@ GPIO.add_event_detect(DATA_READY_PIN, GPIO.RISING, callback=data_ready_callback)
 try:
     while True:
         # Request first chunk
-        spi.xfer2([0x01])  # request next frame
-
-        buf0 = [0x00] * CHUNK_SIZE
-        frame_queue.get(block=True)  # wait for DATA_READY
-        buffer0 = spi.xfer2(buf0)  # skip the first byte (response to request)
-        print(f"First four bytes of buffer0: {buffer0[:4]}")
-
-
-        spi.xfer2([0x01])  # request next frame
-
-        buf1 = [0x00] * CHUNK_SIZE
-        frame_queue.get(block=True)  # wait for DATA_READY
-        buffer1 = spi.xfer2(buf1)  # skip the first byte (response to request)
-    
-
+        frame_queue.get()  # wait for DATA_READY signal
+        values = spi.readbytes(CHUNK_SIZE)
+        print(f"First four bytes of chunk: {values[:4]}")
+        
         time.sleep(0.01)  # small delay between frames
 
 except KeyboardInterrupt:

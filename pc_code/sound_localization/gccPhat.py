@@ -99,7 +99,7 @@ def TDOA(cross_corr):
 	# To clear confusion: lag means the signal is delayed, so the sign is flipped here so the TDOA is positive when signal2 arrives after signal1.
 	return -peak_lag(cross_corr)
 
-def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False, sample_size=None):
+def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False):
 	"""
 	Calculate TDOA between signal1 and signal2.
 	Returns: tdoa in samples where positive value means signal2 arrives AFTER signal1
@@ -139,12 +139,13 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False, sample_size=N
 				
 				# Log this combination
 				weight_int = int(weight * 10)
-				const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{sample_size}_SAMPLES_{filter_state}"
+				const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{logger.Logger.current_samples_size}_SAMPLES_{filter_state}"
 				try:
 					column_key = getattr(logger, const_name)
 					logger.Logger.set_value(column_key, tdoa)
 				except AttributeError:
 					print(f"Warning: Logger constant {const_name} not found")
+		return tdoa
 
 	R_phat = phat_weight(R, weight=weight)
 	"""

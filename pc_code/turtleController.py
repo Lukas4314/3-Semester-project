@@ -80,56 +80,94 @@ class TurtleController:
 
 		# Implement the sample size counting for logging here
 		if SHOULD_LOG:
-			chunk_count = end_index - start_index + 1
-			pass
+			center_chunk = (start_index + end_index) // 2
+			chunk_sizes = [8, 4, 2] # Important to check largest to smallest
+			start_index = center_chunk - chunk_sizes[0] // 2
+			end_index = start_index + chunk_sizes[0]
+   
+			while not self.queue1.empty():
+				message_index, new_chunk = self.queue1.get()
+				if start_index <= message_index <= end_index:
+					mic1_data.append(new_chunk)
+			while not self.queue2.empty():
+				message_index, new_chunk = self.queue2.get()
+				if start_index <= message_index <= end_index:
+					mic2_data.append(new_chunk)
+			while not self.queue3.empty():
+				message_index, new_chunk = self.queue3.get()
+				if start_index <= message_index <= end_index:
+					mic3_data.append(new_chunk)
 		
-		while not self.queue1.empty():
-			message_index, new_chunk = self.queue1.get()
-			if start_index <= message_index <= end_index:
-				mic1_data.append(new_chunk)
-			else:
-				#print(f"index: {message_index} not in range {start_index} to {end_index}")
-				pass
-		while not self.queue2.empty():
-			message_index, new_chunk = self.queue2.get()
-			if start_index <= message_index <= end_index:
-				mic2_data.append(new_chunk)
+	
+			for size in chunk_sizes:
+				current_mic1_data = mic1_data.copy()
+				current_mic2_data = mic2_data.copy()
+				current_mic3_data = mic3_data.copy()
+
+				current_mic1_data = current_mic1_data[(len(mic1_data)-size)//2:len(mic1_data)-(len(mic1_data)-size)//2]
+				current_mic2_data = current_mic2_data[(len(mic2_data)-size)//2:len(mic2_data)-(len(mic2_data)-size)//2]
+				current_mic3_data = current_mic3_data[(len(mic3_data)-size)//2:len(mic3_data)-(len(mic3_data)-size)//2]
+				Logger.current_samples_size = size
+    
+
+				best_point, best_score = triangulate_from_sound(current_mic1_data, current_mic2_data, current_mic3_data)
 				
-		while not self.queue3.empty():
-			message_index, new_chunk = self.queue3.get()
-			if start_index <= message_index <= end_index:
-				mic3_data.append(new_chunk)
-		
-		if len(mic1_data) < 1:
-			print(f"No data received from microphones in the specified range {start_index} to {end_index}.")
-			return
-		
-		if len(mic1_data) >= 1:
-			mic1_data = np.concatenate(mic1_data)
-			mic2_data = np.concatenate(mic2_data)
-			mic3_data = np.concatenate(mic3_data)        
-		
-		write("actually_fed_to_gcc1.wav", SAMPLE_RATE, mic1_data.astype(np.int16))
-		write("actually_fed_to_gcc2.wav", SAMPLE_RATE, mic2_data.astype(np.int16))
-		write("actually_fed_to_gcc3.wav", SAMPLE_RATE, mic3_data.astype(np.int16))
-		
-		if SHOULD_LOG:
-			best_point, best_score = triangulate_from_sound(mic1_data, mic2_data, mic3_data, num_chunks=chunk_count)
+				print(f"Best point: {best_point}, Best score: {best_score}")
+				angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
+				distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
+				
+				print(f"Sound located at angle {angle} degrees and distance {distance} meters")
+			
+			Logger.set_value(ACTUAL_TRIANGULATION_ANGLE, input("What angle did it triangulate to (in degrees)?: "))
+			Logger.set_value(ACTUAL_TRIANGULATION_DISTANCE, input("What distance did it triangulate to (in meters)?: "))
+
+
+				
+    
+    
 		else:
-			best_point, best_score = triangulate_from_sound(mic1_data, mic2_data, mic3_data, num_chunks=None)
-		
-		print(f"Best point: {best_point}, Best score: {best_score}")
-		angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
-		distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
-		Logger.set_value(ACTUAL_TRIANGULATION_ANGLE, angle)
-		Logger.set_value(ACTUAL_TRIANGULATION_DISTANCE, distance)
-		Logger.write_row()
-		
-		print(f"Sound located at angle {angle} degrees and distance {distance} meters")
-		
-		self.turn_counter_clockwise(angle)
-		time.sleep(0.5)
-		self.move_forward(distance)
+      
+      
+			while not self.queue1.empty():
+				message_index, new_chunk = self.queue1.get()
+				if start_index <= message_index <= end_index:
+					mic1_data.append(new_chunk)
+			while not self.queue2.empty():
+				message_index, new_chunk = self.queue2.get()
+				if start_index <= message_index <= end_index:
+					mic2_data.append(new_chunk)
+					
+			while not self.queue3.empty():
+				message_index, new_chunk = self.queue3.get()
+				if start_index <= message_index <= end_index:
+					mic3_data.append(new_chunk)
+			
+			if len(mic1_data) < 1:
+				print(f"No data received from microphones in the specified range {start_index} to {end_index}.")
+				return
+			
+			if len(mic1_data) >= 1:
+				mic1_data = np.concatenate(mic1_data)
+				mic2_data = np.concatenate(mic2_data)
+				mic3_data = np.concatenate(mic3_data)        
+			
+			write("actually_fed_to_gcc1.wav", SAMPLE_RATE, mic1_data.astype(np.int16))
+			write("actually_fed_to_gcc2.wav", SAMPLE_RATE, mic2_data.astype(np.int16))
+			write("actually_fed_to_gcc3.wav", SAMPLE_RATE, mic3_data.astype(np.int16))
+			
+
+			best_point, best_score = triangulate_from_sound(mic1_data, mic2_data, mic3_data)
+			
+			print(f"Best point: {best_point}, Best score: {best_score}")
+			angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
+			distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
+			
+			print(f"Sound located at angle {angle} degrees and distance {distance} meters")
+			
+			self.turn_counter_clockwise(angle)
+			time.sleep(0.5)
+			self.move_forward(distance)
+   
 
 	def execute_command(self, action, direction, distance):
 		if self.executing_thread and self.executing_thread.is_alive():
