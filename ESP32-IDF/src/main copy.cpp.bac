@@ -85,10 +85,6 @@ bool initSPISlave()
     buscfg.quadwp_io_num = -1;
     buscfg.max_transfer_sz = SPI_MAX_CHUNK;
 
-    gpio_set_pull_mode(SPI_MISO, GPIO_PULLUP_ONLY);
-    gpio_set_pull_mode(SPI_MOSI, GPIO_PULLUP_ONLY);
-    gpio_set_pull_mode(SPI_SCLK, GPIO_PULLUP_ONLY);
-
     spi_slave_interface_config_t slvcfg = {};
     slvcfg.spics_io_num = SPI_CS;
     slvcfg.queue_size = 3;
@@ -237,63 +233,49 @@ void i2sTask(void *param)
 
 
 
+// Simplified SPI Slave Task - FIXED VERSION
 void spiSlaveTask(void *param) {
     uint8_t command;
     spi_slave_transaction_t trans = {};
     
-    // Local buffers (zeroed)
-    uint8_t rx_buffer[4] = {0};
-    uint8_t tx_buffer[4] = {0};
-    
-    printf("=== SPI SLAVE CLEAN VERSION ===\n");
-    printf("All buffers zeroed, waiting for commands...\n");
+    printf("SPI Slave Task Started\n");
     
     while (true) {
-        // 1. RECEIVE: Wait for command (1 byte)
-        memset(rx_buffer, 0, sizeof(rx_buffer));  // Clear receive buffer
-        
-        trans.length = 1 * 8;  // Expect 1 byte command
-        trans.rx_buffer = rx_buffer;
-        trans.tx_buffer = NULL;  // Send nothing while receiving
-        
+        // === 1. WAIT FOR COMMAND ===
+        trans.length = 8;  // 1 byte command
+        trans.rx_buffer = &command;
+        trans.tx_buffer = NULL;
         esp_err_t ret = spi_slave_transmit(SPI_HOST_VAR, &trans, portMAX_DELAY);
         
         if (ret != ESP_OK) {
-            printf("SPI receive error: %d\n", ret);
+            printf("SPI command receive error: %d\n", ret);
             continue;
         }
         
-        command = rx_buffer[0];
         printf("Received command: 0x%02x\n", command);
         
-        // 2. PROCESS & RESPOND
-        memset(tx_buffer, 0, sizeof(tx_buffer));  // Clear transmit buffer
-        
-        if (command == 0x01) {  // QUERY
+        // === 2. PROCESS COMMAND ===
+        if (command == 0x01) {  // QUERY: How many packets ready?
+            // Count ready buffers
             uint8_t ready_count = 0;
             for (int i = 0; i < NUM_I2S_BUFFERS; i++) {
                 if (buffer_ready[i]) ready_count++;
             }
             
-            printf("  Query: %d buffers ready\n", ready_count);
+            // DEBUG: Print what we're sending
+            printf("QUERY: %d packets ready, sending [0x81, 0x%02x]\n", ready_count, ready_count);
             
-            tx_buffer[0] = 0x81;      // Query response header
-            tx_buffer[1] = ready_count; // Number of packets
-            // tx_buffer[2] and [3] remain 0
-            
-            trans.length = 4 * 8;     // Always send 4 bytes
-            trans.tx_buffer = tx_buffer;
+            // Send response: [HEADER][COUNT]
+            uint8_t response[2] = {0x81, ready_count};  // USE 0x81 NOT RESP_QUERY_HEADER
+            trans.length = 2 * 8;
+            trans.tx_buffer = response;
             trans.rx_buffer = NULL;
-            
             spi_slave_transmit(SPI_HOST_VAR, &trans, portMAX_DELAY);
             
-            printf("  Sent: [0x%02x, 0x%02x, 0x%02x, 0x%02x]\n", 
-                   tx_buffer[0], tx_buffer[1], tx_buffer[2], tx_buffer[3]);
+            printf("QUERY response sent\n");
             
-        } else if (command == 0x02) {  // REQUEST PACKET
-            printf("  Packet request received\n");
-            
-            // Find a ready buffer
+        } else if (command == 0x02) {  // REQUEST: Send next available packet
+            // Find next ready buffer
             int8_t buffer_index = -1;
             for (int i = 0; i < NUM_I2S_BUFFERS; i++) {
                 if (buffer_ready[i]) {
@@ -303,53 +285,86 @@ void spiSlaveTask(void *param) {
             }
             
             if (buffer_index == -1) {
-                printf("  No packets available\n");
-                tx_buffer[0] = 0xFF;  // Error header
-                tx_buffer[1] = 0x01;  // Error: no data
-                
-                trans.length = 4 * 8;
-                trans.tx_buffer = tx_buffer;
-                trans.rx_buffer = NULL;
+                // No data available
+                printf("ERROR: No packets available\n");
+                uint8_t error[2] = {0xFF, 0x01}; // 0xFF = ERROR, 0x01 = no data
+                trans.length = 2 * 8;
+                trans.tx_buffer = error;
                 spi_slave_transmit(SPI_HOST_VAR, &trans, portMAX_DELAY);
                 continue;
             }
             
             uint16_t packet_id = buffer_ids[buffer_index];
-            printf("  Sending packet %d from buffer %d\n", packet_id, buffer_index);
+            int16_t* audio_data = mic_data[buffer_index];
             
-            // Send ACK first
-            tx_buffer[0] = 0xAC;  // ACK header
-            tx_buffer[1] = 0x00;
+            // DEBUG: Calculate actual sizes
+            size_t total_audio_bytes = BUFFER_SIZE_TOTAL * sizeof(int16_t);
+            printf("Sending packet %d (buffer %d): %zu bytes total\n", 
+                   packet_id, buffer_index, total_audio_bytes);
             
-            trans.length = 4 * 8;
-            trans.tx_buffer = tx_buffer;
+            // === FRAME 1: First 4095 bytes of audio data ===
+            uint8_t frame1[4096];  // Use literal 4096, not FRAME_SIZE
+            frame1[0] = 0x01;  // Header for first frame
+            
+            // Copy first 4095 bytes
+            size_t frame1_data_size = 4095;
+            if (total_audio_bytes < frame1_data_size) {
+                frame1_data_size = total_audio_bytes;
+            }
+            
+            memcpy(&frame1[1], audio_data, frame1_data_size);
+            
+            // DEBUG
+            printf("Frame 1: header=0x01, data=%zu bytes\n", frame1_data_size);
+            printf("  First 8 audio bytes: ");
+            for (int i = 0; i < 8 && i < frame1_data_size; i++) {
+                printf("%02x ", ((uint8_t*)audio_data)[i]);
+            }
+            printf("\n");
+            
+            trans.length = 4096 * 8;  // Always send full 4096 bytes
+            trans.tx_buffer = frame1;
             trans.rx_buffer = NULL;
             spi_slave_transmit(SPI_HOST_VAR, &trans, portMAX_DELAY);
             
-            // Now the Pi should send another transaction for the actual data
-            // We'll implement that in the next iteration
+            // === FRAME 2: Remaining data + Packet ID ===
+            size_t remaining_bytes = total_audio_bytes - frame1_data_size;
+            uint8_t frame2[4096];  // We'll use only 2058 bytes
             
-        } else if (command == 0x00) {
-            printf("  Received 0x00 (dummy byte)\n");
-            // Send sync pattern so Pi knows we're alive
-            tx_buffer[0] = 0xAA;
-            tx_buffer[1] = 0x55;
-            tx_buffer[2] = 0xAA;
-            tx_buffer[3] = 0x55;
+            frame2[0] = 0x02;      // Header for last frame
+            frame2[1] = packet_id & 0xFF;      // ID LSB
+            frame2[2] = (packet_id >> 8) & 0xFF; // ID MSB
             
-            trans.length = 4 * 8;
-            trans.tx_buffer = tx_buffer;
-            trans.rx_buffer = NULL;
+            // Copy remaining audio data
+            if (remaining_bytes > 0) {
+                memcpy(&frame2[3], (uint8_t*)audio_data + frame1_data_size, remaining_bytes);
+            }
+            
+            // Calculate frame2 used size: header(1) + ID(2) + data
+            size_t frame2_used = 3 + remaining_bytes;
+            
+            // DEBUG
+            printf("Frame 2: header=0x02, ID=%d, remaining=%zu bytes\n", 
+                   packet_id, remaining_bytes);
+            printf("  Frame 2 total: %zu bytes\n", frame2_used);
+            
+            // Send second frame (EXACT size Python expects: 2058 bytes)
+            // ESP32 will pad with zeros if frame2_used < 2058
+            trans.length = 2058 * 8;  // FIXED: Always send 2058 bytes
+            trans.tx_buffer = frame2;
             spi_slave_transmit(SPI_HOST_VAR, &trans, portMAX_DELAY);
+            
+            // Mark buffer as consumed
+            buffer_ready[buffer_index] = false;
+            
+            printf("Packet %d sent successfully\n\n", packet_id);
             
         } else {
-            printf("  Unknown command\n");
-            tx_buffer[0] = 0xFF;  // Error header
-            tx_buffer[1] = 0x02;  // Error: unknown command
-            
-            trans.length = 4 * 8;
-            trans.tx_buffer = tx_buffer;
-            trans.rx_buffer = NULL;
+            // Unknown command
+            printf("ERROR: Unknown command 0x%02x\n", command);
+            uint8_t error[2] = {0xFF, 0x02}; // 0xFF = ERROR, 0x02 = unknown command
+            trans.length = 2 * 8;
+            trans.tx_buffer = error;
             spi_slave_transmit(SPI_HOST_VAR, &trans, portMAX_DELAY);
         }
     }
@@ -360,6 +375,6 @@ extern "C" void app_main(void)
     setup();
     printf("Setup complete, starting tasks...\n");
 
-    //xTaskCreatePinnedToCore(i2sTask, "I2S_Task", 8192 * 2, nullptr, 5, nullptr, 1);
+    xTaskCreatePinnedToCore(i2sTask, "I2S_Task", 8192 * 2, nullptr, 5, nullptr, 1);
     xTaskCreatePinnedToCore(spiSlaveTask, "SPI_Slave_Task", 4096 * 4, nullptr, 5, nullptr, 0);
 }
