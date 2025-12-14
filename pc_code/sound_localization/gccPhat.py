@@ -96,8 +96,7 @@ def peak_lag(corr):
 
 # 6. Calculate the TDOA from the location of the peak (after considering lag) in the cross-correlation function.
 def TDOA(cross_corr):
-	# To clear confusion: lag means the signal is delayed, so the sign is flipped here so the TDOA is positive when signal2 arrives after signal1.
-	return -peak_lag(cross_corr)
+	return peak_lag(cross_corr)
 
 def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False):
 	"""
@@ -147,7 +146,7 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False):
 					print(f"Warning: Logger constant {const_name} not found")
 		return tdoa
 
-	R_phat = phat_weight(R, weight=weight)
+	R_phat = phat_weight(R, weight=1.0)
 	"""
 	fig = plt.figure()
 	plt.subplot(2, 1, 1)
@@ -300,6 +299,13 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False):
 		plt.ylabel("Correlation")
 		plt.grid(True)
 
+		# Add TDOA as text annotation
+		plt.text(0.05, 0.95, f"TDOA: {tdoa:.2f} samples",
+         transform=plt.gca().transAxes,
+         fontsize=12, verticalalignment='top',
+         bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+
+
 		plt.tight_layout()
 		plt.show()
 
@@ -346,8 +352,8 @@ def create_delayed_signals(base_signal, delays_samples, signal_length):
 	"""
 	signals = []
 	for delay in delays_samples:
-		# Create delayed signal by rolling
-		delayed_sig = np.roll(base_signal, delay)
+		# Create delayed signal by rolling, here delay is - because roll normally shifts right and wraps around, so a roll of 5 would mean a tdoa of -5.
+		delayed_sig = np.roll(base_signal, -delay)
 		
 		# Handle wrap-around by zero-padding the beginning
 		if delay > 0:
