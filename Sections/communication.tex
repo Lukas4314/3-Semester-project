@@ -33,9 +33,7 @@ A QoS of 1 means the message is delivered at least once, with acknowledgment, so
 
 A QoS of 2 means the message is delivered exactly once, with a four-step handshake to ensure no duplicates.
 
-Movement commands are sent with a QoS of 1, to ensure they are received. 
-
-Audio data is sent with a QoS of ?????
+All commands (Movement commands and audio data) are sent with a QoS of 1, to ensure they are received. 
 
 The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in the table below:
 
