@@ -3,11 +3,10 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
-extern "C" {
-    #include "esp_rom_sys.h"
+extern "C"
+{
+#include "esp_rom_sys.h"
 }
-
-
 
 I2sInterface::I2sInterface(
     i2s_port_t port,
@@ -34,23 +33,32 @@ I2sInterface::I2sInterface(
 {
 }
 
-
 IRAM_ATTR static bool i2s_rx_queue_overflow_callback(i2s_chan_handle_t handle,
                                                      i2s_event_data_t *event,
                                                      void *user_ctx)
 {
-    I2sInterface* iface = (I2sInterface*)user_ctx;
+    I2sInterface *iface = (I2sInterface *)user_ctx;
     iface->counterOffset++;
     return false;
 }
 
-
-
 bool I2sInterface::begin()
 {
+    //i2s_std_slot_config_t slotConfig = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(dataBitWidth, slotMode);
+    i2s_std_slot_config_t slotConfig = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(dataBitWidth, slotMode);
+    slotConfig.data_bit_width = dataBitWidth;
+    slotConfig.slot_bit_width = I2S_SLOT_BIT_WIDTH_16BIT;
+    slotConfig.slot_mode = slotMode;
+    slotConfig.slot_mask = slotMask;
+    slotConfig.ws_width = 16;
+    slotConfig.ws_pol = false;
+    slotConfig.bit_shift = true;
+
+    
+
     i2s_std_config_t stdConfig = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(sampleRate),
-        .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(dataBitWidth, slotMode),
+        .slot_cfg = slotConfig,
         .gpio_cfg = {
             .mclk = mclkPin,
             .bclk = bclkPin,
@@ -64,7 +72,6 @@ bool I2sInterface::begin()
             },
         },
     };
-    stdConfig.slot_cfg.slot_mask = slotMask;
 
     i2s_chan_config_t chanConfig = I2S_CHANNEL_DEFAULT_CONFIG(port, role);
     chanConfig.dma_frame_num = 960;
@@ -83,15 +90,12 @@ bool I2sInterface::begin()
     cbs.on_send_q_ovf = NULL;
 
     ESP_ERROR_CHECK(i2s_channel_register_event_callback(rx_chan, &cbs, this));
-    
-
 
     err = i2s_channel_init_std_mode(rx_chan, &stdConfig);
     if (err != ESP_OK)
     {
         return false;
     }
-
 
     i2s_channel_enable(rx_chan);
 
@@ -108,4 +112,3 @@ size_t I2sInterface::readSamples(void *data, size_t maxBytes)
     }
     return bytesRead;
 }
-

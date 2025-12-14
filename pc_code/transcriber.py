@@ -116,8 +116,8 @@ class transcriber:
 			segment = torch.from_numpy(segment)
 		
 		
-		
-		segment = self.resampler(segment)
+		if self.samplerate != 16000:
+			segment = self.resampler(segment)
 
 
 		# Pad or trim to 30s (Whisper default)

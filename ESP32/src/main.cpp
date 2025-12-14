@@ -38,7 +38,7 @@
 #define MIC3_DO I2S1_DIN // Data output from microphone to input for I2S1
 
 
-#define SAMPLERATE 44100
+#define SAMPLERATE 22050
 
 
 //Create I2S interface objects
@@ -95,11 +95,14 @@ void setup() {
 
 void loop() {
     //mqtt.loop();
-    const int numSamples = 1024*8;
+    const int numSamples = 1024;
 
     // Reserve space for: [counter(4 bytes)] + audio samples
     static int16_t buffer0[numSamples * 2 + 2]; 
     static int16_t buffer1[numSamples + 2];
+
+
+
 
     static uint32_t counter = 0;
 
@@ -121,13 +124,25 @@ void loop() {
         numSamples * sizeof(int16_t)
     );
 
+    for (int i = 0; i < 10; i++){
+        Serial.print(buffer0[i]);
+        Serial.print(", ");
+    }
+    Serial.print("       ");
+    for (int i = 0; i < 10; i++){
+        Serial.print(buffer1[i]);
+        Serial.print(", ");
+    }
+    Serial.println();
+
+
     // Write counter (4 bytes) into first 2 int16 positions
     memcpy(buffer0, &counter, sizeof(counter));
     memcpy(buffer1, &counter, sizeof(counter));
 
     counter++;
 
-    if (counter == 20){
+    if (counter == 20 && false){
         Serial.println("Buffer0:");
         for (int i = 0; i < sizeof(buffer0)/sizeof(buffer0[0]); i++){
             Serial.print(buffer0[i]);

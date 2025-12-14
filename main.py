@@ -75,8 +75,8 @@ def main():
         mqtt_interface_vel.client.disconnect()
         
         #transcriber_instance.save_audio_to_wav()
-        mqtt_interface_aud0.save_to_wav("audio_aud0.wav")
-        mqtt_interface_aud1.save_to_wav("audio_aud1.wav")
+        mqtt_interface_aud0.save_to_wav("audio_aud0.wav", amount_of_channels=2)
+        mqtt_interface_aud1.save_to_wav("audio_aud1.wav", amount_of_channels=1)
     finally:
         if SHOULD_LOG:
             Logger.close()

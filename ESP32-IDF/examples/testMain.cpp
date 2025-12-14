@@ -73,12 +73,16 @@ void setup()
     // Default LOW
     gpio_set_level(DATA_READY_GPIO, 0);
 
-    //Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
+    // Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
     gpio_set_pull_mode(SPI_MOSI, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(SPI_SCLK, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(SPI_CS, GPIO_PULLUP_ONLY);
 
+    printf("Setup complete\n");
+}
 
+void spiSlaveTask(void *param)
+{
     if (!initSPISlave())
     {
         printf("SPI slave init failed\n");
@@ -86,11 +90,6 @@ void setup()
             ;
     }
 
-    printf("Setup complete\n");
-}
-
-void spiSlaveTask(void *param)
-{
     while (true)
     {
         uint8_t txBuffer[4096];

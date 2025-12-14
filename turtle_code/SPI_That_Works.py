@@ -3,6 +3,8 @@ import struct
 import time
 from RPi import GPIO 
 import queue
+import numpy as np
+from mqttInterface import MQTTInterface
 # =======================
 # SPI CONFIG
 # =======================
@@ -37,7 +39,8 @@ print("SPI master ready (request-per-chunk protocol)")
 
 
 
-
+mqtt0 = MQTTInterface("127.0.0.1", 1883, "I2S0")
+mqtt1 = MQTTInterface("127.0.0.1", 1883, "I2S1")
 
 # Queue for non-blocking callback 
 frame_queue = queue.Queue() 
@@ -57,6 +60,10 @@ GPIO.setup(DATA_READY_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.add_event_detect(DATA_READY_PIN, GPIO.RISING, callback=data_ready_callback)
 
 
+
+
+
+
 # =======================
 # MAIN LOOP
 # =======================
@@ -64,11 +71,33 @@ try:
     while True:
         # Request first chunk
         frame_queue.get()  # wait for DATA_READY signal
-        values = spi.readbytes(CHUNK_SIZE)
-        print(f"First four bytes of chunk: {values[:4]}")
+        values0 = spi.readbytes(CHUNK_SIZE)
+        np_values0 = np.array(values0, dtype=np.uint8)
         
-        time.sleep(0.01)  # small delay between frames
+        frame_queue.get()  # wait for DATA_READY signal
+        values1 = spi.readbytes(CHUNK_SIZE)
+        np_values1 = np.array(values1, dtype=np.uint8)
+        
+        np_values = np.concatenate((np_values0, np_values1))
+        
+    
+        I2S0 = np_values[:I2S0_SIZE]
+        I2S1 = np_values[I2S0_SIZE:I2S0_SIZE + I2S1_SIZE]
+            
+        
+        counter0 = struct.unpack('<I', I2S0[:COUNTER_SIZE].tobytes())[0]
+        counter1 = struct.unpack('<I', I2S1[:COUNTER_SIZE].tobytes())[0]
+        print(f"Counters: I2S0={counter0}, I2S1={counter1}, len I2S0={len(I2S0)}, len I2S1={len(I2S1)}")
+         
+        mqtt0.publish_buffer(I2S0.tobytes())
+        mqtt1.publish_buffer(I2S1.tobytes())
+        
+        
+        
+        #time.sleep(0.03)  # small delay between frames
 
 except KeyboardInterrupt:
+    mqtt0.disconnect()
+    mqtt1.disconnect()
     print("Stopping SPI master...")
     spi.close()
