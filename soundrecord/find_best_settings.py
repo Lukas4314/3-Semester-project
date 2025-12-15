@@ -7,17 +7,16 @@ import torch
 import torchaudio
 from stringToCommand import string_to_command  # your parser
 
-
-SAMPLE_RATE = 22050   # whatever your project uses (not critical here)
+SAMPLE_RATE = 22050
 
 
 # -----------------------------
 # Preprocessing identical to your transcriber
 # -----------------------------
-def preprocess_segment(segment: np.ndarray, orig_sr: int):
+def preprocess_segment(segment: np.ndarray, orig_sr: int, device: torch.device):
     """
-    Same as your transcriber pipeline:
     int16 → float32 → torch → resample → pad_or_trim → log_mel_spectrogram
+    Runs log-mel on GPU if device is CUDA.
     """
     from whisper.audio import pad_or_trim, log_mel_spectrogram
 
@@ -27,20 +26,21 @@ def preprocess_segment(segment: np.ndarray, orig_sr: int):
     else:
         segment = segment.astype(np.float32)
 
-    segment = torch.from_numpy(segment)
+    audio = torch.from_numpy(segment)
 
-    # Resample to 16000 (Whisper native)
+    # Resample to 16000 (Whisper native) - often CPU, that's fine
     if orig_sr != 16000:
-        resampler = torchaudio.transforms.Resample(
-            orig_freq=orig_sr, new_freq=16000
-        )
-        segment = resampler(segment)
+        resampler = torchaudio.transforms.Resample(orig_freq=orig_sr, new_freq=16000)
+        audio = resampler(audio)
 
-    # Pad or trim to Whisper's required 30s window
-    segment = pad_or_trim(segment)
+    # Whisper expects exactly ~30s window
+    audio = pad_or_trim(audio)
 
-    # Convert to mel spectrogram
-    mel = log_mel_spectrogram(segment)
+    # Move to GPU (or stay CPU) so mel can be computed on the same device
+    audio = audio.to(device)
+
+    # Convert to mel spectrogram (GPU if audio is on CUDA)
+    mel = log_mel_spectrogram(audio)
     return mel
 
 
@@ -79,7 +79,7 @@ def command_score(pred_cmd, expected_cmd):
             diff = abs(pred_dist - exp_dist)
 
             if exp_unit == "meters":
-                tol = 0.01   # 1 cm
+                tol = 0.01  # 1 cm
             elif exp_unit == "radians":
                 tol = math.radians(1)  # ~1 degree
             else:
@@ -92,41 +92,54 @@ def command_score(pred_cmd, expected_cmd):
 
 
 # -----------------------------
-# Main evaluation function
+# Main evaluation function (multi-file)
 # -----------------------------
-def find_best_whisper_settings_for_file(audio_path, expected_command):
-    # Load model once – FIXED to base.en
-    model = whisper.load_model("base.en")
+@torch.no_grad()
+def find_best_whisper_settings_for_files(audio_files, expected_commands):
+    """
+    audio_files: list[str] of wav paths
+    expected_commands: dict[str, dict] mapping filename -> expected command dict
+    """
+    # Pick device + load model onto it
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Device:", device)
 
-    # Load file as int16 mono
-    sr, data = wavfile.read(audio_path)
-    if data.ndim == 2:
-        data = data.mean(axis=1).astype(np.int16)
-    data = data.astype(np.int16)
+    model = whisper.load_model("base.en").to(device)
+    use_fp16 = (device.type == "cuda")
+    torch.set_grad_enabled(False)
 
-    print(f"Loaded audio @ {sr} Hz")
+    # ---- Precompute mels for all clips once ----
+    mels = []
+    exp_cmds = []
 
-    # Preprocess using SAME pipeline as your transcriber
-    mel = preprocess_segment(data, orig_sr=sr)
+    for path in audio_files:
+        if path not in expected_commands:
+            raise ValueError(f"No expected command defined for file: {path}")
 
-    # -----------------------------
-    # Big search grid over DecodingOptions (base.en only)
-    # -----------------------------
-    TEMPS = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.7, 1.0]
-    BEAMS = [None, 2, 4, 8, 12, 16]
-    BEST_OF = [1, 2, 3, 5, 8]          # only used in sampling mode (no beam, temp > 0)
-    PATIENCE = [None, 0.0, 0.5, 1.0, 2.0]
-    LENGTH_PEN = [None, 0.0, 0.1, 0.2, 0.5]
+        sr, data = wavfile.read(path)
+        if data.ndim == 2:
+            data = data.mean(axis=1).astype(np.int16)
+        data = data.astype(np.int16)
+
+        mel = preprocess_segment(data, orig_sr=sr, device=device)
+        mels.append(mel)
+        exp_cmds.append(expected_commands[path])
+
+        print(f"Loaded+preprocessed: {path} @ {sr} Hz")
+
+    # ---- Grid over DecodingOptions ----
+    TEMPS = [0.0, 0.1, 0.3, 0.5]
+    BEAMS = [None, 2, 4, 8]
+    BEST_OF = [1, 2, 3]
+    PATIENCE = [None, 0.0, 0.5, 1.0]
+    LENGTH_PEN = [None, 0.0, 0.1, 0.2]
 
     LANG = "en"
     TASK = "transcribe"
 
-    rough_count = 0
-    for temp, beam, best_of, pat, lp in itertools.product(
-        TEMPS, BEAMS, BEST_OF, PATIENCE, LENGTH_PEN
-    ):
-        rough_count += 1
-    print(f"About to iterate over ~{rough_count} parameter tuples (not all use best_of/patience)\n")
+    total_cfgs = len(TEMPS) * len(BEAMS) * len(BEST_OF) * len(PATIENCE) * len(LENGTH_PEN)
+    total_decodes = total_cfgs * len(audio_files)
+    print(f"\nTesting {total_cfgs} configs × {len(audio_files)} clips = {total_decodes} decode calls\n")
 
     results = []
     idx = 0
@@ -135,98 +148,124 @@ def find_best_whisper_settings_for_file(audio_path, expected_command):
         TEMPS, BEAMS, BEST_OF, PATIENCE, LENGTH_PEN
     ):
         idx += 1
-        cfg_name = (
-            f"cfg_{idx}_temp{temp}_beam{beam}_bestof{best_of}_"
-            f"pat{pat}_lenpen{lp}"
-        )
+        cfg_name = f"cfg_{idx}_temp{temp}_beam{beam}_bestof{best_of}_pat{pat}_lenpen{lp}"
 
-        print(f"\n=== Testing {cfg_name} ===")
-
-        # Base decoding options – model-level behavior fixed
         opt_kwargs = {
-            "fp16": False,
+            "fp16": use_fp16,          # True on CUDA, False on CPU
             "language": LANG,
             "task": TASK,
             "temperature": temp,
             "without_timestamps": True,
         }
 
-        # Beam search vs sampling:
+        # Beam search vs sampling
         if beam is not None:
-            # Beam search mode: set beam_size, optionally patience & length_penalty
             opt_kwargs["beam_size"] = beam
-
             if pat is not None:
-                # patience only valid when beam_size is set
                 opt_kwargs["patience"] = pat
-
             if lp is not None:
                 opt_kwargs["length_penalty"] = lp
-
-            # NO best_of in beam search
         else:
-            # Sampling mode: no beam_size, no patience
-            # length_penalty is technically for beam, but we can ignore/set only when beam is not None,
-            # so we do nothing here.
             if temp > 0.0 and best_of > 1:
-                # best_of only in sampling + temperature > 0
                 opt_kwargs["best_of"] = best_of
-            # if temp == 0.0 → greedy: do NOT set best_of at all
 
-        # Strip out None fields just in case (we only added non-None above)
         opt_kwargs = {k: v for k, v in opt_kwargs.items() if v is not None}
-
         options = whisper.DecodingOptions(**opt_kwargs)
 
-        # Decode
-        result = whisper.decode(model, mel, options)
-        transcript = result.text
-        print(f"Transcript: {transcript}")
+        # Evaluate this config across all clips
+        total_score = 0.0
+        per_clip = []
 
-        # Parse into robot command
-        pred_cmd = string_to_command(transcript)
-        print(f"Parsed cmd: {pred_cmd}")
+        for path, mel, exp in zip(audio_files, mels, exp_cmds):
+            result = whisper.decode(model, mel, options)
+            transcript = result.text
+            pred_cmd = string_to_command(transcript)
+            score = command_score(pred_cmd, exp)
 
-        # Score against expected_command
-        score = command_score(pred_cmd, expected_command)
-        print(f"Cmd score: {score:.3f}")
+            total_score += score
+            per_clip.append({
+                "file": path,
+                "text": transcript,
+                "pred_cmd": pred_cmd,
+                "score": score,
+            })
+
+        avg_score = total_score / len(mels)
+        print(f"{cfg_name} -> avg_score={avg_score:.3f}")
 
         results.append({
             "cfg": cfg_name,
-            "score": score,
-            "text": transcript,
-            "cmd": pred_cmd,
+            "avg_score": avg_score,
             "params": opt_kwargs,
+            "per_clip": per_clip,
         })
 
-    # Sort results
-    results.sort(key=lambda r: r["score"], reverse=True)
+    # Sort and print
+    results.sort(key=lambda r: r["avg_score"], reverse=True)
 
-    print("\n========== BEST SETTINGS (TOP 20) ==========")
-    for r in results[:20]:
-        print(f"{r['cfg']}  score={r['score']:.3f}  cmd={r['cmd']}")
+    print("\n========== BEST SETTINGS (TOP 10) ==========")
+    for r in results[:10]:
+        print(f"{r['cfg']}  avg_score={r['avg_score']:.3f}")
 
-    print("\nBEST OVERALL:")
     best = results[0]
+    print("\nBEST OVERALL:")
     print("Config:", best["cfg"])
     print("Params:", best["params"])
-    print("Score :", best["score"])
-    print("Cmd   :", best["cmd"])
-    print("Text  :", best["text"])
+    print("Avg   :", best["avg_score"])
+
+    print("\nPer-clip details for BEST:")
+    for d in best["per_clip"]:
+        print(f"\n--- {d['file']} ---")
+        print("Transcript:", d["text"])
+        print("Pred cmd  :", d["pred_cmd"])
+        print("Score     :", f"{d['score']:.3f}")
 
 
 # -----------------------------
 # Run test
 # -----------------------------
 if __name__ == "__main__":
-    audio_path = "go backwards 10cm_mhvvee3l.wav"
+    # Define your filenames here:
+    audio_files = [
+        "go backwards 10cm_mhvvee3l.wav",
+        "go forward 10cm_mhvv8b3i.wav",
+        "turn left 20 degrees_mhvw41el.wav",
+        "turn right 40 degrees_mhvw58q4.wav",
+        "go forward 50cm_mhvvd39t.wav",
+    ]
 
-    # What you EXPECT after parsing whisper output:
-    expected_command = {
-        "action": "move",
-        "direction": "backward",
-        "distance": 0.10,   # 10 cm in meters
-        "unit": "meters",
+    # Define expected parsed commands for each file:
+    expected_commands = {
+        "go backwards 10cm_mhvvee3l.wav": {
+            "action": "move",
+            "direction": "backward",
+            "distance": 0.10,
+            "unit": "meters",
+        },
+        "go forward 10cm_mhvv8b3i.wav": {
+            "action": "move",
+            "direction": "forward",
+            "distance": 0.10,
+            "unit": "meters",
+        },
+        "turn left 20 degrees_mhvw41el.wav": {
+            "action": "turn",
+            "direction": "left",
+            "distance": 20,
+            "unit": "radians",
+        },
+        "turn right 40 degrees_mhvw58q4.wav": {
+            "action": "turn",
+            "direction": "right",
+            "distance": 40,
+            "unit": "radians",
+        },
+        "go forward 50cm_mhvvd39t.wav": {
+            "action": "move",
+            "direction": "forward",
+            "distance": 0.5,
+            "unit": "meters",
+        },
     }
 
-    find_best_whisper_settings_for_file(audio_path, expected_command)
+    find_best_whisper_settings_for_files(audio_files, expected_commands)

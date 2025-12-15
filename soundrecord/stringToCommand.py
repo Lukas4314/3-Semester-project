@@ -291,7 +291,7 @@ def string_to_command(input_string):
         else:
             # next_unit is canonical "degrees" or "radians"
             if next_unit == "degrees":
-                next_distance = float(next_distance) * (math.pi / 180.0)
+                next_distance = float(next_distance)
                 next_unit = "radians"
             elif next_unit == "radians":
                 next_distance = float(next_distance)
