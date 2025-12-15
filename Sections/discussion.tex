@@ -1,4 +1,8 @@
 \section{Discussion}
+
+As seen in \cref{sec:testing}
+The system that gets the best TDOA estimates, when GCC-PHAT is set to a weight of ??? and when a filter/nofilter is applied. When comparing the sample size GCC-PHAT performs best with ??? samples. 
+
 \label{SEC:discussion}
 \subsection{MQTT}
 MQTT is used for real-time data transfer for sound localisation, since it already was implemented on the Turtlebot3 for ROS2 communication. However, MQTT is not suited for real-time data transfer since it is a lightweight pub-sub messaging protocol. However, through testing it was found that the required data rate for sending audio data was still lower than the maximum data rate of MQTT.
