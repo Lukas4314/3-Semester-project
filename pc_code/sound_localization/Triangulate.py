@@ -42,14 +42,29 @@ def calculate_score(a12, a13, a23, measured_d1, measured_d2, measured_d3):
     return score
 
 def create_grid(search_range=10.0, grid_size=0.1):
-    x_vals = np.arange(-search_range, search_range, grid_size)
-    y_vals = np.arange(-search_range, search_range, grid_size)
-    z_vals = np.arange(0, 2.0, grid_size)  # Assume ground level to 2m height
+    """
+    Create a spherical grid of points with constraints:
+    - X and Y: ±search_range meters
+    - Z: 0 to 2 meters (above ground)
+    - Only includes points within a sphere of radius search_range
+    
+    Parameters:
+    - search_range: radius of the sphere in meters
+    - grid_size: spacing between grid points in meters
+    """
     grid_points = []
+    
+    x_vals = np.arange(-search_range, search_range + grid_size, grid_size)
+    y_vals = np.arange(-search_range, search_range + grid_size, grid_size)
+    z_vals = np.arange(0, 2.0 + grid_size, grid_size)  # Z: 0 to 2 meters
+    
     for x in x_vals:
         for y in y_vals:
             for z in z_vals:
-                grid_points.append(np.array([x, y, z]))
+                r = np.sqrt(x**2 + y**2 + z**2)
+                if r <= search_range:  # Only include points inside sphere
+                    grid_points.append(np.array([x, y, z]))
+    
     return grid_points
 
 def find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_sound=343.0):

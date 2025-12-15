@@ -8,7 +8,7 @@ import re
 from consts import SAMPLE_RATE
 
 
-use_fake_data = True
+use_fake_data = False
 
 if not use_fake_data:
     I2S0 = np.array([])
