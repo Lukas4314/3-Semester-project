@@ -17,9 +17,12 @@
 #define I2S0_BCLK GPIO_NUM_26
 #define I2S0_LRCLK GPIO_NUM_25
 #define I2S0_DIN GPIO_NUM_22
+// #define I2S0_DIN GPIO_NUM_17
 
-#define I2S1_BCLK GPIO_NUM_16
-#define I2S1_LRCLK GPIO_NUM_4
+#define I2S1_BCLK GPIO_NUM_26
+//#define I2S1_BCLK GPIO_NUM_16
+#define I2S1_LRCLK GPIO_NUM_25
+//#define I2S1_LRCLK GPIO_NUM_4
 #define I2S1_DIN GPIO_NUM_32
 
 #define MIC1_SEL_PIN GPIO_NUM_13
@@ -132,21 +135,21 @@ void setup()
                         I2S_SLOT_MODE_STEREO, GPIO_NUM_NC, I2S0_BCLK, I2S0_LRCLK, I2S0_DIN,
                         I2S_STD_SLOT_BOTH, SAMPLE_RATE, 0);
     i2s1 = I2sInterface(I2S_NUM_1, I2S_ROLE_SLAVE, I2S_DATA_BIT_WIDTH_16BIT,
-                        I2S_SLOT_MODE_MONO, GPIO_NUM_NC, I2S1_BCLK, I2S1_LRCLK, I2S1_DIN,
-                        I2S_STD_SLOT_LEFT, SAMPLE_RATE, 1);
+                        I2S_SLOT_MODE_STEREO, GPIO_NUM_NC, I2S1_BCLK, I2S1_LRCLK, I2S1_DIN,
+                        I2S_STD_SLOT_BOTH, SAMPLE_RATE, 1);
 
     i2sQueue = xQueueCreate(NUM_I2S_BUFFERS - 1, sizeof(I2SBuffer));
 
     printf("Setup complete\n");
 
-    if (!i2s1.begin())
+    if (!i2s0.begin())
     {
         printf("I2S1 init failed\n");
         while (1)
             ;
     }
 
-    if (!i2s0.begin())
+    if (!i2s1.begin())
     {
         printf("I2S init failed\n");
         while (1)
@@ -165,23 +168,22 @@ void i2sTask(void *param)
     const size_t monoSize = BUFFER_SIZE;
 
     static int16_t temp0[stereoSize];
-    static int16_t temp1[monoSize];
+    static int16_t temp1[stereoSize];
 
     while (true)
     {
         size_t bytesRead0 = i2s0.readSamples(temp0, stereoSize * sizeof(int16_t));
-        size_t bytesRead1 = i2s1.readSamples(temp1, monoSize * sizeof(int16_t));
+        size_t bytesRead1 = i2s1.readSamples(temp1, stereoSize * sizeof(int16_t));
 
-    
-        printf("Random samples I2S0: %d %d %d | I2S1: %d %d %d\n",
-               temp0[0], temp0[1], temp0[2],
-               temp1[0], temp1[1], temp1[2]);
+        printf("%d %d %d    |||     %d %d %d    |||    %d %d %d    |||    %d %d %d\n",
+               temp0[0], temp0[2], temp0[4], temp0[1], temp0[3], temp0[5],
+               temp1[0], temp1[2], temp1[4], temp1[1], temp1[3], temp1[5]);
 
         if (bytesRead0 != stereoSize * sizeof(int16_t))
         {
             printf("I2S0 read size mismatch: %d bytes\n", bytesRead0);
         }
-        if (bytesRead1 != monoSize * sizeof(int16_t))
+        if (bytesRead1 != stereoSize * sizeof(int16_t))
         {
             printf("I2S1 read size mismatch: %d bytes\n", bytesRead1);
         }
@@ -191,13 +193,13 @@ void i2sTask(void *param)
 
         if (i2s0.counterOffset > 0)
         {
-            counter0 += i2s0.counterOffset * stereoSize;
+            counter0 += i2s0.counterOffset;
             printf("I2S0 counter offset applied: %d\n", i2s0.counterOffset);
             i2s0.counterOffset = 0;
         }
         if (i2s1.counterOffset > 0)
         {
-            counter1 += i2s1.counterOffset * monoSize;
+            counter1 += i2s1.counterOffset;
             printf("I2S1 counter offset applied: %d\n", i2s1.counterOffset);
             i2s1.counterOffset = 0;
         }
@@ -208,17 +210,23 @@ void i2sTask(void *param)
         mic_data[buf0][BUFFER_SIZE * 2 + 2] = (int16_t)(counter1 & 0xFFFF);
         mic_data[buf0][BUFFER_SIZE * 2 + 3] = (int16_t)(counter1 >> 16);
 
+        int16_t mic3_data[monoSize];
+        for (size_t i = 0; i < monoSize; i++)
+        {
+            // Simple average of left and right channels
+            mic3_data[i] = (temp0[i * 2]);
+        } 
         memcpy(mic_data[buf0] + 2, temp0, bytesRead0);
-        memcpy(mic_data[buf0] + BUFFER_SIZE * 2 + 4, temp1, bytesRead1);
+        memcpy(mic_data[buf0] + BUFFER_SIZE * 2 + 4, mic3_data, monoSize * sizeof(int16_t));
 
         // Queue buffers for SPI task
-        I2SBuffer msg0 = {buf0, (bytesRead0 + 4 + bytesRead1 + 4)}; // 2 counters * 2 bytes
+        I2SBuffer msg0 = {buf0, (bytesRead0 + 4 + monoSize * sizeof(int16_t) + 4)}; // 2 counters * 2 bytes
 
         uint8_t err = xQueueSend(i2sQueue, &msg0, 0);
         if (err != pdTRUE)
         {
             // Queue full, overflow
-            //printf("Queue full, idx dropped: %d\n", buf0);
+            // printf("Queue full, idx dropped: %d\n", buf0);
         }
 
         counter0++;
@@ -259,14 +267,11 @@ void spiSlaveTask(void *param)
                 t.tx_buffer = spiSlaveBuf;
                 t.rx_buffer = NULL;
 
-
                 // Print the number in the middle of the payload to make sure it is not all 0
-                //printf("SPI Slave transmitting chunk, first bytes: %d %d %d %d ... middle bytes: %d %d %d %d ... last bytes: %d %d %d %d\n",
+                // printf("SPI Slave transmitting chunk, first bytes: %d %d %d %d ... middle bytes: %d %d %d %d ... last bytes: %d %d %d %d\n",
                 //       spiSlaveBuf[0], spiSlaveBuf[1], spiSlaveBuf[2], spiSlaveBuf[3],
                 //       spiSlaveBuf[chunk / 2], spiSlaveBuf[chunk / 2 + 1], spiSlaveBuf[chunk / 2 + 2], spiSlaveBuf[chunk / 2 + 3],
                 //       spiSlaveBuf[chunk - 4], spiSlaveBuf[chunk - 3], spiSlaveBuf[chunk - 2], spiSlaveBuf[chunk - 1]);
-
-
 
                 uint8_t ret = spi_slave_transmit(SPI_HOST_VAR, &t, portMAX_DELAY);
                 if (ret != ESP_OK)

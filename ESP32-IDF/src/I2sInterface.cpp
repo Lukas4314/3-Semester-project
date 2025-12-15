@@ -46,13 +46,13 @@ bool I2sInterface::begin()
 {
     //i2s_std_slot_config_t slotConfig = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(dataBitWidth, slotMode);
     i2s_std_slot_config_t slotConfig = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(dataBitWidth, slotMode);
-    slotConfig.data_bit_width = dataBitWidth;
-    slotConfig.slot_bit_width = I2S_SLOT_BIT_WIDTH_16BIT;
-    slotConfig.slot_mode = slotMode;
-    slotConfig.slot_mask = slotMask;
-    slotConfig.ws_width = 16;
-    slotConfig.ws_pol = false;
-    slotConfig.bit_shift = true;
+    //slotConfig.data_bit_width = dataBitWidth;
+    //slotConfig.slot_bit_width = I2S_SLOT_BIT_WIDTH_16BIT;
+    //slotConfig.slot_mode = slotMode;
+    //slotConfig.slot_mask = slotMask;
+    //slotConfig.ws_width = 16;
+    //slotConfig.ws_pol = false;
+    //slotConfig.bit_shift = true;
 
     
 
@@ -75,7 +75,7 @@ bool I2sInterface::begin()
 
     i2s_chan_config_t chanConfig = I2S_CHANNEL_DEFAULT_CONFIG(port, role);
     chanConfig.dma_frame_num = 960;
-    chanConfig.dma_desc_num = 8;
+    chanConfig.dma_desc_num = 4;
 
     esp_err_t err = i2s_new_channel(&chanConfig, NULL, &rx_chan);
     if (err != ESP_OK)
@@ -108,6 +108,7 @@ size_t I2sInterface::readSamples(void *data, size_t maxBytes)
     esp_err_t err = i2s_channel_read(rx_chan, data, maxBytes, &bytesRead, 1000);
     if (err != ESP_OK)
     {
+        printf("Error reading I2S data: %d\n", err);
         return 0;
     }
     return bytesRead;

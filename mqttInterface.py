@@ -134,7 +134,7 @@ class MQTTInterface:
             
             output_queue1.put((message_index, arr[0::2]))
             output_queue2.put((message_index, arr[1::2]))
-            self.recorded_data.append(arr[1::2])
+            self.recorded_data.append(arr)
             
         self.client.subscribe(self.topic)
         self.client.on_message = on_message
@@ -169,7 +169,7 @@ class MQTTInterface:
             
             output_queue1.put((message_index, arr[0::2]))
             output_queue2.put((message_index, arr[1::2]))
-            self.recorded_data.append(arr[1::2])
+            self.recorded_data.append(arr)
             
         self.client.subscribe(self.topic)
         self.client.on_message = on_message
