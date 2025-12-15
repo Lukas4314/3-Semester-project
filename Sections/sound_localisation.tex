@@ -47,22 +47,25 @@ This is the standard cross-spectrum, which is used in standard cross-correlation
     \frac{X_1(f) \cdot X_2^*(f)}{|X_1(f) \cdot X_2^*(f)|} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{|(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})|} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{A_1 A_2} = e^{i (\phi_1 - \phi_2)}
 \end{equation}
 
-The normalised cross-spectrum can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. The TDOA of the signal is then found by calculating at which sample the maximum amplitude occurs, as seen in \cref{fig:Constructed-signal-GCC-PHAT_TDOA_Example}.
+The normalised cross-spectrum can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. The TDOA of the signal is then found by calculating at which sample the maximum amplitude occurs, as seen in \cref{fig:GCC-PHAT_TDOA_Example}.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1.0\linewidth]{Pictures/Constructed-signal-GCC-PHAT_TDOA_Example.png}
-    \caption{Example of the GCC-PHAT TDOA calculation on two signals where one signal is a constructed signal and the other is shifted by a known sample amount, where the peak indicates the time delay between the two signals with the highest correlation.}
-    \label{fig:Constructed-signal-GCC-PHAT_TDOA_Example}
-\end{figure}
-
-However, this calculation is on a constructed signal (with random noise) to ensure the calculation of the sample offest was correct. A FFT on real audio data isn't as convincing. \cref{fig:GCC-PHAT_TDOA_Example}.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\linewidth]{Pictures/GCC-PHAT_TDOA_Example.png}
-    \caption{Example of the GCC-PHAT TDOA calculation on two signals received from the ESP32, where the peak indicates the time delay between the two signals with the highest correlation.}
-    \label{fig:GCC-PHAT_TDOA_Example}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Pictures/Constructed-signal-GCC-PHAT_TDOA_Example.png}
+        \caption{Constructed signal with known offset}
+        \label{fig:Constructed-signal-GCC-PHAT_TDOA_Example}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Pictures/GCC-PHAT_TDOA_Example.png}
+        \caption{Real audio data from ESP32}
+        \label{fig:GCC-PHAT_TDOA_Example}
+    \end{subfigure}
+    \caption{Examples of GCC-PHAT TDOA calculation where the peak indicates the time delay between the two signals with the highest correlation. (a) shows a constructed signal with random noise shifted by a known sample amount to verify the calculation, while (b) shows real signals received from the ESP32.}
+    \label{fig:GCC-PHAT_combined}
 \end{figure}
 
 The difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
