@@ -75,7 +75,7 @@ bool I2sInterface::begin()
 
     i2s_chan_config_t chanConfig = I2S_CHANNEL_DEFAULT_CONFIG(port, role);
     chanConfig.dma_frame_num = 960;
-    chanConfig.dma_desc_num = 4;
+    chanConfig.dma_desc_num = 8;
 
     esp_err_t err = i2s_new_channel(&chanConfig, NULL, &rx_chan);
     if (err != ESP_OK)

@@ -20,9 +20,9 @@
 // #define I2S0_DIN GPIO_NUM_17
 
 #define I2S1_BCLK GPIO_NUM_26
-//#define I2S1_BCLK GPIO_NUM_16
+// #define I2S1_BCLK GPIO_NUM_16
 #define I2S1_LRCLK GPIO_NUM_25
-//#define I2S1_LRCLK GPIO_NUM_4
+// #define I2S1_LRCLK GPIO_NUM_4
 #define I2S1_DIN GPIO_NUM_32
 
 #define MIC1_SEL_PIN GPIO_NUM_13
@@ -168,17 +168,23 @@ void i2sTask(void *param)
     const size_t monoSize = BUFFER_SIZE;
 
     static int16_t temp0[stereoSize];
-    static int16_t temp1[stereoSize];
+    static int16_t temp1[monoSize];
+    static int16_t tempTemp[stereoSize]; // to help with mono extraction
 
     while (true)
     {
         size_t bytesRead0 = i2s0.readSamples(temp0, stereoSize * sizeof(int16_t));
-        size_t bytesRead1 = i2s1.readSamples(temp1, stereoSize * sizeof(int16_t));
+        size_t bytesRead1 = i2s1.readSamples(tempTemp, stereoSize * sizeof(int16_t));
+        for (size_t i = 0; i < BUFFER_SIZE; i++)
+        {
+            // Extract mono from stereo (left channel)
+            temp1[i] = tempTemp[i * 2];
+        }
 
-        printf("%d %d %d    |||     %d %d %d    |||    %d %d %d    |||    %d %d %d\n",
-               temp0[0], temp0[2], temp0[4], temp0[1], temp0[3], temp0[5],
-               temp1[0], temp1[2], temp1[4], temp1[1], temp1[3], temp1[5]);
-
+        int offset = 100;
+        printf("%d %d %d    |||     %d %d %d    |||    %d %d %d\n",
+               temp0[offset + 0], temp0[offset + 2], temp0[offset + 4], temp0[offset + 1], temp0[offset + 3], temp0[offset + 5],
+               temp1[offset + 0], temp1[offset + 1], temp1[offset + 2]);
         if (bytesRead0 != stereoSize * sizeof(int16_t))
         {
             printf("I2S0 read size mismatch: %d bytes\n", bytesRead0);
@@ -210,14 +216,14 @@ void i2sTask(void *param)
         mic_data[buf0][BUFFER_SIZE * 2 + 2] = (int16_t)(counter1 & 0xFFFF);
         mic_data[buf0][BUFFER_SIZE * 2 + 3] = (int16_t)(counter1 >> 16);
 
-        int16_t mic3_data[monoSize];
-        for (size_t i = 0; i < monoSize; i++)
-        {
-            // Simple average of left and right channels
-            mic3_data[i] = (temp0[i * 2]);
-        } 
         memcpy(mic_data[buf0] + 2, temp0, bytesRead0);
-        memcpy(mic_data[buf0] + BUFFER_SIZE * 2 + 4, mic3_data, monoSize * sizeof(int16_t));
+        memcpy(mic_data[buf0] + BUFFER_SIZE * 2 + 4, temp1, monoSize * sizeof(int16_t));
+
+        offset += 2;
+        printf("%d %d %d    |||     %d %d %d    |||    %d %d %d\n",
+               mic_data[buf0][offset + 0], mic_data[buf0][offset + 2], mic_data[buf0][offset + 4],
+               mic_data[buf0][offset + 1], mic_data[buf0][offset + 3], mic_data[buf0][offset + 5],
+               mic_data[buf0][offset + 0 + BUFFER_SIZE * 2 + 2], mic_data[buf0][offset + 1 + BUFFER_SIZE * 2 + 2], mic_data[buf0][offset + 2 + BUFFER_SIZE * 2 + 2]);
 
         // Queue buffers for SPI task
         I2SBuffer msg0 = {buf0, (bytesRead0 + 4 + monoSize * sizeof(int16_t) + 4)}; // 2 counters * 2 bytes
@@ -226,7 +232,7 @@ void i2sTask(void *param)
         if (err != pdTRUE)
         {
             // Queue full, overflow
-            // printf("Queue full, idx dropped: %d\n", buf0);
+            printf("Queue full, idx dropped: %d\n", buf0);
         }
 
         counter0++;
@@ -293,6 +299,6 @@ extern "C" void app_main(void)
     setup();
     printf("Setup complete, starting tasks...\n");
 
-    xTaskCreatePinnedToCore(i2sTask, "I2S_Task", 8192 * 2, nullptr, 5, nullptr, 1);
+    xTaskCreatePinnedToCore(i2sTask, "I2S_Task", 8192 * 3, nullptr, 5, nullptr, 1);
     xTaskCreatePinnedToCore(spiSlaveTask, "SPI_Slave_Task", 4096 * 4, nullptr, 5, nullptr, 0);
 }
