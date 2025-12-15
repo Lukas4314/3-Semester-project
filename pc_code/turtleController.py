@@ -195,8 +195,6 @@ class TurtleController:
 				Logger.set_value(DISTANCE_MOVED, input("How far did it move (in meters)?: "))
 				Logger.set_value(DISTANCE_THOUGHT_IT_MOVED, distance)
 				Logger.set_value(ACTION, action)
-				Logger.write_row()
-
 
 		elif action == "turn":
 			if direction == "left":
@@ -210,7 +208,6 @@ class TurtleController:
 				Logger.set_value(ANGLE_ROTATED, input("How much did it turn (in radians)?: "))
 				Logger.set_value(ANGLE_THOUGHT_IT_ROTATED, distance)
 				Logger.set_value(ACTION, action)
-				Logger.write_row()
 
 if __name__ == "__main__":
 
