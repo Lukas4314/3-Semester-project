@@ -11,9 +11,9 @@ flowchart LR
         end
         subgraph L2[<b>Layer 3: Communication</b>]
             PI_OPENCR[Turtlebot3 driver]
-            PI_MQTT[MQTT Broker]
+            PI_MQTT[Mosquitto Broker]
             PI_ROS[ROS Daemon]
-            PI_Client[Mosquitto Client]
+            PI_Client[MQTT Client]
         end
         subgraph L3[<b>Layer 2: Processing layer</b>]
             

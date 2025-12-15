@@ -18,7 +18,7 @@ flowchart BT
 
     end
 
-    MQTT_Broker[MQTT Broker] -- "subscribes and publishes" --- PC_MQTT
+    MQTT_Broker[Mosquitto Broker] -- "subscribes and publishes" --- PC_MQTT
 
     PC_MQTT -- "one datastream" --- PC_Whisper
     PC_MQTT -- "three datastreams" --- PC_SL

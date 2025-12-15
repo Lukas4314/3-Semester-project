@@ -6,7 +6,7 @@
 The highest level of movement command comes in the form of human speech but has the goal of controlling the movement of the robot:
 human speech → text → command → movement control.
 
-After a command is sent over MQTT to the Raspberry Pi, a ROS2 node converts the given distance into velocity commands that satisfy the requested command. The velocity command is published to the cmd_vel topic, which the TurtleBot3 node subscribes to. The TurtleBot3 node then translates the velocity commands into motor control commands and sends them to the OpenCR board over UART. The OpenCR board can then control the motors using its built-in motor controller.
+After a command is sent over MQTT to the Raspberry Pi, a ROS2 node converts the given distance into velocity commands that satisfy the requested command. The velocity command is published to the cmd\_vel topic, which the TurtleBot3 node subscribes to. The TurtleBot3 node then translates the velocity commands into motor control commands and sends them to the OpenCR board over UART. The OpenCR board can then control the motors using its built-in motor controller.
 
 While the motors are driving, the OpenCR board sends positional data from the encoders on the board back to the ROS2 environment. This makes it possible to correct the motors at runtime by continuously checking the current position and adjusting the velocity of each motor to keep them synchronized.
 

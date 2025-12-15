@@ -3,7 +3,7 @@
 % https://mosquitto.org/man/mqtt-7.html <--- cool link
 % https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.pdf <-- also cool
 
-Communication between the different components in the system is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic). %This ensures a layered architecture where different components only know about the topics they need data from, instead of all other components, allowing for modularity and easy scalability. 
+Communication between the different components in the system is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic) \cite{OASIS_MQTT5}. %This ensures a layered architecture where different components only know about the topics they need data from, instead of all other components, allowing for modularity and easy scalability. 
 
 MQTT messages consist of a fixed header, variable header and a payload. The fixed header contains information about the message type and flags, while the variable header contains topic name and packet identifier (if QoS $>$ 0).
 
@@ -25,8 +25,15 @@ Examples for variable header fields for different MQTT message types are shown i
     \label{tab:mqtt_packet_types}
 \end{table}
 
-The PUBLISH packet type is used for all application data. The last four bits of its fixed header is the QoS (Quality of Service) level and flags in the last four bits (3-0) of its fixed header.
+The PUBLISH packet type is used for all application data. The last four bits of its fixed header is the QoS (Quality of Service) level. 
 
+A QoS of 0 means the message is delivered a maximum of one time, with no acknowledgment, so if it is lost it will not be retransmitted. 
+
+A QoS of 1 means the message is delivered at least once, with acknowledgment, so if it is lost it will be retransmitted until acknowledged. 
+
+A QoS of 2 means the message is delivered exactly once, with a four-step handshake to ensure no duplicates.
+
+All commands (Movement commands and audio data) are sent with a QoS of 1, to ensure they are received. 
 
 The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in the table below:
 
@@ -35,3 +42,10 @@ Max is 256 MB for MQTT, even when when using the mosquitto broker.
 Therefore the limiting factor is the MTU (Maximum Transmission Unit) for TCP, which is around 1500 bytes, so MQTT messages should be kept below this size to avoid fragmentation.
 
 All of the MQTT logic is handled by the mosquitto library leveraged in the project. The library abstracts away the low-level details of MQTT message construction and parsing. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Pictures/pubsub.png}
+    \caption{MQTT topic setup for communication between the ESP32, PC, and Raspberry Pi.}
+    \label{fig:mqtt_topic_setup}
+\end{figure}
