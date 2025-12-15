@@ -31,7 +31,7 @@ Where $\phi$ is the phase.
 
 While in the frequency domain, a very precise band-pass filter can also easily be applied without wasting computing time. The chosen structure of the filter is based on the telephone speech band, which is 300-3400 Hz, because that is where human speech is most represented. To apply the filter, the frequency of every FFT bin is calculated with \( f_k = \frac{k\, f_s}{N} \) where both the amplitude and phase information is set to zero if it is not inside the telephone speech band. Filtering out frequencies other than human speech will increase the likelihood of GCC\_PHAT calculating the TDOA of a human speaking instead of the TDOA of some noise.
 
-Next, the signal can be compared to a reference signal by multiplying the signal with the complex conjugate of the reference signal. This is because multiplying the reference signal with the complex conjugate of another signal gives the phase difference between the two signals, as represented by the difference in the imaginary part:
+The signal can be compared to a reference signal by multiplying the signal with the complex conjugate of the reference signal. This is because multiplying the reference signal with the complex conjugate of another signal gives the phase difference between the two signals, as represented by the difference in the imaginary part:
 
 \begin{equation}
 X_1(f) \cdot X_2^*(f) = (A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2}) = A_1 A_2 e^{i (\phi_1 - \phi_2)}
@@ -56,7 +56,7 @@ The normalised cross-spectrum can then be used to calculate the TDOA by first ap
     \label{fig:GCC-PHAT_TDOA_Example}
 \end{figure}
 
-Next the difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
+The difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
 
 Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation.
 
