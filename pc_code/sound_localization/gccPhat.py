@@ -140,11 +140,11 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False):
 				weight_int = int(weight * 10)
 				sample_size_name = ""
 				if logger.Logger.current_samples_size == 2048:
-					sample_size_name = "2k"
+					sample_size_name = "2K"
 				elif logger.Logger.current_samples_size == 4096:
-					sample_size_name = "4k"
+					sample_size_name = "4K"
 				elif logger.Logger.current_samples_size == 8192:
-					sample_size_name = "8k"
+					sample_size_name = "8K"
 
 
 				const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{sample_size_name}_SAMPLES_{filter_state}"
