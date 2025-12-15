@@ -7,7 +7,7 @@ from scipy.io.wavfile import write
 from consts import SAMPLE_RATE
 import math
 
-DRIVE_SPEED_M_S = 0.1              # m/s (sent as "speed")
+DRIVE_SPEED_M_S = 0.2              # m/s (sent as "speed")
 TURN_RATE_RAD_S = 1.0               # rad/s (sent as "turn_rate")
 
 
