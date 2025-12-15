@@ -305,15 +305,17 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False, phat_weight_v
 		# ------------------------------
 		fig = plt.figure(figsize=(10,5))
 		plt.plot(np.real(cross_corr))
-		plt.title("Cross-Correlation (IFFT of GCC-PHAT)")
-		plt.xlabel("Lag (samples)")
-		plt.ylabel("Correlation")
+		plt.title("Cross-Correlation (IFFT of GCC-PHAT)", fontsize=40)
+		plt.xlabel("Lag (samples)", fontsize=40)
+		plt.ylabel("Correlation", fontsize=40)
+		plt.xticks(fontsize=40)
+		plt.yticks(fontsize=40)
 		plt.grid(True)
 
 		# Add TDOA as text annotation
 		plt.text(0.05, 0.95, f"TDOA: {tdoa:.2f} samples",
          transform=plt.gca().transAxes,
-         fontsize=12, verticalalignment='top',
+         fontsize=40, verticalalignment='top',
          bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
 
 
@@ -583,7 +585,7 @@ def test_gcc_phat():
 	
 	# Test case 1: signal2 delayed by 10 samples relative to signal1
 	test_signal1 = base_signal.copy()
-	test_signal2 = np.roll(base_signal, 10)
+	test_signal2 = np.roll(base_signal, -10)
 	test_signal2[:10] = 0  # Clear wrap-around
 	
 	verify_signals(test_signal1, test_signal2, 10)
