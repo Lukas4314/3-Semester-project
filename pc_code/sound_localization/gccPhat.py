@@ -98,7 +98,7 @@ def peak_lag(corr):
 def TDOA(cross_corr):
 	return peak_lag(cross_corr)
 
-def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False):
+def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False, phat_weight_value=1.0):
 	"""
 	Calculate TDOA between signal1 and signal2.
 	Returns: tdoa in samples where positive value means signal2 arrives AFTER signal1
@@ -114,7 +114,7 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False):
 		fft2 = filter_telephone_band(fft2)
 	
 	R = GCC(fft1, fft2)
-	
+	"""
 	if SHOULD_LOG:
 		weights = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 		filter_states = ["WITHOUT_FILTER", "WITH_FILTER"]
@@ -153,9 +153,11 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False):
 					logger.Logger.set_value(column_key, tdoa)
 				except AttributeError:
 					print(f"Warning: Logger constant {const_name} not found")
+				
 		return tdoa
-
-	R_phat = phat_weight(R, weight=1.0)
+		"""
+			
+	R_phat = phat_weight(R, weight=phat_weight_value)
 	"""
 	fig = plt.figure()
 	plt.subplot(2, 1, 1)

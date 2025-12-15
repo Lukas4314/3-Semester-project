@@ -110,6 +110,8 @@ class Logger:
     
     
     current_samples_size = -1
+    mic_pair = 1
+
 
     log_dir = Path("Logs")
 

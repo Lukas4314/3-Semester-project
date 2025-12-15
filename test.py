@@ -5,10 +5,15 @@ from pc_code.sound_localization.Triangulate import test123, triangulate_from_sou
 import numpy as np
 from scipy.io.wavfile import write
 import re
-from consts import SAMPLE_RATE
+from consts import SAMPLE_RATE, SHOULD_LOG
+from logger import *
+
+if SHOULD_LOG:
+    Logger.initialize(Logger.get_all_logger_keys())
+    Logger.current_samples_size = 8192
 
 
-use_fake_data = True
+use_fake_data = False
 
 if not use_fake_data:
     I2S0 = np.array([])
@@ -69,12 +74,26 @@ write("mic_3.wav", SAMPLE_RATE, mic_3.astype(np.int16))
 
 
 print("Mic data lengths:", len(mic_1), len(mic_2), len(mic_3))
+chunk_sizes = [8192, 4096, 2048]
+
+for size in chunk_sizes:
+    current_mic1_data = mic_1.copy()
+    current_mic2_data = mic_2.copy()
+    current_mic3_data = mic_3.copy()
+
+    current_mic1_data = current_mic1_data[(len(mic_1)-size)//2:len(mic_1)-(len(mic_1)-size)//2]
+    current_mic2_data = current_mic2_data[(len(mic_2)-size)//2:len(mic_2)-(len(mic_2)-size)//2]
+    current_mic3_data = current_mic3_data[(len(mic_3)-size)//2:len(mic_3)-(len(mic_3)-size)//2]
+    Logger.current_samples_size = size
 
 
-print("GCC-PHAT TDOA estimates:")
-print(PHAT_GCC_TDOA(mic_1, mic_2))
-print(PHAT_GCC_TDOA(mic_1, mic_3))
-print(PHAT_GCC_TDOA(mic_2, mic_3))
+    best_point, best_score = triangulate_from_sound(current_mic1_data, current_mic2_data, current_mic3_data)
+    
+    print(f"Best point: {best_point}, Best score: {best_score}")
+    angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
+    distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
+    
+    print(f"Sound located at angle {angle} degrees and distance {distance} meters")
 
 print("GCC-PHAT MATLAB estimates:")
 print(gccphat_matlab(mic_1, mic_2)[0])
@@ -89,4 +108,7 @@ best_point, _ = triangulate_from_sound(mic1_data=mic_1, mic2_data=mic_2, mic3_da
 print("Estimated source location (x, y):", best_point)
 print("Estimated angle (degrees):", np.degrees(np.arctan2(best_point[1], best_point[0])))
 
+if SHOULD_LOG:
+    Logger.write_row()
+    Logger.close()
 

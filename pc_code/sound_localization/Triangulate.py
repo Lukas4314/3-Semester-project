@@ -3,7 +3,9 @@ from pc_code.sound_localization.gccPhatByMatlab import gccphat_matlab
 import pc_code.sound_localization.smallestIntegral as smallestIntegral
 import numpy as np
 import matplotlib.pyplot as plt
-from consts import SHOULD_PLOT, SAMPLE_RATE
+from consts import SHOULD_PLOT, SAMPLE_RATE, SHOULD_LOG
+from logger import *
+import logger
 # Triangulate by searching a 3D grid for the best match to TDOA estimates
 
 def microphone_placement():
@@ -126,10 +128,50 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
     
     
     # Calculate TDOA estimates using GCC-PHAT
+
+
+    
     tdoa_12 = gcc.PHAT_GCC_TDOA(mic1_data, mic2_data)  # If positive, mic2 is after mic1
     tdoa_13 = gcc.PHAT_GCC_TDOA(mic1_data, mic3_data)  # If positive, mic3 is after mic1
     tdoa_23 = gcc.PHAT_GCC_TDOA(mic2_data, mic3_data)  # If positive, mic3 is after mic2
     
+
+    if SHOULD_LOG:
+        weights = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        filter_states = ["WITHOUT_FILTER", "WITH_FILTER"]
+        
+        for filter_state in filter_states:
+            # Test all weights
+            for weight in weights:
+                if filter_state == "WITHOUT_FILTER":
+                    tdoa_12_log = gcc.PHAT_GCC_TDOA(mic1_data, mic2_data, telephone_band_filter=False, phat_weight_value=weight)
+                    tdoa_13_log = gcc.PHAT_GCC_TDOA(mic1_data, mic3_data, telephone_band_filter=False, phat_weight_value=weight)
+                    tdoa_23_log = gcc.PHAT_GCC_TDOA(mic2_data, mic3_data, telephone_band_filter=False, phat_weight_value=weight)
+                else:
+                    tdoa_12_log = gcc.PHAT_GCC_TDOA(mic1_data, mic2_data, telephone_band_filter=True, phat_weight_value=weight)
+                    tdoa_13_log = gcc.PHAT_GCC_TDOA(mic1_data, mic3_data, telephone_band_filter=True, phat_weight_value=weight)
+                    tdoa_23_log = gcc.PHAT_GCC_TDOA(mic2_data, mic3_data, telephone_band_filter=True, phat_weight_value=weight)
+                # Log this combination
+                weight_int = int(weight * 10)
+                sample_size_name = ""
+                if Logger.current_samples_size == 2048:
+                    sample_size_name = "2K"
+                elif Logger.current_samples_size == 4096:
+                    sample_size_name = "4K"
+                elif Logger.current_samples_size == 8192:
+                    sample_size_name = "8K"
+
+
+                const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{sample_size_name}_SAMPLES_{filter_state}"
+                try:
+                    
+                    TDOAs = [tdoa_12_log, tdoa_13_log, tdoa_23_log]
+                    
+
+                    column_key = getattr(logger, const_name)
+                    Logger.set_value(column_key, f"{TDOAs[0]};{TDOAs[1]};{TDOAs[2]}")
+                except AttributeError:
+                    print(f"Warning: Logger constant {const_name} not found")
     """
     allowed_max_tdoa = 160
     
