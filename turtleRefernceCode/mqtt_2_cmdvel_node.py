@@ -54,6 +54,11 @@ class MqttToCmdVelNode(Node):
         self.lin_speed = 0.10     # m/s
         self.turn_rate = 0.60     # rad/s
 
+        # ---- Known physical drift compensation (feed-forward) ----
+        # Positive angular.z = turn left, negative = turn right.
+        # If your robot drifts LEFT during "distance", use a small NEGATIVE value.
+        self.known_drift_ang = -0.02  # rad/s (START SMALL and tune)
+
         # Simple accel / decel profile (distance mode)
         self.ramp_up_time = 0.4       # seconds to reach full linear speed
         self.decel_distance = 0.1     # meters from goal where we start slowing down
@@ -102,6 +107,7 @@ class MqttToCmdVelNode(Node):
 
         self.get_logger().info(f"JointState logging to: {self.log_path}")
         self.get_logger().info(f"Logging every {self.log_every_n} joint_states messages")
+        self.get_logger().info(f"Straight drift feed-forward angular.z = {self.known_drift_ang:.4f} rad/s")
 
     # ---------- ROS helpers ----------
 
@@ -293,7 +299,9 @@ class MqttToCmdVelNode(Node):
             lin = target_speed * scale
             lin = check_linear_limit_velocity(lin)
 
-            self._publish_cmd_vel(lin, 0.0)
+            # ---- Feed-forward correction for known physical drift ----
+            # If robot drifts LEFT, use a small NEGATIVE angular.z to bias right.
+            self._publish_cmd_vel(lin, self.known_drift_ang)
 
         elif self.mode == "turn":
             # Estimate yaw from wheel difference
