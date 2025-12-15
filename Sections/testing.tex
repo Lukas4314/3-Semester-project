@@ -52,8 +52,33 @@ The algorithm for finding where the command was said, was tested using real data
 Before the algorithm:
 This is the segment we know "come here" was said
 
-after the algorithm, :
+after the algorithm:
 the algorithm Successfully found the exact moment where "come" where said, which satisfyes out needs for later calculations with GGC_PHAT
+
+
+\subsection{Movement control}
+%striglt line 
+
+%tabel start posotion
+\begin{table}
+    \centering
+    \begin{tabular}{l | l l}
+        \toprule
+        \textbf{movement command} & \textbf{exspedted position} & \textbf{actual position} \\
+        \midrule
+        +1 m $\rightarrow$ +90 deg $\rightarrow$ +0.5 m $\rightarrow$ return 3  & (1.0;0.5) & () \\
+        Can you turn left 90 degrees  & () & () \\
+        Go back 0.5 m  & () & () \\
+        Stop right now  & () & () \\
+        Come here  & () & () \\
+        \bottomrule
+    \end{tabular}
+    \caption{Command identification test results}
+    \label{tab:commandidentificationtest}
+\end{table}
+
+
+
 
 \subsection{Full system testing}
 

@@ -10,7 +10,7 @@ After a command is sent over MQTT to the Raspberry Pi, a ROS2 node converts the 
 
 While the motors are driving, the OpenCR board sends positional data from the encoders on the board back to the ROS2 environment. This makes it possible to correct the motors at runtime by continuously checking the current position and adjusting the velocity of each motor to keep them synchronized.
 
-The movement control node uses a P-regulating algorithm to calculate the difference in position between the two motors and adjust the velocity of each motor based on the size of the offset between them.
+The movement control node uses a P-regulating algorithm to calculate the difference in position between the two motors and adjust the velocity of each motor based on the size of the offset between them. Furthermore to increse accuracy, the movement controller uses the actual posotion of the motors to end the movement.
 
 This solution is necessary because the motors do not drive at exactly the same velocity, and over time this offset would create a curved path instead of a straight path. It is also necessary when the return command is used, as the robot must know its actual position, which would be lost if no regulation or position feedback were used.
 
