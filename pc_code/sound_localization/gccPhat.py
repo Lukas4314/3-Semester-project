@@ -138,7 +138,16 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False):
 				
 				# Log this combination
 				weight_int = int(weight * 10)
-				const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{logger.Logger.current_samples_size}_SAMPLES_{filter_state}"
+
+				if logger.Logger.current_samples_size is 2048:
+					sample_size_name = "2k"
+				elif logger.Logger.current_samples_size is 4096:
+					sample_size_name = "4k"
+				elif logger.Logger.current_samples_size is 8192:
+					sample_size_name = "8k"
+
+
+				const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{sample_size_name}_SAMPLES_{filter_state}"
 				try:
 					column_key = getattr(logger, const_name)
 					logger.Logger.set_value(column_key, tdoa)
