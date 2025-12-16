@@ -50,30 +50,25 @@ def calculate_score(a12, a13, a23, measured_d1, measured_d2, measured_d3):
     return score
 
 def create_grid(search_range=10.0, grid_size=0.1):
-    """
-    Create a spherical grid of points with constraints:
-    - X and Y: ±search_range meters
-    - Z: 0 to 2 meters (above ground)
-    - Only includes points within a sphere of radius search_range
-    
-    Parameters:
-    - search_range: radius of the sphere in meters
-    - grid_size: spacing between grid points in meters
-    """
-    grid_points = []
-    
+    # Axes
     x_vals = np.arange(-search_range, search_range + grid_size, grid_size)
     y_vals = np.arange(-search_range, search_range + grid_size, grid_size)
-    z_vals = np.arange(0, 2.0 + grid_size, grid_size)  # Z: 0 to 2 meters
-    
-    for x in x_vals:
-        for y in y_vals:
-            for z in z_vals:
-                r = np.sqrt(x**2 + y**2 + z**2)
-                if r <= search_range:  # Only include points inside sphere
-                    grid_points.append(np.array([x, y, z]))
-    
-    return grid_points
+    z_vals = np.arange(0.0, 2.0 + grid_size, grid_size)
+
+    # 3D grid
+    X, Y, Z = np.meshgrid(x_vals, y_vals, z_vals, indexing='ij')
+
+    # Cylinder mask in XY plane
+    xy_r = np.sqrt(X**2 + Y**2)
+    inside_cylinder = xy_r <= search_range
+
+    mask = inside_cylinder
+
+    # Stack into (N, 3)
+    points = np.column_stack((X[mask], Y[mask], Z[mask]))
+
+    # Return as list of vectors (if your downstream expects list)
+    return [points[i] for i in range(points.shape[0])]
 
 def find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_sound=343.0):
     measured_d1 = tdoa_estimates[0] * speed_of_sound  # mic1 - mic2
