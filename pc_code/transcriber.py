@@ -189,13 +189,15 @@ class transcriber:
 			# Remove-Item "debug_segments\*" -Recurse -Force
 
 			text = self.whisperoutput(segment)
-			text = text.strip().lower().replace(".", "")
+			text = text.strip().lower()
+			for punctuation in string.punctuation:
+				text = text.replace(punctuation, "")
 			print(text)
 			if not end_found:
-				if "here" in text.split() and satisfied == False:
+				if "come" in text.split() and satisfied == False:
 					end -= ((end - start) * factor) 
 					end = floor(end)
-				elif "here" in text.split() and satisfied == True:
+				elif "come" in text.split() and satisfied == True:
 					end_found = True
 					end += context_buffer
 					satisfied = False
@@ -203,13 +205,18 @@ class transcriber:
 					end += fine_tuning_cut_size
 					satisfied = True
 			else:
-				if "here" in text.split() and satisfied == False:
+				if "come" in text.split() and satisfied == False:
 					start += (end - start) * factor
 					start = floor(start)
-				elif "here" in text.split() and satisfied == True:
+				elif "come" in text.split() and satisfied == True:
 					self.output_queue.queue.clear()
 					end -= context_buffer
 					print("Final here found between indices:", start, "and", end, "offset:", offset)
+					specified_data = self.recorded_audio[start : end + 1]
+					segment = np.concatenate([chunk for _, chunk in specified_data])
+					debug_fname = f"debug_segment_Best_interval_{start}_{end}.wav"
+					print("Saving debug wav:", debug_fname)
+					write(os.path.join("debug_segments", debug_fname), self.samplerate, segment.astype(np.int16))
 					return floor((start + end) / 2) + offset
 				else:
 					start -= fine_tuning_cut_size

@@ -31,24 +31,20 @@ class MQTTInterface:
         else:
             print(f"Failed to connect to MQTT broker")
 
-    def publish_command(self, linear_x, angular_z):
-        # Prepare the payload to match a Twist message structure
-        payload = {
-            "linear": {
-                "x": linear_x,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "angular": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": angular_z
-            }
-        }
-    
-        # Publish the payload to the MQTT topic
+    def publish_stop(self):
+        self.client.publish(self.topic, json.dumps({"stop": True}), qos=1)
+
+    def publish_distance(self, meters, speed=None):
+        payload = {"distance": float(meters)}
+        if speed is not None:
+            payload["speed"] = float(speed)
         self.client.publish(self.topic, json.dumps(payload), qos=1)
-        print(f"Published to {self.topic}: {payload}")
+
+    def publish_turn_deg(self, deg, turn_rate=None):
+        payload = {"turn_deg": float(deg)}
+        if turn_rate is not None:
+            payload["turn_rate"] = float(turn_rate)
+        self.client.publish(self.topic, json.dumps(payload), qos=1)
 
     def publish_buffer(self, buffer):
         # Publish raw buffer data as a JSON array
@@ -177,7 +173,10 @@ class MQTTInterface:
     
     
     def disconnect(self):
-        self.publish_command(0.0, 0.0)
+        try:
+            self.publish_stop()
+        except Exception:
+            pass
         self.client.loop_stop()
         self.client.disconnect()
         print("Disconnected from MQTT broker.")

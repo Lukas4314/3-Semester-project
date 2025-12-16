@@ -2,8 +2,6 @@
 import json
 import math
 import time
-import csv
-from pathlib import Path
 
 import rclpy
 from rclpy.node import Node
@@ -54,15 +52,19 @@ class MqttToCmdVelNode(Node):
         self.lin_speed = 0.10     # m/s
         self.turn_rate = 0.60     # rad/s
 
-        # ---- Known physical drift compensation (feed-forward) ----
-        # Positive angular.z = turn left, negative = turn right.
-        # If your robot drifts LEFT during "distance", use a small NEGATIVE value.
-        self.known_drift_ang = -0.02  # rad/s (START SMALL and tune)
+        # PI sync for straight driving (distance mode)
+        self.kp_sync = 0.05
+        self.ki_sync = 0.1
+        self.i_term = 0.0
+        self.i_limit = 1.0
+        # PID (add D for wheel-sync)
+        self.kd_sync = 0.05        # start small
+        self.prev_err = 0.0
+        self.d_filt = 0.0
+        self.d_alpha = 0.2         # 0..1, higher = less filtering
 
-        # Simple accel / decel profile (distance mode)
-        self.ramp_up_time = 0.4       # seconds to reach full linear speed
-        self.decel_distance = 0.1     # meters from goal where we start slowing down
-        self.ramp_start_time = None
+
+        self.last_ctrl_time = time.time()
 
         # Control timer (50 Hz)
         self.timer = self.create_timer(0.02, self._control_loop)
@@ -82,39 +84,10 @@ class MqttToCmdVelNode(Node):
 
         self.get_logger().info(f"Subscribed to MQTT topic: {self.mqtt_topic}")
 
-        # ---- JointState logging (TXT / CSV) ----
-        log_dir = Path("/home/pi/rb3_ws/src/mqtt_2_cmd_pkg/mqtt_2_cmd_pkg")
-        log_dir.mkdir(parents=True, exist_ok=True)
-
-        self.log_path = log_dir / f"joint_states_{int(time.time())}.txt"
-        self.log_f = open(self.log_path, "w", newline="")
-        self.log_csv = csv.writer(self.log_f)
-
-        self.log_csv.writerow([
-            "t_sec",
-            "left_pos_rad",
-            "right_pos_rad",
-            "traveled_m",
-            "yaw_rad",
-            "active",
-            "mode"
-        ])
-        self.log_f.flush()
-
-        # Log only every N joint_state messages
-        self.log_every_n = 20
-        self._js_count = 0
-
-        self.get_logger().info(f"JointState logging to: {self.log_path}")
-        self.get_logger().info(f"Logging every {self.log_every_n} joint_states messages")
-        self.get_logger().info(f"Straight drift feed-forward angular.z = {self.known_drift_ang:.4f} rad/s")
-
     # ---------- ROS helpers ----------
 
     def _js_cb(self, js: JointState):
-        """Update wheel positions every message, but log only every N messages."""
-
-        # -------- always update left/right wheel positions --------
+        """Store latest wheel positions in radians."""
         try:
             li = js.name.index("wheel_left_joint")
             ri = js.name.index("wheel_right_joint")
@@ -125,39 +98,6 @@ class MqttToCmdVelNode(Node):
             if len(js.position) >= 2:
                 self.left_pos = js.position[0]
                 self.right_pos = js.position[1]
-
-        # Count messages and only log every Nth
-        self._js_count += 1
-        if (self._js_count % self.log_every_n) != 0:
-            return
-
-        # -------- timestamp (ROS time preferred) --------
-        if js.header.stamp.sec != 0 or js.header.stamp.nanosec != 0:
-            t_sec = js.header.stamp.sec + js.header.stamp.nanosec * 1e-9
-        else:
-            t_sec = time.time()
-
-        # -------- derived quantities (only meaningful during motion) --------
-        traveled = ""
-        yaw = ""
-
-        if self.left_pos is not None and self.right_pos is not None and self.active:
-            dL = self.left_pos - self.start_left
-            dR = self.right_pos - self.start_right
-            traveled = WHEEL_RADIUS * (dL + dR) / 2.0
-            yaw = WHEEL_RADIUS * (dR - dL) / WHEEL_SEPARATION
-
-        # -------- write one line to TXT (CSV format) --------
-        self.log_csv.writerow([
-            f"{t_sec:.9f}",
-            "" if self.left_pos is None else f"{self.left_pos:.9f}",
-            "" if self.right_pos is None else f"{self.right_pos:.9f}",
-            "" if traveled == "" else f"{traveled:.9f}",
-            "" if yaw == "" else f"{yaw:.9f}",
-            int(self.active),
-            "" if self.mode is None else self.mode
-        ])
-        self.log_f.flush()
 
     def _publish_cmd_vel(self, lin_x: float, ang_z: float):
         """Publish TwistStamped to /cmd_vel."""
@@ -173,11 +113,13 @@ class MqttToCmdVelNode(Node):
         self.publisher.publish(msg)
 
     def _stop(self):
-        """Stop immediately and cancel any active goal."""
         self._publish_cmd_vel(0.0, 0.0)
         self.active = False
         self.mode = None
-        self.ramp_start_time = None
+        self.i_term = 0.0
+        self.prev_err = 0.0
+        self.d_filt = 0.0
+
 
     # ---------- MQTT callbacks ----------
 
@@ -199,6 +141,8 @@ class MqttToCmdVelNode(Node):
 
           Turn in place (degrees):
             {"turn_deg": 180, "turn_rate": 0.8}  # turn_rate optional
+
+       
         """
         try:
             payload = json.loads(msg.payload.decode())
@@ -242,8 +186,12 @@ class MqttToCmdVelNode(Node):
             # Start goal tracking
             self.start_left = self.left_pos
             self.start_right = self.right_pos
+            self.i_term = 0.0
+            self.last_ctrl_time = time.time()
             self.active = True
-            self.ramp_start_time = time.time()
+            self.prev_err = 0.0
+            self.d_filt = 0.0
+
 
             unit = "m" if self.mode == "distance" else "rad"
             self.get_logger().info(f"New goal: mode={self.mode}, value={self.goal_value:.3f} {unit}")
@@ -256,6 +204,10 @@ class MqttToCmdVelNode(Node):
     # ---------- Control loop for goals ----------
 
     def _control_loop(self):
+        self.get_logger().info(
+            f"Left: {self.left_pos:.3f} rad, Right: {self.right_pos:.3f} rad"
+        )
+
         if not self.active:
             return
 
@@ -263,6 +215,14 @@ class MqttToCmdVelNode(Node):
             self.get_logger().error("Lost /joint_states. Stopping.")
             self._stop()
             return
+
+        now = time.time()
+        dt = now - self.last_ctrl_time
+        if dt <= 0.0:
+            dt = 0.02
+        dt = max(dt, 0.001)
+        dt = min(dt, 0.1)
+        self.last_ctrl_time = now
 
         dL = self.left_pos - self.start_left    # rad
         dR = self.right_pos - self.start_right  # rad
@@ -277,31 +237,26 @@ class MqttToCmdVelNode(Node):
                 self._stop()
                 return
 
-            # Target speed sign
-            sign = 1.0 if self.goal_value >= 0 else -1.0
-            target_speed = self.lin_speed * sign
+            # PI wheel-sync: keep dL ~= dR (straight)
+            err = dL - dR
+            self.i_term += err * dt
+            self.i_term = constrain(self.i_term, -self.i_limit, self.i_limit)
+            # Derivative of error
+            d_err = (err - self.prev_err) / dt
+            self.prev_err = err
 
-            # ---- Ramp UP (time-based) ----
-            if self.ramp_start_time is None:
-                self.ramp_start_time = time.time()
-            t = time.time() - self.ramp_start_time
-            ramp_up = min(t / self.ramp_up_time, 1.0) if self.ramp_up_time > 0 else 1.0
+            # Low-pass filter derivative to reduce noise
+            self.d_filt = (1 - self.d_alpha) * self.d_filt + self.d_alpha * d_err
 
-            # ---- Ramp DOWN (distance-based) ----
-            remaining = abs(self.goal_value - traveled)
-            if self.decel_distance > 0 and remaining < self.decel_distance:
-                ramp_down = remaining / self.decel_distance
-            else:
-                ramp_down = 1.0
+            correction = (self.kp_sync * err) + (self.ki_sync * self.i_term) + (self.kd_sync * self.d_filt)
 
-            # ---- Final commanded speed ----
-            scale = min(ramp_up, ramp_down)
-            lin = target_speed * scale
+            lin = self.lin_speed if self.goal_value >= 0 else -self.lin_speed
             lin = check_linear_limit_velocity(lin)
 
-            # ---- Feed-forward correction for known physical drift ----
-            # If robot drifts LEFT, use a small NEGATIVE angular.z to bias right.
-            self._publish_cmd_vel(lin, self.known_drift_ang)
+            ang = correction
+            ang = check_angular_limit_velocity(ang)
+
+            self._publish_cmd_vel(lin, ang)
 
         elif self.mode == "turn":
             # Estimate yaw from wheel difference
@@ -322,27 +277,13 @@ class MqttToCmdVelNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = MqttToCmdVelNode()
-
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
-        try:
-            node.mqtt_client.loop_stop()
-        except Exception:
-            pass
-
-        try:
-            node._stop()
-        except Exception:
-            pass
-
-        try:
-            node.log_f.close()
-        except Exception:
-            pass
-
+        node.mqtt_client.loop_stop()
+        node._stop()
         node.destroy_node()
         rclpy.shutdown()
 

@@ -13,6 +13,7 @@ class actionEnum(enum.Enum):
     COME = "come here"
     TURN = "turn"
     STOP = "stop"
+    RETURN = "return"
     
 
 class directionEnum(enum.Enum):
@@ -48,7 +49,9 @@ ACTIONS = {
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
 
-    "come here": actionEnum.COME
+    "come here": actionEnum.COME,    
+    
+    "return": actionEnum.RETURN
 }
 
 DIRECTIONS = {
@@ -102,6 +105,7 @@ UNITS = {
     "radians":   unitEnum.RADIANS,
     "rad":       unitEnum.RADIANS,
 }
+
 
 # Defaults used when distance/unit aren't included
 DEFAULTS = {
@@ -222,6 +226,12 @@ def string_to_command(input_string):
     # If a 'come' action was spoken, return come immediately (no direction/distance)
     if any(action == "come here" for _, action in actions_found):
         return {"action": "come here", "direction": None, "distance": None, "unit": None}
+    
+    # If "return" in action return with distance
+    if any(action == "return" for _, action in actions_found) and distances_found:
+        return {"action": "return", "direction": None, "distance": int(distances_found[0][1]), "unit": None}
+    
+    
 
     if actions_found == [] or directions_found == []:
         print("No actions or directions found.")
