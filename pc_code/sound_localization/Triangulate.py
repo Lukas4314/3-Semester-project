@@ -49,7 +49,7 @@ def calculate_score(a12, a13, a23, measured_d1, measured_d2, measured_d3):
     score += (a23 - measured_d3) ** 2
     return score
 
-def create_grid(search_range=10.0, grid_size=0.1):
+def create_grid(search_range=15.0, grid_size=0.2):
     # Axes
     x_vals = np.arange(-search_range, search_range + grid_size, grid_size)
     y_vals = np.arange(-search_range, search_range + grid_size, grid_size)
