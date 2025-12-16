@@ -1,4 +1,7 @@
 Questions:
 
 1. Show our layered software architecture and get it approved
-2. 
+
+2. In the project description it says "the possibility for a joint demo or presentation", can we do both? How long should the presentation be? Should it be about how we worked together on the project (scrum meetings) or just a summary of the rapport.
+
+3. 
