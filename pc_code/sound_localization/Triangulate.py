@@ -15,13 +15,19 @@ def microphone_placement():
     #    [0.1, 0.057, 0.0]       # Mic 3
     #])
     
+    #mic_positions = np.array([
+    #    [0.0, 0.1155, 0.0],    # Mic 1
+    #    [0.1, -0.057, 0.0],     # Mic 2
+    #    [-0.1, -0.057, 0.0]       # Mic 3
+    #])
+    
     mic_positions = np.array([
-        [0.0, 0.1155, 0.0],    # Mic 1
-        [0.1, -0.057, 0.0],     # Mic 2
-        [-0.1, -0.057, 0.0]       # Mic 3
+        [-1.0, 0.0, 0.0],    # Mic 1
+        [0.5, 0.866, 0.0],     # Mic 2
+        [0.5, -0.866, 0.0]       # Mic 3
     ])
     
-    mic_positions *= 44.5/11.55  # Scale to actual size
+    mic_positions *= 0.3
     return mic_positions
 
 def get_distance_between_mic_in_point_direction(point, mic_positions):
