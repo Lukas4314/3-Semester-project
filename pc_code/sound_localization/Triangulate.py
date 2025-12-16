@@ -112,7 +112,7 @@ def plot_microphone_data(mic_1, mic_2, mic_3, name="microphone_signals"):
         plt.show()
 
 
-def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
+def triangulate_from_sound(mic1_data, mic2_data, mic3_data, called_by_logger = False):
     
     plot_microphone_data(mic1_data, mic2_data, mic3_data)
     
@@ -151,7 +151,6 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
     tdoa_13 = gcc.PHAT_GCC_TDOA(mic1_data, mic3_data)  # If positive, mic3 is after mic1
     tdoa_23 = gcc.PHAT_GCC_TDOA(mic2_data, mic3_data)  # If positive, mic3 is after mic2
     
-    print("TDOA Estimates:", tdoa_12, tdoa_13, tdoa_23)
 
     if SHOULD_LOG:
         weights = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
@@ -183,103 +182,10 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
                     Logger.set_value(column_key, f"{TDOAs[0]};{TDOAs[1]};{TDOAs[2]}")
                 except AttributeError:
                     print(f"Warning: Logger constant {const_name} not found")
-    """
-    allowed_max_tdoa = 160
-    
-    good_tdoa_01 = None
-    good_tdoa_02 = None
-    good_tdoa_12 = None
-    
-    tdoa_01, r_01, lags_01 = gccphat_matlab(mic0_data, mic1_data)
-    tdoa_02, r_02, lags_02 = gccphat_matlab(mic0_data, mic2_data)
-    tdoa_12, r_12, lags_12 = gccphat_matlab(mic1_data, mic2_data)
-    # 01
-    r_temp = r_01.copy()
-    for _ in range(len(lags_01)):
 
-        idx = np.argmax(np.abs(r_temp))
-        tau = lags_01[idx]
-
-        if abs(tau) < allowed_max_tdoa:
-            good_tdoa_01 = tau
-            break
-
-        # zero out the peak that caused the invalid tau
-        r_temp[idx] = 0
-
-
-    # 02
-    r_temp = r_02.copy()
-    for _ in range(len(lags_02)):
-
-        idx = np.argmax(np.abs(r_temp))
-        tau = lags_02[idx]
-
-        if abs(tau) < allowed_max_tdoa:
-            good_tdoa_02 = tau
-            break
-
-        r_temp[idx] = 0
-
-
-    # 12
-    r_temp = r_12.copy()
-    for _ in range(len(lags_12)):
-
-        idx = np.argmax(np.abs(r_temp))
-        tau = lags_12[idx]
-
-        if abs(tau) < allowed_max_tdoa:
-            good_tdoa_12 = tau
-            break
-
-        r_temp[idx] = 0
-
-    
-    
-    print(f"Previous TDOA Estimates: {tdoa_01}, {tdoa_02}, {tdoa_12}")
-    print(f"Good TDOA Estimates: {good_tdoa_01}, {good_tdoa_02}, {good_tdoa_12}")
-   
-    tdoa_01 = good_tdoa_01
-    tdoa_02 = good_tdoa_02
-    tdoa_12 = good_tdoa_12
-    
-    
-    
-    
-    integral_tdoa_01 = smallestIntegral.get_TDOA(filtered_mic0_data, filtered_mic1_data, name="integral_tdoa_01")
-    integral_tdoa_02 = smallestIntegral.get_TDOA(filtered_mic0_data, filtered_mic2_data, name="integral_tdoa_02")
-    integral_tdoa_12 = smallestIntegral.get_TDOA(filtered_mic1_data, filtered_mic2_data, name="integral_tdoa_12")
-    
-    print(f"Integral TDOA Estimates: {integral_tdoa_01}, {integral_tdoa_02}, {integral_tdoa_12}")
-    
-    print(f"TDOA Estimates: {tdoa_01}, {tdoa_02}, {tdoa_12}")
-    
-    # Printing which micophones are closer based on TDOA signs
-    if (tdoa_01 < 0):
-        print("Mic 0 is before Mic 1")
-    elif (tdoa_01 > 0):
-        print("Mic 1 is before Mic 0")
-    else:
-        print("Mic 0 and Mic 1 are at the same time")
-    
-    if (tdoa_02 < 0):
-        print("Mic 0 is before Mic 2")
-    elif (tdoa_02 > 0):
-        print("Mic 2 is before Mic 0")
-    else:
-        print("Mic 0 and Mic 2 are at the same time")
-
-    if (tdoa_12 < 0):
-        print("Mic 1 is before Mic 2")
-    elif (tdoa_12 > 0):
-        print("Mic 2 is before Mic 1")
-    else:
-        print("Mic 1 and Mic 2 are at the same time")
-    
-    """
     tdoa_estimates = [tdoa_12, tdoa_13, tdoa_23]
-    print(f"TDOA Estimates 1-2: {tdoa_12}, 1-3: {tdoa_13}, 2-3: {tdoa_23}")
+    if not called_by_logger:
+        print(f"TDOA Estimates (seconds): {tdoa_estimates}")
     mic_positions = microphone_placement()
 
     best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)

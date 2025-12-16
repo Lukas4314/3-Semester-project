@@ -53,7 +53,7 @@ class TurtleController:
 		self.mqtt_interface.publish_turn_deg(float(deg), turn_rate=TURN_RATE_RAD_S)
 
 	def turn_right_deg(self, deg):
-		print(f"Turn goal: -{deg:.1f} deg")
+		print(f"Turn goal: {deg:.1f} deg")
 		self.mqtt_interface.publish_turn_deg(-float(deg), turn_rate=TURN_RATE_RAD_S)
 
 	# Convenience if you already have radians
@@ -72,6 +72,7 @@ class TurtleController:
 		if self.queue1 is None or self.queue2 is None or self.queue3 is None:
 			print("go_to_human() requires queue1, queue2, queue3 passed to TurtleController.")
 			return
+
 
 		mic1_data = []
 		mic2_data = []
@@ -102,52 +103,54 @@ class TurtleController:
 				current_mic1_data = mic1_data.copy()
 				current_mic2_data = mic2_data.copy()
 				current_mic3_data = mic3_data.copy()
-
+				
 				current_mic1_data = current_mic1_data[(len(mic1_data)-size)//2:len(mic1_data)-(len(mic1_data)-size)//2]
 				current_mic2_data = current_mic2_data[(len(mic2_data)-size)//2:len(mic2_data)-(len(mic2_data)-size)//2]
 				current_mic3_data = current_mic3_data[(len(mic3_data)-size)//2:len(mic3_data)-(len(mic3_data)-size)//2]
 				Logger.current_samples_size = size
+				current_mic1_data = np.concatenate(current_mic1_data)
+				current_mic2_data = np.concatenate(current_mic2_data)
+				current_mic3_data = np.concatenate(current_mic3_data)
     
 
-				best_point, best_score = triangulate_from_sound(current_mic1_data, current_mic2_data, current_mic3_data)
+				best_point, best_score = triangulate_from_sound(current_mic1_data, current_mic2_data, current_mic3_data, called_by_logger=True)
 				
-				print(f"Best point: {best_point}, Best score: {best_score}")
 				angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
-				distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
+				distance_by_TDOA = np.sqrt(best_point[0]**2 + best_point[1]**2)
 				
-				print(f"Sound located at angle {angle} degrees and distance {distance} meters")
 			
-			Logger.set_value(ACTUAL_TRIANGULATION_ANGLE, input("What angle did it triangulate to (in degrees)?: "))
-			Logger.set_value(ACTUAL_TRIANGULATION_DISTANCE, input("What distance did it triangulate to (in meters)?: "))
+			Logger.set_value(ACTUAL_TRIANGULATION_ANGLE, input("What is the correct angle (in degrees)?: "))
+			Logger.set_value(ACTUAL_TRIANGULATION_DISTANCE, input("What is the correct distance (in meters)?: "))
 
-	
- 
-		mic1_data = []
-		mic2_data = []
-		mic3_data = []
-		# Collect chunks in range
-		while not self.queue1.empty():
-			message_index, new_chunk = self.queue1.get()
-			if start_index <= message_index <= end_index:
-				mic1_data.append(new_chunk)
+		if SHOULD_LOG:
+			mic1_data = mic1_data[chunk_sizes[0]//2:len(mic1_data)-chunk_sizes[0]//2]
+			mic2_data = mic2_data[chunk_sizes[0]//2:len(mic2_data)-chunk_sizes[0]//2]
+			mic3_data = mic3_data[chunk_sizes[0]//2:len(mic3_data)-chunk_sizes[0]//2]
+   
+		else:
+			# Collect chunks in range
+			while not self.queue1.empty():
+				message_index, new_chunk = self.queue1.get()
+				if start_index <= message_index <= end_index:
+					mic1_data.append(new_chunk)
 
-		while not self.queue2.empty():
-			message_index, new_chunk = self.queue2.get()
-			if start_index <= message_index <= end_index:
-				mic2_data.append(new_chunk)
+			while not self.queue2.empty():
+				message_index, new_chunk = self.queue2.get()
+				if start_index <= message_index <= end_index:
+					mic2_data.append(new_chunk)
 
-		while not self.queue3.empty():
-			message_index, new_chunk = self.queue3.get()
-			if start_index <= message_index <= end_index:
-				mic3_data.append(new_chunk)
+			while not self.queue3.empty():
+				message_index, new_chunk = self.queue3.get()
+				if start_index <= message_index <= end_index:
+					mic3_data.append(new_chunk)
 
 		if len(mic1_data) < 1:
 			print(f"No mic data in range {start_index}..{end_index}")
 			return
 
 		mic1_data = np.concatenate(mic1_data)
-		mic2_data = np.concatenate(mic2_data) if len(mic2_data) else np.array([], dtype=mic1_data.dtype)
-		mic3_data = np.concatenate(mic3_data) if len(mic3_data) else np.array([], dtype=mic1_data.dtype)
+		mic2_data = np.concatenate(mic2_data)
+		mic3_data = np.concatenate(mic3_data)
 
 		# Debug WAVs
 		write("actually_fed_to_gcc1.wav", SAMPLE_RATE, mic1_data.astype(np.int16))
@@ -167,12 +170,13 @@ class TurtleController:
 		print(f"Sound located at angle {angle_deg:.1f} deg and distance {distance_m:.3f} m")
 
 		# Turn then drive (these are GOALS; robot-side will execute them)
+		angle_rad = math.radians(angle_deg)
 		if angle_deg >= 0:
 			#self.turn_left_deg(angle_deg)
-			self.execute_command("turn", "left", angle_deg)
+			self.execute_command("turn", "left", angle_rad)
 		else:
 			#self.turn_right_deg(abs(angle_deg))
-			self.execute_command("turn", "right", angle_deg)
+			self.execute_command("turn", "right", angle_rad)
 		time.sleep(angle_deg/70)  #180 deg = 2,5 sec
 		#self.move_forward(distance)
 		self.execute_command("move", "forward", distance)
@@ -294,6 +298,9 @@ class TurtleController:
 		  action="stop"
 		  action="return", distance=<count>
 		"""
+		if distance < 0.01:
+			distance = 0
+		print(f"Executing command: action={action}, direction={direction}, distance={distance}")
 		if action == "stop":
 			self._run_in_thread(self.stop)
 			if SHOULD_LOG:
@@ -343,8 +350,8 @@ class TurtleController:
 				print("turn direction must be 'left' or 'right'")
 			if SHOULD_LOG:
 				self.executing_thread.join()
-				Logger.set_value(ANGLE_ROTATED, input("How much did it turn (in radians)?: "))
-				Logger.set_value(ANGLE_THOUGHT_IT_ROTATED, distance)
+				Logger.set_value(ANGLE_ROTATED, input("How much did it turn (in degrees)?: "))
+				Logger.set_value(ANGLE_THOUGHT_IT_ROTATED, distance*180/np.pi)
 				Logger.set_value(ACTION, action)
 				Logger.write_row()
 			return
