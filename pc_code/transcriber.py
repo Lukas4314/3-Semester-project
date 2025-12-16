@@ -224,6 +224,7 @@ class transcriber:
 					start = floor(start)
 				elif "come" in text.split() and satisfied == True:
 					self.output_queue.queue.clear()
+					self.input_queue.queue.clear()
 					end -= context_buffer
 					print("Final here found between indices:", start, "and", end, "offset:", offset)
 					specified_data = self.recorded_audio[start : end + 1]

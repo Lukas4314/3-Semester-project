@@ -15,8 +15,8 @@ import paho.mqtt.client as mqtt
 BURGER_MAX_LIN_VEL = 0.22
 BURGER_MAX_ANG_VEL = 2.84
 
-WHEEL_RADIUS = 0.033      # meters
-WHEEL_SEPARATION = 0.160  # meters (Burger)
+WHEEL_RADIUS = 0.033     
+WHEEL_SEPARATION = 0.160 
 
 
 def constrain(x, lo, hi):
@@ -35,7 +35,7 @@ class MqttToCmdVelNode(Node):
     def __init__(self):
         super().__init__("mqtt_to_cmd_vel")
 
-        # Publish TwistStamped on /cmd_vel (unchanged format)
+        # Publish TwistStamped on /cmd_vel
         self.publisher = self.create_publisher(TwistStamped, "cmd_vel", 10)
 
         # Joint feedback
@@ -54,10 +54,8 @@ class MqttToCmdVelNode(Node):
         self.lin_speed = 0.10     # m/s
         self.turn_rate = 0.60     # rad/s
 
-        # ---- Known physical drift compensation (feed-forward) ----
         # Positive angular.z = turn left, negative = turn right.
-        # If your robot drifts LEFT during "distance", use a small NEGATIVE value.
-        self.known_drift_ang = -0.02  # rad/s (START SMALL and tune)
+        self.known_drift_ang = -0.0  # rad/s 
 
         # Simple accel / decel profile (distance mode)
         self.ramp_up_time = 0.4       # seconds to reach full linear speed
@@ -81,6 +79,7 @@ class MqttToCmdVelNode(Node):
         self.mqtt_client.subscribe(self.mqtt_topic)
 
         self.get_logger().info(f"Subscribed to MQTT topic: {self.mqtt_topic}")
+        self.get_logger().info(f"Drift feed-forward ang.z (NOT applied in ramp-down): {self.known_drift_ang:.4f} rad/s")
 
         # ---- JointState logging (TXT / CSV) ----
         log_dir = Path("/home/pi/rb3_ws/src/mqtt_2_cmd_pkg/mqtt_2_cmd_pkg")
@@ -107,47 +106,42 @@ class MqttToCmdVelNode(Node):
 
         self.get_logger().info(f"JointState logging to: {self.log_path}")
         self.get_logger().info(f"Logging every {self.log_every_n} joint_states messages")
-        self.get_logger().info(f"Straight drift feed-forward angular.z = {self.known_drift_ang:.4f} rad/s")
 
-    # ---------- ROS helpers ----------
+  
 
     def _js_cb(self, js: JointState):
         """Update wheel positions every message, but log only every N messages."""
 
-        # -------- always update left/right wheel positions --------
+        # always update positions
         try:
             li = js.name.index("wheel_left_joint")
             ri = js.name.index("wheel_right_joint")
             self.left_pos = js.position[li]
             self.right_pos = js.position[ri]
         except Exception:
-            # fallback: assume first two
             if len(js.position) >= 2:
                 self.left_pos = js.position[0]
                 self.right_pos = js.position[1]
-
-        # Count messages and only log every Nth
+        """
+        # log only every Nth message
         self._js_count += 1
         if (self._js_count % self.log_every_n) != 0:
             return
 
-        # -------- timestamp (ROS time preferred) --------
+        # timestamp (ROS time preferred)
         if js.header.stamp.sec != 0 or js.header.stamp.nanosec != 0:
             t_sec = js.header.stamp.sec + js.header.stamp.nanosec * 1e-9
         else:
             t_sec = time.time()
 
-        # -------- derived quantities (only meaningful during motion) --------
         traveled = ""
         yaw = ""
-
         if self.left_pos is not None and self.right_pos is not None and self.active:
             dL = self.left_pos - self.start_left
             dR = self.right_pos - self.start_right
             traveled = WHEEL_RADIUS * (dL + dR) / 2.0
             yaw = WHEEL_RADIUS * (dR - dL) / WHEEL_SEPARATION
 
-        # -------- write one line to TXT (CSV format) --------
         self.log_csv.writerow([
             f"{t_sec:.9f}",
             "" if self.left_pos is None else f"{self.left_pos:.9f}",
@@ -158,9 +152,8 @@ class MqttToCmdVelNode(Node):
             "" if self.mode is None else self.mode
         ])
         self.log_f.flush()
-
+        """
     def _publish_cmd_vel(self, lin_x: float, ang_z: float):
-        """Publish TwistStamped to /cmd_vel."""
         msg = TwistStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = ""
@@ -173,13 +166,12 @@ class MqttToCmdVelNode(Node):
         self.publisher.publish(msg)
 
     def _stop(self):
-        """Stop immediately and cancel any active goal."""
         self._publish_cmd_vel(0.0, 0.0)
         self.active = False
         self.mode = None
         self.ramp_start_time = None
 
-    # ---------- MQTT callbacks ----------
+  
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
@@ -203,7 +195,7 @@ class MqttToCmdVelNode(Node):
         try:
             payload = json.loads(msg.payload.decode())
 
-            # ---- STOP ----
+            # STOP
             if payload.get("stop", False) is True:
                 self.get_logger().info("STOP command received.")
                 self._stop()
@@ -214,19 +206,17 @@ class MqttToCmdVelNode(Node):
                 self.get_logger().error("No /joint_states yet. Start turtlebot3_node and try again.")
                 return
 
-            # ---- Distance goal ----
+            # Distance goal
             if "distance" in payload:
                 self.mode = "distance"
-                self.goal_value = float(payload["distance"])  # meters
-
+                self.goal_value = float(payload["distance"])
                 spd = float(payload.get("speed", self.lin_speed))
                 self.lin_speed = constrain(abs(spd), 0.0, BURGER_MAX_LIN_VEL)
 
-            # ---- Turn goal ----
+            # Turn goal
             elif "turn_deg" in payload:
                 self.mode = "turn"
-                self.goal_value = math.radians(float(payload["turn_deg"]))  # radians
-
+                self.goal_value = math.radians(float(payload["turn_deg"]))
                 rate = float(payload.get("turn_rate", self.turn_rate))
                 self.turn_rate = constrain(abs(rate), 0.0, BURGER_MAX_ANG_VEL)
 
@@ -253,7 +243,7 @@ class MqttToCmdVelNode(Node):
         except Exception as e:
             self.get_logger().error(f"on_message error: {e}")
 
-    # ---------- Control loop for goals ----------
+
 
     def _control_loop(self):
         if not self.active:
@@ -264,13 +254,13 @@ class MqttToCmdVelNode(Node):
             self._stop()
             return
 
-        dL = self.left_pos - self.start_left    # rad
-        dR = self.right_pos - self.start_right  # rad
+        dL = self.left_pos - self.start_left
+        dR = self.right_pos - self.start_right
 
         if self.mode == "distance":
-            traveled = WHEEL_RADIUS * (dL + dR) / 2.0  # meters
+            traveled = WHEEL_RADIUS * (dL + dR) / 2.0
 
-            # Stop condition (forward/backward)
+            # Stop condition
             if (self.goal_value >= 0 and traveled >= self.goal_value) or \
                (self.goal_value < 0 and traveled <= self.goal_value):
                 self.get_logger().info(f"Distance reached. traveled={traveled:.3f} m")
@@ -281,31 +271,33 @@ class MqttToCmdVelNode(Node):
             sign = 1.0 if self.goal_value >= 0 else -1.0
             target_speed = self.lin_speed * sign
 
-            # ---- Ramp UP (time-based) ----
+            # Ramp up
             if self.ramp_start_time is None:
                 self.ramp_start_time = time.time()
             t = time.time() - self.ramp_start_time
             ramp_up = min(t / self.ramp_up_time, 1.0) if self.ramp_up_time > 0 else 1.0
 
-            # ---- Ramp DOWN (distance-based) ----
+            # Ramp down
             remaining = abs(self.goal_value - traveled)
             if self.decel_distance > 0 and remaining < self.decel_distance:
                 ramp_down = remaining / self.decel_distance
             else:
                 ramp_down = 1.0
 
-            # ---- Final commanded speed ----
+            # Final commanded linear speed
             scale = min(ramp_up, ramp_down)
-            lin = target_speed * scale
-            lin = check_linear_limit_velocity(lin)
+            lin = check_linear_limit_velocity(target_speed * scale)
 
-            # ---- Feed-forward correction for known physical drift ----
-            # If robot drifts LEFT, use a small NEGATIVE angular.z to bias right.
-            self._publish_cmd_vel(lin, self.known_drift_ang)
+            # Drift compensation
+            if self.decel_distance > 0 and remaining < self.decel_distance:
+                ang = 0.0
+            else:
+                ang = self.known_drift_ang
+
+            self._publish_cmd_vel(lin, ang)
 
         elif self.mode == "turn":
-            # Estimate yaw from wheel difference
-            yaw = WHEEL_RADIUS * (dR - dL) / WHEEL_SEPARATION  # rad
+            yaw = WHEEL_RADIUS * (dR - dL) / WHEEL_SEPARATION
 
             if (self.goal_value >= 0 and yaw >= self.goal_value) or \
                (self.goal_value < 0 and yaw <= self.goal_value):
