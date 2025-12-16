@@ -150,6 +150,7 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
     tdoa_13 = gcc.PHAT_GCC_TDOA(mic1_data, mic3_data)  # If positive, mic3 is after mic1
     tdoa_23 = gcc.PHAT_GCC_TDOA(mic2_data, mic3_data)  # If positive, mic3 is after mic2
     
+    print("TDOA Estimates:", tdoa_12, tdoa_13, tdoa_23)
 
     if SHOULD_LOG:
         weights = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]

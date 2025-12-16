@@ -125,6 +125,7 @@ class MQTTInterface:
 
             # Combine into a 32-bit unsigned integer
             message_index = (int(big_u) << 16) | int(small_u)
+            #print(f"Message index: {message_index}")
             
             
             

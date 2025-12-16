@@ -156,13 +156,27 @@ class transcriber:
 		start_index = start_index - ceil(self.samples_overlap/1024)
 		offset = None
 		print(f"Searching for here between {start_index} and {end_index}")
+		best_start_score = float('inf')
+		best_end_score = float('inf')
+		"""
+		for i, (msg_idx, chunk) in enumerate(self.recorded_audio):
+			score = abs(start_index - msg_idx)
+			if score < best_start_score:
+				best_start_score = score
+				start = i
+			score = abs(end_index - msg_idx)
+			if score < best_end_score:
+				best_end_score = score
+				end = i
+		""" 	
 		for i, (msg_idx, chunk) in enumerate(self.recorded_audio):
 			if start_index == msg_idx:
 				print(f"found start at index {i}")
 				start = i
 			if end_index == msg_idx:
 				print(f"found end at index {i}")
-				end = i
+				end = i		
+		
 		
 		
 		if start is None or end is None:
