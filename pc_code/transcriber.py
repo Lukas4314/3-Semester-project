@@ -139,9 +139,9 @@ class transcriber:
 		with self.whisper_lock:
 			mel = self.preprocess_segment(segment)
 			if USE_GPU:
-				options = whisper.DecodingOptions(fp16=True, language="en")
+				options = whisper.DecodingOptions(fp16=True, language="en", best_of=3, beam_size=None, temperature=0.3)
 			else:
-				options = whisper.DecodingOptions(fp16=False, language="en")
+				options = whisper.DecodingOptions(fp16=False, language="en", best_of=3, beam_size=None, temperature=0.3)
 			result = whisper.decode(self.model, mel, options)
 			return result.text
 	
@@ -156,13 +156,27 @@ class transcriber:
 		start_index = start_index - ceil(self.samples_overlap/1024)
 		offset = None
 		print(f"Searching for here between {start_index} and {end_index}")
+		best_start_score = float('inf')
+		best_end_score = float('inf')
+		"""
+		for i, (msg_idx, chunk) in enumerate(self.recorded_audio):
+			score = abs(start_index - msg_idx)
+			if score < best_start_score:
+				best_start_score = score
+				start = i
+			score = abs(end_index - msg_idx)
+			if score < best_end_score:
+				best_end_score = score
+				end = i
+		""" 	
 		for i, (msg_idx, chunk) in enumerate(self.recorded_audio):
 			if start_index == msg_idx:
 				print(f"found start at index {i}")
 				start = i
 			if end_index == msg_idx:
 				print(f"found end at index {i}")
-				end = i
+				end = i		
+		
 		
 		
 		if start is None or end is None:
@@ -210,6 +224,7 @@ class transcriber:
 					start = floor(start)
 				elif "come" in text.split() and satisfied == True:
 					self.output_queue.queue.clear()
+					self.input_queue.queue.clear()
 					end -= context_buffer
 					print("Final here found between indices:", start, "and", end, "offset:", offset)
 					specified_data = self.recorded_audio[start : end + 1]

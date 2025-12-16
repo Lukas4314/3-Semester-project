@@ -1,5 +1,5 @@
 
-from mqqtInterface import MQTTInterface
+from mqttInterface import MQTTInterface
 from pc_code.turtleController import TurtleController
 from pc_code.stringToCommand import string_to_command
 from pc_code.transcriber import transcriber

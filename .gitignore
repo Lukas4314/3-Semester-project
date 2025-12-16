@@ -18,3 +18,4 @@ ESP32/.vscode/settings.json
 *.wav
 *.txt
 *.png
+Logs/
