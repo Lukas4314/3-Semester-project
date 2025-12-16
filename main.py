@@ -47,12 +47,12 @@ def main():
             
             if command is not None:
                 
-                if command["action"] == "come here":
+                if command["action"] == "come" and command["direction"] == "here":
                     best_index = transcriber_instance.find_nearest_here(start_index, end_index)
-                    offset  = 2
+                    offset  = 0
                     start_buffer = 0
                     end_buffer = 0
-                    turtleController.go_to_human(start_index = best_index - start_buffer + offset, end_index = best_index + end_buffer + offset)
+                    turtleController.go_to_human(start_index = best_index - start_buffer + offset, end_index = best_index + end_buffer + offset, distance=command.get("distance"))
             
                 print("Recognized command:", command)
                 analysisstring = ""  # Reset after a valid command

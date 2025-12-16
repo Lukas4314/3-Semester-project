@@ -170,13 +170,7 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
                     tdoa_23_log = gcc.PHAT_GCC_TDOA(mic2_data, mic3_data, telephone_band_filter=True, phat_weight_value=weight)
                 # Log this combination
                 weight_int = int(weight * 10)
-                sample_size_name = ""
-                if Logger.current_samples_size == 2048:
-                    sample_size_name = "2K"
-                elif Logger.current_samples_size == 4096:
-                    sample_size_name = "4K"
-                elif Logger.current_samples_size == 8192:
-                    sample_size_name = "8K"
+                sample_size_name = str(Logger.current_samples_size)+ "K"
 
 
                 const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{sample_size_name}_SAMPLES_{filter_state}"

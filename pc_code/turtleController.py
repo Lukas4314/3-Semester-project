@@ -4,8 +4,9 @@ import time
 import threading
 import numpy as np
 from scipy.io.wavfile import write
-from consts import SAMPLE_RATE
+from consts import SAMPLE_RATE, SHOULD_LOG
 import math
+from logger import *
 
 DRIVE_SPEED_M_S = 0.2              # m/s (sent as "speed")
 TURN_RATE_RAD_S = 1.0               # rad/s (sent as "turn_rate")
@@ -63,7 +64,7 @@ class TurtleController:
 		self.turn_right_deg(float(radians) * 180.0 / math.pi)
 
 
-	def go_to_human(self, start_index, end_index):
+	def go_to_human(self, start_index, end_index, distance):
 		"""
 		Uses queued mic data to triangulate a point, then turns and drives towards it.
 		Requires queue1/queue2/queue3 in __init__.
@@ -76,6 +77,54 @@ class TurtleController:
 		mic2_data = []
 		mic3_data = []
 
+
+		if SHOULD_LOG:
+			center_chunk = (start_index + end_index) // 2
+			chunk_sizes = [8, 4, 2] # Important to check largest to smallest
+			start_index = center_chunk - chunk_sizes[0] // 2
+			end_index = start_index + chunk_sizes[0]
+   
+			while not self.queue1.empty():
+				message_index, new_chunk = self.queue1.get()
+				if start_index <= message_index <= end_index:
+					mic1_data.append(new_chunk)
+			while not self.queue2.empty():
+				message_index, new_chunk = self.queue2.get()
+				if start_index <= message_index <= end_index:
+					mic2_data.append(new_chunk)
+			while not self.queue3.empty():
+				message_index, new_chunk = self.queue3.get()
+				if start_index <= message_index <= end_index:
+					mic3_data.append(new_chunk)
+		
+	
+			for size in chunk_sizes:
+				current_mic1_data = mic1_data.copy()
+				current_mic2_data = mic2_data.copy()
+				current_mic3_data = mic3_data.copy()
+
+				current_mic1_data = current_mic1_data[(len(mic1_data)-size)//2:len(mic1_data)-(len(mic1_data)-size)//2]
+				current_mic2_data = current_mic2_data[(len(mic2_data)-size)//2:len(mic2_data)-(len(mic2_data)-size)//2]
+				current_mic3_data = current_mic3_data[(len(mic3_data)-size)//2:len(mic3_data)-(len(mic3_data)-size)//2]
+				Logger.current_samples_size = size
+    
+
+				best_point, best_score = triangulate_from_sound(current_mic1_data, current_mic2_data, current_mic3_data)
+				
+				print(f"Best point: {best_point}, Best score: {best_score}")
+				angle = np.arctan2(best_point[1], best_point[0]) * 180 / np.pi
+				distance = np.sqrt(best_point[0]**2 + best_point[1]**2)
+				
+				print(f"Sound located at angle {angle} degrees and distance {distance} meters")
+			
+			Logger.set_value(ACTUAL_TRIANGULATION_ANGLE, input("What angle did it triangulate to (in degrees)?: "))
+			Logger.set_value(ACTUAL_TRIANGULATION_DISTANCE, input("What distance did it triangulate to (in meters)?: "))
+
+	
+ 
+		mic1_data = []
+		mic2_data = []
+		mic3_data = []
 		# Collect chunks in range
 		while not self.queue1.empty():
 			message_index, new_chunk = self.queue1.get()
@@ -119,12 +168,14 @@ class TurtleController:
 
 		# Turn then drive (these are GOALS; robot-side will execute them)
 		if angle_deg >= 0:
-			self.turn_left_deg(angle_deg)
+			#self.turn_left_deg(angle_deg)
+			self.execute_command("turn", "left", angle_deg)
 		else:
-			self.turn_right_deg(abs(angle_deg))
-
-		time.sleep(0.5)  # small delay between goals (optional)
-		#self.move_forward(distance_m)
+			#self.turn_right_deg(abs(angle_deg))
+			self.execute_command("turn", "right", angle_deg)
+		time.sleep(angle_deg/70)  #180 deg = 2,5 sec
+		#self.move_forward(distance)
+		self.execute_command("move", "forward", distance)
 
 
 	def _run_in_thread(self, fn, *args):
@@ -245,6 +296,10 @@ class TurtleController:
 		"""
 		if action == "stop":
 			self._run_in_thread(self.stop)
+			if SHOULD_LOG:
+				self.executing_thread.join()
+				Logger.set_value(ACTION, action)
+				Logger.write_row()
 			return
 
 		if action == "return":
@@ -265,6 +320,12 @@ class TurtleController:
 				self._run_in_thread(self.move_backward, float(distance))
 			else:
 				print("move direction must be 'forward' or 'backward'")
+			if SHOULD_LOG:
+				self.executing_thread.join()
+				Logger.set_value(DISTANCE_MOVED, input("How far did it move (in meters)?: "))
+				Logger.set_value(DISTANCE_THOUGHT_IT_MOVED, distance)
+				Logger.set_value(ACTION, action)
+				Logger.write_row()
 			return
 
 		if action == "turn":
@@ -280,6 +341,12 @@ class TurtleController:
 				self._run_in_thread(self.turn_right_rad, radians)
 			else:
 				print("turn direction must be 'left' or 'right'")
+			if SHOULD_LOG:
+				self.executing_thread.join()
+				Logger.set_value(ANGLE_ROTATED, input("How much did it turn (in radians)?: "))
+				Logger.set_value(ANGLE_THOUGHT_IT_ROTATED, distance)
+				Logger.set_value(ACTION, action)
+				Logger.write_row()
 			return
 
 		print(f"Unknown action: {action}")
