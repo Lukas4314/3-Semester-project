@@ -1,0 +1,8 @@
+Test, sound localization, robot commands (hvor præcist kører den, hvor meget afviger den)
+(evt. lave flere kommadoer robotten kan udføre, f.eks. return to home)
+
+Lav layered software architecture
+
+Diskussion (sound localization, whisper/faster whisper)
+
+Læs hele rapporten igennem som helhed og se om der mangler noget. Derefter lave introduktion og konklusion, når der er skabt overblik over hele rapporten.

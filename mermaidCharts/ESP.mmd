@@ -1,0 +1,28 @@
+flowchart TD
+    subgraph ESP[ESP32 Microcontroller]
+        direction TB
+        subgraph L1[<b>Layer 4: Physical/sensor layer</b>]
+            direction TB
+            
+            ESP_Board[I2s Interface]
+            ESP_Mic[Microphones]
+            ESP_Board -- "record audio" --- ESP_Mic
+        end
+
+        subgraph L2[<b>Layer 3: Communication</b>]
+            ESP_MQTT[MQTT Client]
+            ESP_BUFFERREADER[RMA Buffer]
+        end
+
+        subgraph L3[<b>Layer 2: Processing layer</b>]
+            
+            ESP_Sampling[Audio Sampling]
+        end
+    end
+
+
+    MQTT_Broker[Mosquitto Broker] -- "Publishes audio batches" --- ESP_MQTT
+    ESP_BUFFERREADER -- "Store data" --- ESP_Board
+    ESP_Sampling -- "Queues audio batches" --- ESP_MQTT
+    ESP_Sampling -- "Audio Data" --- ESP_BUFFERREADER
+    

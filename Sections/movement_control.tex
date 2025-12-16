@@ -1,7 +1,20 @@
 \section{Movement Control}
-For the project, a turtlebot 3 burger model is used. Onboaard the turtlebot a ROS 2 environment is installed along with all necessary packages to run the robot. The ROS daemon provides a pub sub architecture for communication between different nodes running on the robot. %Using this a differential drive controller node provided by the manufacturer is setup to handle the movement of the robot. The node subscribes to a topic called \textit{cmd\_vel} where velocity commands are published.
+%For the project, a Turtlebot 3 burger model is used. Onboard the Turtlebot a ROS 2 environment is installed along with all necessary packages to run the robot. The ROS daemon provides a pub sub architecture for communication between different nodes running on the robot. %Using this a differential drive controller node provided by the manufacturer is setup to handle the movement of the robot. The node subscribes to a topic called \textit{cmd\_vel} where velocity commands are published.
 
-While the ROS daemon is running a pub sub architecture, it is not the main way of communicating with the robot, instead a separate MQTT server is used to send commands to the robot from an external computer. This service is being run using the mosquitto client. Onboard the robot the MQTT commands are then handled by a python script that updates the appropriate ROS topic to move the robot.
+%While the ROS daemon is running a pub sub architecture, it is not the main way of communicating with the robot, instead a separate MQTT server is used to send commands to the robot from an external computer. This service is being run using the mosquitto client. Onboard the robot the MQTT commands are then handled by a python script that updates the appropriate ROS topic to move the robot.
+
+The highest level of movement command comes in the form of human speech but has the goal of controlling the movement of the robot:
+human speech → text → command → movement control.
+
+After a command is sent over MQTT to the Raspberry Pi, a ROS2 node converts the given distance into velocity commands that satisfy the requested command. The velocity command is published to the cmdvel topic, which the TurtleBot3 node subscribes to. The TurtleBot3 node then translates the velocity commands into motor control commands and sends them to the OpenCR board over UART. The OpenCR board can then control the motors using its built-in motor controller.
+
+While the motors are driving, the OpenCR board sends positional data from the encoders on the board back to the ROS2 environment. This makes it possible to drive the exact distance by continuously checking for position until the goal is reached.
+
+Furthermore, the motor mounted on the TurtleBot has an inbuilt PID algorithm \cite{motor_Specifications} which makes sure the individual motor has more accruate velocity.
+
+Both PID control and position-based driving are necessary if the robot should be able to trace back to its original position.
 
 
-%Lidt om diffdrive controlleren
+
+
+

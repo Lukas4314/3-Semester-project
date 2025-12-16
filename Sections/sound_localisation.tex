@@ -1,70 +1,114 @@
 \section{Sound Localisation}
 \label{SEC:sound_localisation}
-Kilde indtil videre:
-https://en.wikipedia.org/wiki/Cross-correlation#Cross-correlation\_of\_deterministic\_signals
-\subsection{locating time of command}
+The sound localisation is done on the processing layer. The goal of the sound localisation is to find the position of the person giving commands. For this GCC-PHAT (Generalised Cross Correlation-Phase Transform) is used to find the TDOA (Time Delay Of Arrival) between each pair of microphones.
+
+\subsection{Locating time of command}\label{sec:Locating_time_of_command}
 
 %husk og ændre 80 sampels til det rigtige tal
 Before calculating the position of the sound source, the exact sample where the command was said must be found, to avoid accidentally calculating the position of random noise. To keep track of samples, the ESP32 gives every sample an ID number, which is also sent through MQTT alongside the data.
 
 But since Whisper does not operate in the time domain, it is not possible to link a Whisper output with an ID number in the time domain. Therefore, the first and last ID number is saved for every segment sent to Whisper, making it possible to link a Whisper segment with an array of samples.
 
-To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is “here,” which is usually around 10 samples. Then, the sample located in the middle of these 10 samples is chosen as the best possible sample to calculate the location of origin.
-
-
-
+To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is “come” which is usually around 2-10 samples. Then, the sample located in the middle of these 10 samples is chosen as the best possible sample to calculate the location of origin.
 
 \subsection{GCC-PHAT}
-GCC-PHAT (General-Cross-Correlation Phase Transform) is an algorithm that caulculates the TDOA (Time Delay Of Arrival) of a signal in relation to a reference signal. This is used to calculate where the signal is coming from by finding the phase shift between 2 different microphones spaced by a known distance and multiply the phase shift with the speed of sound.
+GCC-PHAT is an algorithm that calculates the TDOA of a signal in relation to a reference signal \cite{MathWorks_gccphat}. This is used to calculate where the signal is coming from by finding the time delay between 2 different microphones spaced by a known distance and multiplying the time delay with the speed of sound. The time delay is found by comparing the phase difference for all frequencies between two signals using cross-correlation.
 
+In order to calculate the TDOA of a signal, the signal must be converted to frequency domain which is done by using FFT (Fast Fourier Transform). When the signal is in the frequency domain, each frequency is represented by a complex number:
 
-In order to calculate the TDOA of a signal, the signal must first be converted to the frequency domain. Therefore, a very precise band-pass filter can easily be applied without wasting computing time, since we are already in the frequency domain. The chosen structure of the filter is based on the telephone speech band, which is 300--3400~Hz, because that’s where human speech is most represented. To apply the filter, the frequency of every FFT bin is calculated with \( f_k = \frac{k\, f_s}{N} \) and set to zero if it is not inside the telephone speech band. Filtering out frequencies other than human speech will increase the likelihood of GCC\_PHAT calculating the TDOA of a human speaking instead of the TDOA of some noise.
-(Find kilde eller argumenter for at det er en god ide at filtrere)
+\begin{equation}
+    a + bi
+\end{equation}
+Where $a$ is the real part and $bi$ is the imaginary part. From this the amplitude and phase can be calculated:
+\begin{equation}
+    A = \sqrt{a^2 + b^2}
+\end{equation}
+Where A is the amplitude, and
+\begin{equation}
+    \phi = \arctan2(b, a)
+\end{equation}
+Where $\phi$ is the phase.
+
+While in the frequency domain, a very precise band-pass filter can also easily be applied without wasting computing time. The chosen structure of the filter is based on the telephone speech band, which is 300-3400 Hz, because that is where human speech is most represented. To apply the filter, the frequency of every FFT bin is calculated with \( f_k = \frac{k\, f_s}{N} \) where both the amplitude and phase information is set to zero if it is not inside the telephone speech band. Filtering out frequencies other than human speech will increase the likelihood of GCC\_PHAT calculating the TDOA of a human speaking instead of the TDOA of some noise.
+
+The signal can be compared to a reference signal by multiplying the signal with the complex conjugate of the reference signal. This is because multiplying the reference signal with the complex conjugate of another signal gives the phase difference between the two signals, as represented by the difference in the imaginary part:
+
+\begin{equation}
+X_1(f) \cdot X_2^*(f) = (A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2}) = A_1 A_2 e^{i (\phi_1 - \phi_2)}
+\end{equation}
+
+Where $X_1(f)$ is the reference signal, $X_2^*(f)$ is the complex conjugate of the other signal.
+$A_1$ and $A_2$ are the amplitudes of the signals.
+$\phi_1$ and $\phi_2$ are the phases of the signals.
+
+This is the standard cross-spectrum, which is used in standard cross-correlation known as xcorr. As seen in the formula the standard cross-correlation compares the magnitude of the signals (since the amplitudes are multiplied by the phase difference) which can vary a lot depending on the environment. In this project GCC-PHAT is instead used, because it only keeps the phase difference by normalising the cross-spectrum. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. The formula therefore becomes:
+
+\begin{equation}
+    \frac{X_1(f) \cdot X_2^*(f)}{|X_1(f) \cdot X_2^*(f)|} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{|(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})|} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{A_1 A_2} = e^{i (\phi_1 - \phi_2)}
+\end{equation}
+
+The normalised cross-spectrum can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. The TDOA of the signal is then found by calculating at which sample the maximum amplitude occurs, as seen in \cref{fig:GCC-PHAT_TDOA_Example}.
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[t]{0.32\linewidth}
+    \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{Pictures/Vision/ffts_of_44k_Hz_for_4096_samples.png}
-        \caption{The FFT of 2 difference signals sampled at 44 kHz for 4096 samples of a person speaking}
-        \label{fig:FFTsOf44kHz} 
+        \includegraphics[width=\textwidth]{Pictures/Constructed-signal-GCC-PHAT_TDOA_Example.png}
+        \caption{Constructed signal with known offset}
+        \label{fig:Constructed-signal-GCC-PHAT_TDOA_Example}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[t]{0.32\linewidth}
+    \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{Pictures/Vision/Result.png}
-        \caption{result of matchTemplate()}
-        \label{fig:resultOfMatchTemplate()}
+        \includegraphics[width=\textwidth]{Pictures/GCC-PHAT_TDOA_Example.png}
+        \caption{Real audio data from ESP32}
+        \label{fig:GCC-PHAT_TDOA_Example}
     \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.32\linewidth}
-        \centering
-        \includegraphics[width=0.83\linewidth]{Pictures/Vision/circleMask.png}
-        \caption{Mask and template image being used}
-        \label{fig:mask}
-    \end{subfigure}
-    
-    \caption{The image matchTemplate() is used on, the result and the mask and template image being used.}
-    \label{fig:matchTemplateResult}
+    \caption{Examples of GCC-PHAT TDOA calculation where the peak indicates the time delay between the two signals with the highest correlation. (a) shows a constructed signal with random noise shifted by a known sample amount to verify the calculation, while (b) shows real signals received from the ESP32.}
+    \label{fig:GCC-PHAT_combined}
 \end{figure}
 
+The difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
 
-The phase is relative to a reference cosine wave that starts at its maximum at time 0.
-
-The signal can be compared to a reference signal by multiplying the signal with the complex conjugate of the reference signal. This is because multiplying the reference signal with complex conjugate of another signal gives the phase difference between the two signals, as represented by the difference in the imaginary part:
-
-\begin{equation}
-    X_1(f) \cdot X_2^*(f) = (A_1 \cdot e^{i \cdot \phi_1}) * (A_2 \cdot e^{-i \phi_2}) = (A_1 A_2) e^{i(\phi_1 - \phi_2)}
-\end{equation}
-
-Where $X_1(f)$ is the reference signal, $X_2^*(f)$ is the complex conjugate of the other signal, $A_1$ and $A_2$ are the amplitudes of the signals and $\phi_1$ and $\phi_2$ are the phases of the signals.
-
-
-The phase difference can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. Next the difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
-
-Depending on what GCC-PHAT is used for a weighting can also be applied. In this project however, a weight of 1 (no weight, except for $\epsilon = 1 \cdot 10^{-8}$ is added to avoid division by 0) is applied. This is because the human voice has the full range of frequencies that the microphones can pick up.
-
-The standard cross correlation is called xcorr, which only compares the magnitude of the signals which can vary a lot depending on the environment. GCC-PHAT in turn compares the phase difference between the signals by normalizing the amplitudes for all frequencies. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. For this reason GCC-PHAT is used for sound localisation in this project.
+Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation.
 
 \subsection{Triangulation}
-By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 10 cm between each point. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit is chosen as the calculated position of the sound source.
+By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 10 cm between each point. The reason for a 3D grid is because the microphones create a plane in xy-plane, which could result in symmetrical solutions with a negative z-value (essentially underground). These solutions are automatically not found since the grid only searches for solutions between 0 and 2 meters. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit (the point with the smallest difference) is chosen as the calculated position of the sound source.
+
+\begin{equation}
+\begin{align}
+\Delta d^{expected}_{12} = \|P - M_2\| - \|P - M_1\| \\
+\Delta d^{expected}_{13} = \|P - M_3\| - \|P - M_1\| \\
+\Delta d^{expected}_{23} = \|P - M_3\| - \|P - M_2\| \\
+\end{align}
+\end{equation}
+
+We also have the calculated TDOA from GCC-PHAT which can be used to find the measured distance by multiplying with the speed of sound:
+
+\begin{equation}
+\Delta d^{measured}_{ab} = \tau_{ab} \cdot c 
+\end{equation}
+
+Where $\tau$ is the measured TDOA between mic a and b and c is the speed of sound
+
+\begin{equation}
+\text{Error}(P) = (\Delta d^{expected}_{12} - \Delta d^{measured}_{12})^2 + (\Delta d^{expected}_{13} - \Delta d^{measured}_{13})^2 + (\Delta d^{expected}_{23} - \Delta d^{measured}_{23})^2
+\end{equation}
+
+The goal is to find the point P that minimises the error function. This is done by calculating the error for every point in the grid and choosing the point with the smallest error as the estimated position of the sound source. 
+
+In total the formula for finding the position of the sound source becomes:
+\begin{equation}
+    \text{argmin}_{P} \sum_{(a,b)} (\|P - M_b\| - \|P - M_a\| - \Delta d^{measured}_{ab})^2
+\end{equation}
+
+In practice a 3D grid, which is a disk with 10 meter radius and 2 meter height, is designed for triangulation with a space of 10 cm between each point making the error margin a maximum of $\sqrt{5^2 + 5^2 + 5^2} = 8.66$ cm. However, an error of this size isn't a point of concern, since the error is relatively small. An example of the triangulation on perfect TDOA-values that match a certain point can be seen in \cref{fig:Triangulation_Example}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Pictures/Triangulation_Example.png}
+    \caption{Example of the triangulation algorithm used on a random point.}
+    \label{fig:Triangulation_Example}
+\end{figure}
+
+This figure shows that the triangulation algorithm works as intended when given perfect TDOA values. Since this algorithm is easily understood and quick to execute on a relatively small grid, it was chosen instead of implementing a more complex algorithm. If this was the biggest error source in the system, it could either have been tweaked to be a denser grid, which would make the calculation slower, or replaced with a more advanced algorithm.
