@@ -139,9 +139,9 @@ class transcriber:
 		with self.whisper_lock:
 			mel = self.preprocess_segment(segment)
 			if USE_GPU:
-				options = whisper.DecodingOptions(fp16=True, language="en")
+				options = whisper.DecodingOptions(fp16=True, language="en", best_of=3, beam_size=None, temperature=0.3)
 			else:
-				options = whisper.DecodingOptions(fp16=False, language="en")
+				options = whisper.DecodingOptions(fp16=False, language="en", best_of=3, beam_size=None, temperature=0.3)
 			result = whisper.decode(self.model, mel, options)
 			return result.text
 	

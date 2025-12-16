@@ -111,7 +111,7 @@ class TurtleController:
 				current_mic1_data = np.concatenate(current_mic1_data)
 				current_mic2_data = np.concatenate(current_mic2_data)
 				current_mic3_data = np.concatenate(current_mic3_data)
-    
+	
 
 				best_point, best_score = triangulate_from_sound(current_mic1_data, current_mic2_data, current_mic3_data, called_by_logger=True)
 				
@@ -119,8 +119,6 @@ class TurtleController:
 				distance_by_TDOA = np.sqrt(best_point[0]**2 + best_point[1]**2)
 				
 			
-			Logger.set_value(ACTUAL_TRIANGULATION_ANGLE, input("What is the correct angle (in degrees)?: "))
-			Logger.set_value(ACTUAL_TRIANGULATION_DISTANCE, input("What is the correct distance (in meters)?: "))
 
 		if SHOULD_LOG:
 			mic1_data = mic1_data[chunk_sizes[0]//2:len(mic1_data)-chunk_sizes[0]//2]
@@ -177,7 +175,14 @@ class TurtleController:
 		else:
 			#self.turn_right_deg(abs(angle_deg))
 			self.execute_command("turn", "right", angle_rad)
-		time.sleep(angle_deg/70)  #180 deg = 2,5 sec
+   
+		if SHOULD_LOG:
+			Logger.set_value(ACTUAL_TRIANGULATION_ANGLE, input("What is the correct angle (in degrees)?: "))
+			Logger.set_value(ACTUAL_TRIANGULATION_DISTANCE, input("What is the correct distance (in meters)?: "))
+
+   
+   
+		time.sleep(abs(angle_deg)/70)  #180 deg = 2,5 sec
 		#self.move_forward(distance)
 		self.execute_command("move", "forward", distance)
 
@@ -298,7 +303,7 @@ class TurtleController:
 		  action="stop"
 		  action="return", distance=<count>
 		"""
-		if distance < 0.01:
+		if abs(distance) < 0.01:
 			distance = 0
 		print(f"Executing command: action={action}, direction={direction}, distance={distance}")
 		if action == "stop":
@@ -327,7 +332,7 @@ class TurtleController:
 				self._run_in_thread(self.move_backward, float(distance))
 			else:
 				print("move direction must be 'forward' or 'backward'")
-			if SHOULD_LOG:
+			if SHOULD_LOG and False:
 				self.executing_thread.join()
 				Logger.set_value(DISTANCE_MOVED, input("How far did it move (in meters)?: "))
 				Logger.set_value(DISTANCE_THOUGHT_IT_MOVED, distance)
@@ -348,7 +353,7 @@ class TurtleController:
 				self._run_in_thread(self.turn_right_rad, radians)
 			else:
 				print("turn direction must be 'left' or 'right'")
-			if SHOULD_LOG:
+			if SHOULD_LOG and False:
 				self.executing_thread.join()
 				Logger.set_value(ANGLE_ROTATED, input("How much did it turn (in degrees)?: "))
 				Logger.set_value(ANGLE_THOUGHT_IT_ROTATED, distance*180/np.pi)
