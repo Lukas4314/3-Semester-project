@@ -73,7 +73,7 @@ The difference is divided by the sample rate and then multiplied by the speed of
 Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation.
 
 \subsection{Triangulation}
-By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 10 cm between each point. The reason for a 3D grid is because the microphones create a plane in xy-plane, which could result in symmetrical solutions with a negative z-value (essentially underground). These solutions are automatically not found since the grid only searches for solutions between 0 and 2 meters. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit (the point with the smallest difference) is chosen as the calculated position of the sound source.
+By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 20 cm between each point. The reason for a 3D grid is because the microphones create a plane in xy-plane, which could result in symmetrical solutions with a negative z-value (essentially underground). These solutions are automatically not found since the grid only searches for solutions between 0 and 2 meters. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit (the point with the smallest difference) is chosen as the calculated position of the sound source.
 
 \begin{equation}
 \begin{align}
@@ -102,7 +102,7 @@ In total the formula for finding the position of the sound source becomes:
     \text{argmin}_{P} \sum_{(a,b)} (\|P - M_b\| - \|P - M_a\| - \Delta d^{measured}_{ab})^2
 \end{equation}
 
-In practice a 3D grid, which is a disk with 10 meter radius and 2 meter height, is designed for triangulation with a space of 10 cm between each point making the error margin a maximum of $\sqrt{5^2 + 5^2 + 5^2} = 8.66$ cm. However, an error of this size isn't a point of concern, since the error is relatively small. An example of the triangulation on perfect TDOA-values that match a certain point can be seen in \cref{fig:Triangulation_Example}.
+In practice a 3D grid, which is a cylinder with 15 meter radius and 2 meter height, is designed for triangulation with a space of 20 cm between each point making the error margin a maximum of $\sqrt{10^2 + 10^2} = 14.14$ cm. However, an error of this size isn't a point of concern, since the error is relatively small. An example of the triangulation on perfect TDOA-values that match a certain point can be seen in \cref{fig:Triangulation_Example}.
 
 \begin{figure}[H]
     \centering
