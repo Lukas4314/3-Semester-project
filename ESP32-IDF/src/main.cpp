@@ -34,7 +34,7 @@
 
 #define DATA_READY_GPIO GPIO_NUM_21 // safe, free
 
-#define SAMPLE_RATE 22050
+#define SAMPLE_RATE 16000
 #define NUM_I2S_BUFFERS 10
 #define BUFFER_SIZE 1024
 
@@ -142,16 +142,16 @@ void setup()
 
     printf("Setup complete\n");
 
-    if (!i2s0.begin())
+    if (!i2s1.begin())
     {
         printf("I2S1 init failed\n");
         while (1)
             ;
     }
 
-    if (!i2s1.begin())
+    if (!i2s0.begin())
     {
-        printf("I2S init failed\n");
+        printf("I2S0 init failed\n");
         while (1)
             ;
     }
@@ -182,9 +182,9 @@ void i2sTask(void *param)
         }
 
         int offset = 100;
-        printf("%d %d %d    |||     %d %d %d    |||    %d %d %d\n",
-               temp0[offset + 0], temp0[offset + 2], temp0[offset + 4], temp0[offset + 1], temp0[offset + 3], temp0[offset + 5],
-               temp1[offset + 0], temp1[offset + 1], temp1[offset + 2]);
+        //printf("%d %d %d    |||     %d %d %d    |||    %d %d %d\n",
+        //       temp0[offset + 0], temp0[offset + 2], temp0[offset + 4], temp0[offset + 1], temp0[offset + 3], temp0[offset + 5],
+        //       temp1[offset + 0], temp1[offset + 1], temp1[offset + 2]);
         if (bytesRead0 != stereoSize * sizeof(int16_t))
         {
             printf("I2S0 read size mismatch: %d bytes\n", bytesRead0);
@@ -288,7 +288,7 @@ void spiSlaveTask(void *param)
 
                 byte_src += chunk;
                 remaining -= chunk;
-                vTaskDelay(pdMS_TO_TICKS(10)); // small delay to allow master to process data since it does not work otherwise (not sure why)
+                vTaskDelay(pdMS_TO_TICKS(15)); // small delay to allow master to process data since it does not work otherwise (not sure why)
             }
         }
     }
