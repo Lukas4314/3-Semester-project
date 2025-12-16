@@ -53,8 +53,6 @@ def main():
                     start_buffer = 0
                     end_buffer = 0
                     turtleController.go_to_human(start_index = best_index - start_buffer + offset, end_index = best_index + end_buffer + offset)
-                    continue
-            
             
                 print("Recognized command:", command)
                 analysisstring = ""  # Reset after a valid command
@@ -62,7 +60,12 @@ def main():
                 command["action"],
                 command.get("direction"),
                 command.get("distance")
-                )   
+                )
+                
+                if SHOULD_LOG:
+                    Logger.set_value(ATTEMPTS_AT_TALKING_BEFORE_REGISTERING, input("How many tries before registering the command? (1 is good, 0 if it is skitzophrenic): "))
+                    Logger.set_value(ACTION, command["action"])
+                    Logger.write_row()   
     except KeyboardInterrupt:
         print("Exiting program.")
         mqtt_interface_aud0.client.loop_stop()
