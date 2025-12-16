@@ -171,10 +171,10 @@ class TurtleController:
 		angle_rad = math.radians(angle_deg)
 		if angle_deg >= 0:
 			#self.turn_left_deg(angle_deg)
-			self.execute_command("turn", "left", angle_rad)
+			self.execute_command("turn", "left", abs(angle_rad))
 		else:
 			#self.turn_right_deg(abs(angle_deg))
-			self.execute_command("turn", "right", angle_rad)
+			self.execute_command("turn", "right", abs(angle_rad))
    
 		if SHOULD_LOG:
 			Logger.set_value(ACTUAL_TRIANGULATION_ANGLE, input("What is the correct angle (in degrees)?: "))
@@ -303,8 +303,9 @@ class TurtleController:
 		  action="stop"
 		  action="return", distance=<count>
 		"""
-		if abs(distance) < 0.01:
-			distance = 0
+		if distance is not None:
+			if abs(distance) < 0.01:
+				distance = 0
 		print(f"Executing command: action={action}, direction={direction}, distance={distance}")
 		if action == "stop":
 			self._run_in_thread(self.stop)
