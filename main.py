@@ -53,7 +53,6 @@ def main():
                     start_buffer = 0
                     end_buffer = 0
                     turtleController.go_to_human(start_index = best_index - start_buffer + offset, end_index = best_index + end_buffer + offset)
-                    raise Exception("Stopping for now")
                     continue
             
             

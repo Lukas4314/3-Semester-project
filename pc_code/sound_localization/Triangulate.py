@@ -289,6 +289,7 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
     
     """
     tdoa_estimates = [tdoa_12, tdoa_13, tdoa_23]
+    print(f"TDOA Estimates 1-2: {tdoa_12}, 1-3: {tdoa_13}, 2-3: {tdoa_23}")
     mic_positions = microphone_placement()
 
     best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)

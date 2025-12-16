@@ -124,7 +124,7 @@ class TurtleController:
             self.turn_right_deg(abs(angle_deg))
 
         time.sleep(0.5)  # small delay between goals (optional)
-        self.move_forward(distance_m)
+        #self.move_forward(distance_m)
 
 
     def _run_in_thread(self, fn, *args):
