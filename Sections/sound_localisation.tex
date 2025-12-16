@@ -19,8 +19,34 @@ GCC-PHAT (General-Cross-Correlation Phase Transform) is an algorithm that caulcu
 
 
 In order to calculate the TDOA of a signal, the signal must first be converted to the frequency domain. Therefore, a very precise band-pass filter can easily be applied without wasting computing time, since we are already in the frequency domain. The chosen structure of the filter is based on the telephone speech band, which is 300--3400~Hz, because that’s where human speech is most represented. To apply the filter, the frequency of every FFT bin is calculated with \( f_k = \frac{k\, f_s}{N} \) and set to zero if it is not inside the telephone speech band. Filtering out frequencies other than human speech will increase the likelihood of GCC\_PHAT calculating the TDOA of a human speaking instead of the TDOA of some noise.
+(Find kilde eller argumenter for at det er en god ide at filtrere)
 
-
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{Pictures/Vision/ffts_of_44k_Hz_for_4096_samples.png}
+        \caption{The FFT of 2 difference signals sampled at 44 kHz for 4096 samples of a person speaking}
+        \label{fig:FFTsOf44kHz} 
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{Pictures/Vision/Result.png}
+        \caption{result of matchTemplate()}
+        \label{fig:resultOfMatchTemplate()}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=0.83\linewidth]{Pictures/Vision/circleMask.png}
+        \caption{Mask and template image being used}
+        \label{fig:mask}
+    \end{subfigure}
+    
+    \caption{The image matchTemplate() is used on, the result and the mask and template image being used.}
+    \label{fig:matchTemplateResult}
+\end{figure}
 
 
 The phase is relative to a reference cosine wave that starts at its maximum at time 0.
