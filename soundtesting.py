@@ -8,7 +8,7 @@ def triangulate_on_all_rows():
     log_folder = Path("Logs")
     output_folder = Path("triangulation_outputs")
     output_folder.mkdir(exist_ok=True)
-    
+    known_angles = []
     if not log_folder.exists():
         print(f"ERROR: Log folder '{log_folder}' not found!")
         return
@@ -55,6 +55,10 @@ def triangulate_on_all_rows():
                         'actual_angle': row.get('ActualTriangulationAngle', ''),
                         'actual_distance': row.get('ActualTriangulationDistance', '')
                     }
+                    if metadata['action'].lower() != 'come':
+                        # Skip rows where action is not "Come"
+                        rows_processed += 1
+                        continue
                     
                     # Process ALL TDOA columns in this row
                     for col_name in tdoa_columns:
@@ -84,8 +88,17 @@ def triangulate_on_all_rows():
                                         
                                         if len(tdoa_values) == 3:
                                             # Triangulate to get (x, y) point
-                                            best_point = find_sound_origin(microphone_placement(), tdoa_values)
+                                            if (tdoa_values, known_angles):
+                                                for known_point, known_tdoa in known_angles:
+                                                    if np.allclose(tdoa_values, known_tdoa, atol=1e-2):
+                                                        best_point = known_point
+                                                        break
+                                                else:
+                                                    best_point, _ = find_sound_origin(microphone_placement(), tdoa_values)
+                                            else:
+                                                best_point, _ = find_sound_origin(microphone_placement(), tdoa_values)
                                             
+                                            known_angles.append((best_point, tdoa_values))
                                             # Convert (x, y) to angle and distance
                                             angle_rad = float(np.arctan2(best_point[1], best_point[0]))
                                             angle_deg = angle_rad * 180.0 / math.pi
@@ -136,7 +149,13 @@ def triangulate_on_all_rows():
                                 if metadata['actual_angle'] and metadata['actual_angle'].lower() != 'none':
                                     try:
                                         actual_angle = float(metadata['actual_angle'])
-                                        result_entry['angle_error'] = abs(angle - actual_angle)
+                                        
+                                        angle_err = abs(angle - actual_angle)
+                                        if angle_err > 180:
+                                            angle_err = 360 - angle_err
+                                        result_entry['angle_error'] = angle_err
+
+
                                         result_entry['signed_angle_error'] = angle - actual_angle
                                     except (ValueError, TypeError):
                                         pass
