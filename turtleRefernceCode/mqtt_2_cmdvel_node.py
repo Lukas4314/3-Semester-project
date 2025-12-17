@@ -4,6 +4,10 @@ import math
 import time
 import csv
 from pathlib import Path
+from collections import deque
+from dataclasses import dataclass
+from typing import Optional
+import threading
 
 import rclpy
 from rclpy.node import Node
@@ -15,8 +19,8 @@ import paho.mqtt.client as mqtt
 BURGER_MAX_LIN_VEL = 0.22
 BURGER_MAX_ANG_VEL = 2.84
 
-WHEEL_RADIUS = 0.033     
-WHEEL_SEPARATION = 0.160 
+WHEEL_RADIUS = 0.033
+WHEEL_SEPARATION = 0.160
 
 
 def constrain(x, lo, hi):
@@ -29,6 +33,17 @@ def check_linear_limit_velocity(v):
 
 def check_angular_limit_velocity(w):
     return constrain(w, -BURGER_MAX_ANG_VEL, BURGER_MAX_ANG_VEL)
+
+
+@dataclass
+class Command:
+    # "distance" or "turn"
+    kind: str
+    # meters for distance, radians for turn
+    value: float
+    # optional overrides
+    speed: Optional[float] = None
+    turn_rate: Optional[float] = None
 
 
 class MqttToCmdVelNode(Node):
@@ -55,12 +70,16 @@ class MqttToCmdVelNode(Node):
         self.turn_rate = 0.60     # rad/s
 
         # Positive angular.z = turn left, negative = turn right.
-        self.known_drift_ang = -0.0  # rad/s 
+        self.known_drift_ang = -0.0  # rad/s
 
         # Simple accel / decel profile (distance mode)
         self.ramp_up_time = 0.4       # seconds to reach full linear speed
         self.decel_distance = 0.1     # meters from goal where we start slowing down
         self.ramp_start_time = None
+
+        # ---- Command queue (FIFO) ----
+        self.cmd_queue = deque(maxlen=1000)  # raise/lower as you like
+        self.cmd_lock = threading.Lock()
 
         # Control timer (50 Hz)
         self.timer = self.create_timer(0.02, self._control_loop)
@@ -79,7 +98,9 @@ class MqttToCmdVelNode(Node):
         self.mqtt_client.subscribe(self.mqtt_topic)
 
         self.get_logger().info(f"Subscribed to MQTT topic: {self.mqtt_topic}")
-        self.get_logger().info(f"Drift feed-forward ang.z (NOT applied in ramp-down): {self.known_drift_ang:.4f} rad/s")
+        self.get_logger().info(
+            f"Drift feed-forward ang.z (NOT applied in ramp-down): {self.known_drift_ang:.4f} rad/s"
+        )
 
         # ---- JointState logging (TXT / CSV) ----
         log_dir = Path("/home/pi/rb3_ws/src/mqtt_2_cmd_pkg/mqtt_2_cmd_pkg")
@@ -107,8 +128,6 @@ class MqttToCmdVelNode(Node):
         self.get_logger().info(f"JointState logging to: {self.log_path}")
         self.get_logger().info(f"Logging every {self.log_every_n} joint_states messages")
 
-  
-
     def _js_cb(self, js: JointState):
         """Update wheel positions every message, but log only every N messages."""
 
@@ -122,6 +141,7 @@ class MqttToCmdVelNode(Node):
             if len(js.position) >= 2:
                 self.left_pos = js.position[0]
                 self.right_pos = js.position[1]
+
         """
         # log only every Nth message
         self._js_count += 1
@@ -153,6 +173,7 @@ class MqttToCmdVelNode(Node):
         ])
         self.log_f.flush()
         """
+
     def _publish_cmd_vel(self, lin_x: float, ang_z: float):
         msg = TwistStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -171,7 +192,49 @@ class MqttToCmdVelNode(Node):
         self.mode = None
         self.ramp_start_time = None
 
-  
+    def _start_next_if_idle(self):
+        """If not active, pop next queued command and start it."""
+        if self.active:
+            return
+
+        with self.cmd_lock:
+            if not self.cmd_queue:
+                return
+            cmd = self.cmd_queue.popleft()
+
+        # Need joint_states for goals
+        if self.left_pos is None or self.right_pos is None:
+            self.get_logger().error("No /joint_states yet. Can't start queued command.")
+            return
+
+        if cmd.kind == "distance":
+            self.mode = "distance"
+            self.goal_value = float(cmd.value)
+
+            if cmd.speed is not None:
+                spd = float(cmd.speed)
+                self.lin_speed = constrain(abs(spd), 0.0, BURGER_MAX_LIN_VEL)
+
+        elif cmd.kind == "turn":
+            self.mode = "turn"
+            self.goal_value = float(cmd.value)  # radians
+
+            if cmd.turn_rate is not None:
+                rate = float(cmd.turn_rate)
+                self.turn_rate = constrain(abs(rate), 0.0, BURGER_MAX_ANG_VEL)
+
+        else:
+            self.get_logger().error(f"Unknown queued command kind: {cmd.kind}")
+            return
+
+        # Start goal tracking
+        self.start_left = self.left_pos
+        self.start_right = self.right_pos
+        self.active = True
+        self.ramp_start_time = time.time()
+
+        unit = "m" if self.mode == "distance" else "rad"
+        self.get_logger().info(f"Starting queued goal: mode={self.mode}, value={self.goal_value:.3f} {unit}")
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
@@ -195,31 +258,27 @@ class MqttToCmdVelNode(Node):
         try:
             payload = json.loads(msg.payload.decode())
 
-            # STOP
+            # STOP: immediate stop + clear queue
             if payload.get("stop", False) is True:
-                self.get_logger().info("STOP command received.")
+                self.get_logger().info("STOP command received: stopping and clearing queue.")
+                with self.cmd_lock:
+                    self.cmd_queue.clear()
                 self._stop()
                 return
 
-            # Need joint_states for goals
-            if self.left_pos is None or self.right_pos is None:
-                self.get_logger().error("No /joint_states yet. Start turtlebot3_node and try again.")
-                return
-
-            # Distance goal
+            # Build a queued command (do NOT overwrite current goal)
             if "distance" in payload:
-                self.mode = "distance"
-                self.goal_value = float(payload["distance"])
-                spd = float(payload.get("speed", self.lin_speed))
-                self.lin_speed = constrain(abs(spd), 0.0, BURGER_MAX_LIN_VEL)
-
-            # Turn goal
+                cmd = Command(
+                    kind="distance",
+                    value=float(payload["distance"]),
+                    speed=payload.get("speed", None),
+                )
             elif "turn_deg" in payload:
-                self.mode = "turn"
-                self.goal_value = math.radians(float(payload["turn_deg"]))
-                rate = float(payload.get("turn_rate", self.turn_rate))
-                self.turn_rate = constrain(abs(rate), 0.0, BURGER_MAX_ANG_VEL)
-
+                cmd = Command(
+                    kind="turn",
+                    value=math.radians(float(payload["turn_deg"])),
+                    turn_rate=payload.get("turn_rate", None),
+                )
             else:
                 self.get_logger().error(
                     "MQTT payload must be one of:\n"
@@ -229,28 +288,30 @@ class MqttToCmdVelNode(Node):
                 )
                 return
 
-            # Start goal tracking
-            self.start_left = self.left_pos
-            self.start_right = self.right_pos
-            self.active = True
-            self.ramp_start_time = time.time()
+            with self.cmd_lock:
+                self.cmd_queue.append(cmd)
+                qlen = len(self.cmd_queue)
 
-            unit = "m" if self.mode == "distance" else "rad"
-            self.get_logger().info(f"New goal: mode={self.mode}, value={self.goal_value:.3f} {unit}")
+            self.get_logger().info(f"Queued {cmd.kind}. Queue size={qlen}")
+
+            # If idle, start immediately
+            self._start_next_if_idle()
 
         except json.JSONDecodeError:
             self.get_logger().error("Failed to decode JSON from MQTT message.")
         except Exception as e:
             self.get_logger().error(f"on_message error: {e}")
 
-
-
     def _control_loop(self):
+        # If idle, automatically start next queued command
         if not self.active:
+            self._start_next_if_idle()
             return
 
         if self.left_pos is None or self.right_pos is None:
-            self.get_logger().error("Lost /joint_states. Stopping.")
+            self.get_logger().error("Lost /joint_states. Stopping and clearing queue.")
+            with self.cmd_lock:
+                self.cmd_queue.clear()
             self._stop()
             return
 
@@ -265,6 +326,7 @@ class MqttToCmdVelNode(Node):
                (self.goal_value < 0 and traveled <= self.goal_value):
                 self.get_logger().info(f"Distance reached. traveled={traveled:.3f} m")
                 self._stop()
+                self._start_next_if_idle()
                 return
 
             # Target speed sign
@@ -303,12 +365,19 @@ class MqttToCmdVelNode(Node):
                (self.goal_value < 0 and yaw <= self.goal_value):
                 self.get_logger().info(f"Turn reached. yaw={yaw:.3f} rad")
                 self._stop()
+                self._start_next_if_idle()
                 return
 
             ang = self.turn_rate if self.goal_value >= 0 else -self.turn_rate
             ang = check_angular_limit_velocity(ang)
 
             self._publish_cmd_vel(0.0, ang)
+
+        else:
+            # Unknown mode -> stop safely
+            self.get_logger().error("Unknown mode while active. Stopping.")
+            self._stop()
+            self._start_next_if_idle()
 
 
 def main(args=None):
@@ -322,6 +391,12 @@ def main(args=None):
     finally:
         try:
             node.mqtt_client.loop_stop()
+        except Exception:
+            pass
+
+        try:
+            with node.cmd_lock:
+                node.cmd_queue.clear()
         except Exception:
             pass
 

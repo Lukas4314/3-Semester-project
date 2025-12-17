@@ -35,6 +35,7 @@ class transcriber:
 			self.model = whisper.load_model("base.en")  # or "base.en" for better accuracy
 
 
+		self.reset_event = threading.Event()
 
 		self.samplerate = SAMPLE_RATE
 		self.chunk_duration = 5      # seconds per processed chunk
@@ -139,9 +140,9 @@ class transcriber:
 		with self.whisper_lock:
 			mel = self.preprocess_segment(segment)
 			if USE_GPU:
-				options = whisper.DecodingOptions(fp16=True, language="en", best_of=3, beam_size=None, temperature=0.3)
+				options = whisper.DecodingOptions(fp16=True, language="en")
 			else:
-				options = whisper.DecodingOptions(fp16=False, language="en", best_of=3, beam_size=None, temperature=0.3)
+				options = whisper.DecodingOptions(fp16=False, language="en")
 			result = whisper.decode(self.model, mel, options)
 			return result.text
 	
@@ -223,8 +224,6 @@ class transcriber:
 					start += (end - start) * factor
 					start = floor(start)
 				elif "come" in text.split() and satisfied == True:
-					self.output_queue.queue.clear()
-					self.input_queue.queue.clear()
 					end -= context_buffer
 					print("Final here found between indices:", start, "and", end, "offset:", offset)
 					specified_data = self.recorded_audio[start : end + 1]
@@ -238,11 +237,15 @@ class transcriber:
 					satisfied = True
   
 	def transcribe_stream(self):
+	 
 		buffer = np.zeros(0, dtype=np.int16)
 		step = self.samples_per_chunk - self.samples_overlap
 		stamp_queue = queue.Queue()
 
 		while True:
+			if self.reset_event.is_set():
+				buffer = np.zeros(0, dtype=np.int16)
+				self.reset_event.clear()
 			# Pull audio into buffer
 			while not self.input_queue.empty():
 				message_index, new_chunk = self.input_queue.get()
@@ -291,6 +294,29 @@ class transcriber:
 
 			
 			return start_index, end_index, " ".join(texts)
+
+
+	def reset_transcript(self):
+		self.reset_event.set()
+		with self.lock:
+			self.last_string = ""
+			self.recorded_audio.clear()
+			while not self.output_queue.empty():
+				try:
+					self.output_queue.get_nowait()
+				except queue.Empty:
+					break
+			while not self.input_queue.empty():
+				try:
+					self.input_queue.get_nowait()
+				except queue.Empty:
+					break
+		with self.whisper_lock:
+			pass  
+
+		print("Transcript state fully reset.")
+
+
 
 
 
