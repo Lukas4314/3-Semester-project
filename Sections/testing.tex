@@ -53,7 +53,18 @@ Before the algorithm:
 This is the segment we know "come here" was said
 
 after the algorithm, :
-the algorithm Successfully found the exact moment where "come" where said, which satisfies our needs for later calculations with GCC\_PHAT
+the algorithm Successfully found the exact moment where ``come'' was said, which satisfies our needs for later calculations with GCC\_PHAT
+
+GCC Phat was tested using real time data from the 3 microphones while someone said the ``come here'' command from different points around the robot. Then the TDOA is calculated using a variety phat weight, sample size and filter settings, and the output angle was compared to the actual angle. On \cref{fig:GCC-PHAT-Real-Data-Testing} the angle error trend for different configurations is shown. Additional graphs and plots from the testing can be found in \cref{app:GCC-Phat-testing}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Pictures/GCC-Angle-Error-Trend-one-graph.png}
+    \caption{GCC-PHAT angle error trend for different configurations tested with real data, more graphs are available in \cref{app:GCC-Phat-testing}}
+    \label{fig:GCC-PHAT-Real-Data-Testing}
+\end{figure}
+
+The trend shows the best configuration was 2048 samples, a phat weight of 0.9 and a bandpass filter from 300 Hz to 3400 Hz. 
 
 \subsection{Full system testing}
 
