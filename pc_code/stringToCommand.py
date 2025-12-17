@@ -44,11 +44,13 @@ ACTIONS = {
     "turn": actionEnum.TURN,
     "rotate": actionEnum.TURN,
     "spin": actionEnum.TURN,
+    "urn": actionEnum.TURN,
     
     "stop": actionEnum.STOP,
     "halt": actionEnum.STOP,
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
+    "dop": actionEnum.STOP,
 
     "come": actionEnum.COME,    
     
@@ -172,6 +174,7 @@ def string_to_command(input_string):
         "zero": "0",
         "one": "1",
         "two": "2",
+        "to": "2",
         "three": "3",
         "four": "4",
         "five": "5",

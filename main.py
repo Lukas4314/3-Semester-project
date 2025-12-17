@@ -37,6 +37,10 @@ def main():
 			start_index, end_index, new_transcription = transcriber_instance.getNewTranscription()
 			if new_transcription != "":
 				print(f"Transcribed so far:", analysisstring + RED + new_transcription + RED_END)
+				if analysisstring == "":
+					fix_bug = True
+				else:
+					fix_bug = False
 				analysisstring += new_transcription + " "
 				
 			else:
@@ -48,7 +52,7 @@ def main():
 			if command is not None:
 				
 				if command["action"] == "come" and command["direction"] == "here" and command.get("distance") is not None:
-					best_index = transcriber_instance.find_nearest_here(start_index, end_index)
+					best_index = transcriber_instance.find_nearest_here(start_index, end_index, fix_bug)
 					offset  = 0
 					start_buffer = 0
 					end_buffer = 0
