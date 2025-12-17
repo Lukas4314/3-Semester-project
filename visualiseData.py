@@ -359,13 +359,13 @@ def create_comprehensive_visualizations(results_df, output_path):
         try:
             for filter_state in results_df['filter_state'].unique():
                 filter_data = results_df[results_df['filter_state'] == filter_state]
-                trend = filter_data.groupby('weight')['abs_distance_error'].mean().reset_index()
-                ax9.plot(trend['weight'], trend['abs_distance_error'],
+                trend = filter_data.groupby('weight')['abs_angle_error'].mean().reset_index()
+                ax9.plot(trend['weight'], trend['abs_angle_error'],
                         marker='s', linewidth=2, label=filter_state)
             
             ax9.set_xlabel('PHAT Weight', fontsize=12)
-            ax9.set_ylabel('Mean Distance Error (meters)', fontsize=12)
-            ax9.set_title('Distance Error Trend by Filter State', fontsize=14, fontweight='bold')
+            ax9.set_ylabel('Mean Angle Error (degrees)', fontsize=12)
+            ax9.set_title('Angle Error Trend by Filter State', fontsize=14, fontweight='bold')
             ax9.legend()
             ax9.grid(True, alpha=0.3)
         except Exception as e:
