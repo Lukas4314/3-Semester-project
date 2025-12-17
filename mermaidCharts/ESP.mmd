@@ -10,8 +10,8 @@ flowchart TD
         end
 
         subgraph L2[<b>Layer 3: Communication</b>]
-            ESP_MQTT[MQTT Client]
-            ESP_BUFFERREADER[RMA Buffer]
+            ESP_MQTT[SPI]
+            ESP_BUFFERREADER[DMA Buffer]
         end
 
         subgraph L3[<b>Layer 2: Processing layer</b>]
@@ -21,7 +21,6 @@ flowchart TD
     end
 
 
-    MQTT_Broker[Mosquitto Broker] -- "Publishes audio batches" --- ESP_MQTT
     ESP_BUFFERREADER -- "Store data" --- ESP_Board
     ESP_Sampling -- "Queues audio batches" --- ESP_MQTT
     ESP_Sampling -- "Audio Data" --- ESP_BUFFERREADER

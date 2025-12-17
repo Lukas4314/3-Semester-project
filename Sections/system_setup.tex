@@ -44,14 +44,13 @@
 
 %The core systems lie on the first layer and use the second layer to communicate, which in turn uses the third layer to actually transmit data. All three layers of the software architecture are used on every device. 
 
-The overall system architecture is divided into three main components: the PC, the Raspberry Pi onboard the Turtlebot, and the ESP32 microcontroller. Each component has its own layered architecture. The layers are designed to interact only with the layer directly above or below them, ensuring modularity and clear separation of responsibilities. The 4 layers consist of a physical interface layer that should handle direct communication with physical components, a communication layer that manages data transfer between devices and processes, a data processing layer that handles mathematic operations, data packing and transcription, and finally an application layer that interprets processed data and makes decisions based on it.
+The overall system architecture is divided into three main components: the PC, the Raspberry Pi onboard the Turtlebot, and the ESP32 microcontroller. Each component has its own layered architecture. The layers are designed to interact only with the layer directly above or below them, ensuring modularity and clear separation of responsibilities. The 4 layers consist of: \newline
+1. A physical interface layer that should handle direct communication with physical components. \newline
+2. A communication layer that manages data transfer between devices and processes. \newline
+3. A data processing layer, data packing and transcription. \newline
+4. An application layer that interprets processed data and makes decisions based on it.
 
 \subsection{PC}
-The architecture of the PC is illustrated in \cref{fig:PC_system_overview}. It spans 3 layers. The lowest layer, the communication layer, handles communication via an MQTT client that communicates with the MQTT broker hosted on the Turtlebot. The client has 2 way communication with the broker, subscribing to the audio data provided by the ESP32 and publishing positional commands for the Turtlebot. An important aspect the client handles is to duplicate one of the audio streams into 2 queues, as one has to be used for transcription while the other is used with the other 2 streams for sound localisation.
-
-The middle layer, the processing layer, processes the audio data. OpenAI's Whisper model is used for transcription, while the GCC-PHAT algorithm is used for sound localisation. Using the algorithm 3 TDOA (Time Difference of Arrival) values are calculated with which triangulation is performed to estimate the sound source's position. 
-
-The transcribed text is then interpreted for commands on the application layer, and any identified command is translated into a positional command for the robot. If the command ``come here'' is given, the triangulated position is used to calculate a turn and drive command to move the Turtlebot towards the speaker's location.
 
 \begin{figure}[H]
 	\centering
@@ -59,14 +58,14 @@ The transcribed text is then interpreted for commands on the application layer, 
 	\caption{Detailed overview of the PC layered system architecture.}
 	\label{fig:PC_system_overview}
 \end{figure}
+
+The architecture of the PC spans 3 layers and is illustrated in \cref{fig:PC_system_overview}. The lowest layer, the communication layer, handles communication via an MQTT client that communicates with the MQTT broker hosted on the Turtlebot. The client subscribes to the audio data provided by the ESP32 and publishes positional commands for the Turtlebot. One data stream is used for transcription while all 3 data streams are used for sound localisation. 
+
+The middle layer, the processing layer, processes the audio data. OpenAI's Whisper model is used for transcription, while the GCC-PHAT algorithm is used for sound localisation. Using the algorithm 3 TDOA (Time Difference of Arrival) values are calculated with which triangulation is performed to estimate the sound source's position. 
+
+The transcribed text is then interpreted for commands on the application layer, and any identified voice command is translated into a positional command for the robot. If the command ``come here'' is given, the triangulated position is used to calculate a turn- and drive-command to move the Turtlebot towards the speaker's location.
+
 \subsection{Turtlebot and Raspberry Pi}
-The Raspberry Pi similarly has a processing and communication layer. However as the robot also has to control the motors, an additional physical interface layer is needed, while the application layer is not needed. The architecture of the Raspberry Pi is illustrated in \cref{fig:RPI_system_overview}.
-
-From the top, Layer 2 is the processing layer. Here, a ROS2 node gets positional commands from the mosquitto client in the communication layer and translates them into velocity commands that the turtlebot can interpret. Then the messages are published on a ROS2 topic. Furthermore, joint states from the Turtlebot are also read on a ROS2 topic and used for a P-regulator to ensure the motors are moving the correct speed.
-
-Layer 2 is the communication layer. Besides the mosquitto client that subscribes to positional commands from the PC, it also hosts the MQTT broker that all the clients are connected to. Besides the MQTT infrastructure, the layer also handles communication with the Turtlebot's OpenCR board via UART (Universal Asynchronous Receiver-Transmitter). The velocity commands published on the ROS2 topic in the processing layer are picked up by the Turtlebot node, which forwards them via UART to the OpenCR board for motor control, as well as reading joint states from the board and publishing them on a ROS2 topic for the processing layer to use.
-
-The lowest layer, Layer 1, is the physical interface layer. This is handled completely onboard the OpenCR board and is responsible for low-level motor control. The board handles the velocity commands sent from the Raspberry Pi and translates them into PWM (Pulse Width Modulation) signals for the motors to execute the desired movement.
 
 \begin{figure}[H]
     \centering
@@ -87,10 +86,21 @@ The lowest layer, Layer 1, is the physical interface layer. This is handled comp
     \label{fig:system_architectures}
 \end{figure}
 
+The Raspberry Pi similarly has a processing and communication layer. However, as the robot also has to control the motors, an additional physical interface layer is needed, while the application layer is not needed. The architecture of the Raspberry Pi is illustrated in \cref{fig:RPI_system_overview}.
+
+From the top, layer 2 is the processing layer. Here, a ROS2 node gets positional commands from the MQTT client in the communication layer and translates them into velocity commands that the turtlebot can interpret. Then the messages are published on a ROS2 topic. Furthermore, joint states from the Turtlebot are also read on a ROS2 topic and used for a P-regulator to ensure the motors are moving the correct speed. % Rune skal kigge her
+
+Layer 3 is the communication layer. Besides the MQTT client, that subscribes to positional commands from the PC, it also hosts the MQTT broker that all the clients are connected to. The velocity commands published on the ROS2 topic in the processing layer are picked up by the Turtlebot node, which forwards them via UART (Universal Asynchronous Receiver-Transmitter) to the OpenCR board for motor control, as well as reading joint states from the board and publishing them on a ROS2 topic for the processing layer to use.
+
+The lowest layer, layer 4, is the physical interface layer. This is handled completely on the OpenCR board and is responsible for low-level motor control. The board handles the velocity commands sent from the Raspberry Pi and translates them into PWM (Pulse Width Modulation) signals for the motors to execute the desired movement.
+
 \subsection{ESP32}
-The last device is the ESP32 microcontroller. As no application layer is needed here, the architecture only spans the 3 lowest layers, as illustrated in \cref{fig:ESP32_system_overview}.
+The last device is the ESP32 microcontroller. As the ESP32 functions as an interface for all of the microphones, no application layer is involved. The architecture only spans the 3 lowest layers, as illustrated in \cref{fig:ESP32_system_overview}. 
+For sending the data from the ESP32 to the computer, the WiFi module on the ESP32 was originally used to send directly using MQTT, but it was found that this approach introduced a varying latency and inconsistency making the queue occasionally overflow. To solve this issue, SPI is used between the ESP32 and the Raspberry Pi, where the Pi then sends the data over MQTT to the computer. This gives a more consistent data transfer and moves the wireless communication to the Raspberry Pi. % It was found that the ESP32's ability to transfer data over MQTT wasn't sufficient, and therefore SPI (Serial-Peripheral-Interface) was used instead.
 
 On the physical interface layer, the ESP32 interfaces with the 3 microphones using the I2S protocol.
 
-On the communication layer, the ESP32 reads the audio data from the I2S RMA buffers and provides it for processing.
+On the communication layer, the ESP32 reads the audio data from the I2S DMA buffers and provides it for processing, and uses SPI to transmit the data to the Raspberry Pi
+
+On the processing layer the audio data is stamped, for keeping track of synchronisation on the PC.
 
