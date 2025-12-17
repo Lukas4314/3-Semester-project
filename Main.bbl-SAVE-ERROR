@@ -1,0 +1,282 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{OASIS_MQTT5}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=1ce83e568f995d1891f814074b77783d}{%
+           family={Standard},
+           familyi={S\bibinitperiod},
+           given={OASIS},
+           giveni={O\bibinitperiod}}}%
+      }
+      \strng{namehash}{1ce83e568f995d1891f814074b77783d}
+      \strng{fullhash}{1ce83e568f995d1891f814074b77783d}
+      \strng{bibnamehash}{1ce83e568f995d1891f814074b77783d}
+      \strng{authorbibnamehash}{1ce83e568f995d1891f814074b77783d}
+      \strng{authornamehash}{1ce83e568f995d1891f814074b77783d}
+      \strng{authorfullhash}{1ce83e568f995d1891f814074b77783d}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{MQTT Version 5.0}
+      \field{year}{2019}
+      \verb{urlraw}
+      \verb https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.pdf
+      \endverb
+      \verb{url}
+      \verb https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.pdf
+      \endverb
+    \endentry
+    \entry{whisper_paper}{misc}{}
+      \name{author}{6}{}{%
+        {{hash=a812c46caad94fc8701be37871f303ba}{%
+           family={Radford},
+           familyi={R\bibinitperiod},
+           given={Alec},
+           giveni={A\bibinitperiod}}}%
+        {{hash=37a96525bc70870f8509160f7eccf4b7}{%
+           family={Kim},
+           familyi={K\bibinitperiod},
+           given={Jong\bibnamedelima Wook},
+           giveni={J\bibinitperiod\bibinitdelim W\bibinitperiod}}}%
+        {{hash=1eed631dd35845a607a45dd35d948203}{%
+           family={Xu},
+           familyi={X\bibinitperiod},
+           given={Tao},
+           giveni={T\bibinitperiod}}}%
+        {{hash=7ae2a0efeaf9c031f9b420bcb1c19e54}{%
+           family={Brockman},
+           familyi={B\bibinitperiod},
+           given={Greg},
+           giveni={G\bibinitperiod}}}%
+        {{hash=6d3e5097d8af9c8bdf8388f00d5179ac}{%
+           family={McLeavey},
+           familyi={M\bibinitperiod},
+           given={Christine},
+           giveni={C\bibinitperiod}}}%
+        {{hash=8d569d1d5b8b5a7836017a98b430f959}{%
+           family={Sutskever},
+           familyi={S\bibinitperiod},
+           given={Ilya},
+           giveni={I\bibinitperiod}}}%
+      }
+      \strng{namehash}{ca3baa5a22057195db1c71be39b4c922}
+      \strng{fullhash}{e202abc1ca19ec84987f68e0aec49fa3}
+      \strng{bibnamehash}{ca3baa5a22057195db1c71be39b4c922}
+      \strng{authorbibnamehash}{ca3baa5a22057195db1c71be39b4c922}
+      \strng{authornamehash}{ca3baa5a22057195db1c71be39b4c922}
+      \strng{authorfullhash}{e202abc1ca19ec84987f68e0aec49fa3}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{eess.AS}
+      \field{eprinttype}{arXiv}
+      \field{title}{Robust Speech Recognition via Large-Scale Weak Supervision}
+      \field{year}{2022}
+      \verb{eprint}
+      \verb 2212.04356
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2212.04356
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2212.04356
+      \endverb
+    \endentry
+    \entry{huggingface_whisper}{online}{}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labeltitlesource}{title}
+      \field{title}{Transformer architectures for audio}
+      \field{year}{2025}
+      \verb{urlraw}
+      \verb https://huggingface.co/learn/audio-course/en/chapter3/introduction
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/learn/audio-course/en/chapter3/introduction
+      \endverb
+    \endentry
+    \entry{MathWorks_gccphat}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=2d2b0d998977e6379aad61f1b56ac3c1}{%
+           family={MathWorks},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{2d2b0d998977e6379aad61f1b56ac3c1}
+      \strng{fullhash}{2d2b0d998977e6379aad61f1b56ac3c1}
+      \strng{bibnamehash}{2d2b0d998977e6379aad61f1b56ac3c1}
+      \strng{authorbibnamehash}{2d2b0d998977e6379aad61f1b56ac3c1}
+      \strng{authornamehash}{2d2b0d998977e6379aad61f1b56ac3c1}
+      \strng{authorfullhash}{2d2b0d998977e6379aad61f1b56ac3c1}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{gccphat - Estimate time delay using generalized cross-correlation/phase transform}
+      \field{year}{2024}
+      \verb{urlraw}
+      \verb https://www.mathworks.com/help/phased/ref/gccphat.html
+      \endverb
+      \verb{url}
+      \verb https://www.mathworks.com/help/phased/ref/gccphat.html
+      \endverb
+    \endentry
+    \entry{motor_Specifications}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=64d23a1f4fb783828283a618c3ca3958}{%
+           family={robotis},
+           familyi={r\bibinitperiod}}}%
+      }
+      \strng{namehash}{64d23a1f4fb783828283a618c3ca3958}
+      \strng{fullhash}{64d23a1f4fb783828283a618c3ca3958}
+      \strng{bibnamehash}{64d23a1f4fb783828283a618c3ca3958}
+      \strng{authorbibnamehash}{64d23a1f4fb783828283a618c3ca3958}
+      \strng{authornamehash}{64d23a1f4fb783828283a618c3ca3958}
+      \strng{authorfullhash}{64d23a1f4fb783828283a618c3ca3958}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{motor Specifications}
+      \field{year}{2019}
+      \verb{urlraw}
+      \verb https://emanual.robotis.com/docs/en/dxl/x/xl430-w250/
+      \endverb
+      \verb{url}
+      \verb https://emanual.robotis.com/docs/en/dxl/x/xl430-w250/
+      \endverb
+    \endentry
+    \entry{SRP-PHAT}{article}{}
+      \name{author}{1}{}{%
+        {{hash=5ddb4f44ca9329cfdb93d17ee3925a96}{%
+           family={DiBiase},
+           familyi={D\bibinitperiod},
+           given={Joseph},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{5ddb4f44ca9329cfdb93d17ee3925a96}
+      \strng{fullhash}{5ddb4f44ca9329cfdb93d17ee3925a96}
+      \strng{bibnamehash}{5ddb4f44ca9329cfdb93d17ee3925a96}
+      \strng{authorbibnamehash}{5ddb4f44ca9329cfdb93d17ee3925a96}
+      \strng{authornamehash}{5ddb4f44ca9329cfdb93d17ee3925a96}
+      \strng{authorfullhash}{5ddb4f44ca9329cfdb93d17ee3925a96}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{month}{08}
+      \field{title}{A high-accuracy, low-latency technique for talker localization in reverberant environments using microphone arrays /}
+      \field{year}{2000}
+    \endentry
+    \entry{Abdulsatar_2019}{article}{}
+      \name{author}{5}{}{%
+        {{hash=d52ede1829fc2c4d1179071c99820c69}{%
+           family={Abdulsatar},
+           familyi={A\bibinitperiod},
+           given={Assim\bibnamedelima Ara},
+           giveni={A\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
+        {{hash=179d090b2089fa88d97720d510e4baad}{%
+           family={Davydov},
+           familyi={D\bibinitperiod},
+           given={V\bibnamedelima V},
+           giveni={V\bibinitperiod\bibinitdelim V\bibinitperiod}}}%
+        {{hash=712494884dfcba1dee8e0141b8d23d7a}{%
+           family={Yushkova},
+           familyi={Y\bibinitperiod},
+           given={V\bibnamedelima V},
+           giveni={V\bibinitperiod\bibinitdelim V\bibinitperiod}}}%
+        {{hash=93592425f8b8de7922f85e8fcf7c7e10}{%
+           family={Glinushkin},
+           familyi={G\bibinitperiod},
+           given={A\bibnamedelima P},
+           giveni={A\bibinitperiod\bibinitdelim P\bibinitperiod}}}%
+        {{hash=b76df364936c7e2b8a9230fcb57f10e7}{%
+           family={Rud},
+           familyi={R\bibinitperiod},
+           given={V\bibnamedelima Yu},
+           giveni={V\bibinitperiod\bibinitdelim Y\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {IOP Publishing}%
+      }
+      \strng{namehash}{98f67559bf900b198b76f1712e0b1f44}
+      \strng{fullhash}{45370fc1c775af8a97b6fdfd887f3d48}
+      \strng{bibnamehash}{98f67559bf900b198b76f1712e0b1f44}
+      \strng{authorbibnamehash}{98f67559bf900b198b76f1712e0b1f44}
+      \strng{authornamehash}{98f67559bf900b198b76f1712e0b1f44}
+      \strng{authorfullhash}{45370fc1c775af8a97b6fdfd887f3d48}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{The aim of this research is to identify gender and age from speech, the system consists of two parts. The first part is called pre-processing and future extraction. The second part is called classification. This research investigates an automatic gender and age recognizer from speech. First four formant frequencies and twelve MFCCs are used to extract relevant features to recognize the gender. K-NN has been used as a classifier for the age recognizer model, stimulated using MATLAB. A special selectin of solid feature is used in this work to improve the accuracy of the gender and age classifiers based on the frequency range that the features represent.}
+      \field{journaltitle}{Journal of Physics: Conference Series}
+      \field{number}{1}
+      \field{title}{Age and gender recognition from speech signals}
+      \field{volume}{1410}
+      \field{year}{2019}
+      \true{nocite}
+      \field{pages}{012073}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.1088/1742-6596/1410/1/012073
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1088/1742-6596/1410/1/012073
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1088/1742-6596/1410/1/012073
+      \endverb
+    \endentry
+    \entry{NXP_UM11732}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=bdd95750033c6d1e71751acaf3c3d8de}{%
+           family={Semiconductors},
+           familyi={S\bibinitperiod},
+           given={NXP},
+           giveni={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{bdd95750033c6d1e71751acaf3c3d8de}
+      \strng{fullhash}{bdd95750033c6d1e71751acaf3c3d8de}
+      \strng{bibnamehash}{bdd95750033c6d1e71751acaf3c3d8de}
+      \strng{authorbibnamehash}{bdd95750033c6d1e71751acaf3c3d8de}
+      \strng{authornamehash}{bdd95750033c6d1e71751acaf3c3d8de}
+      \strng{authorfullhash}{bdd95750033c6d1e71751acaf3c3d8de}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{UM11732: i.MX RT1170 Crossover Processor Reference Manual}
+      \field{year}{2021}
+      \true{nocite}
+      \verb{urlraw}
+      \verb https://www.nxp.com/docs/en/user-manual/UM11732.pdf
+      \endverb
+      \verb{url}
+      \verb https://www.nxp.com/docs/en/user-manual/UM11732.pdf
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

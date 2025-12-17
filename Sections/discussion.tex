@@ -4,10 +4,16 @@ As seen in \cref{sec:testing} the system that gets the best TDOA estimates, when
 
 \label{SEC:discussion}
 \subsection{MQTT}
-MQTT is used for real-time data transfer for sound localisation, since it already was implemented on the Turtlebot3 for ROS2 communication. However, MQTT is not suited for real-time data transfer since it is a lightweight pub-sub messaging protocol. However, through testing it was found that the required data rate for sending audio data was still lower than the maximum data rate of MQTT.
+MQTT is used for real-time data transfer for sound localisation, since it already was implemented on the Turtlebot3 for ROS2 communication. However, MQTT is not suited for real-time data transfer since it is a lightweight pub-sub messaging protocol. Through testing it was found that the required data rate for sending audio data was still lower than the maximum data rate of MQTT which made it appropriate to use in this project. 
 
 \subsection{AI model vs. Template based voice recognition}
 Instead of using an AI model like Whisper, a template based voice recognition system could have been implemented. This could possibly have made the transcription on the Raspberry Pi possible, however it would potentially make communication with a PC obsolete. A template based system would also be more difficult to expand in the future, as it would require new templates for new commands. Using an AI like Whisper is easier to implement and more flexible. Whisper is also better suited for an environment like a workshop with different sounds and works with any human.
 
+\subsection{movement control}
+
+As seen in the plotted path, there is a deviation from the software to the physical world. This makes it almost impossible to fix since the issue lies in the given hardware. Giving a constant deviation to the motors was tested, but ultimately could not solve the problem since the deviation is too variable and can change depending on the type of floor. Therefore, the current setup does not account for deviation. This will, of course, add up and become exponentially worse the longer the robot is driving. However, this is still considered sufficient, since this project focuses on movement control and less on actual motor control.
+
 % 3. Sound localisation method. Not really important, since we used GCC-PHAT which is a good method, and it doesn't seem to be an issue.
 
+\subsection{Sound localisation method}
+Other methods than GCC-PHAT exist, like for example SRP-PHAT, which can be seen in \cite{SRP-PHAT}. However, SRP-PHAT is both more computationally heavy also only marginally better when using a large amount of microphones (15-256 microphones), as seen in other papers researching SRP-PHAT. Since this project only uses three microphones, GCC-PHAT was chosen as it is both less computationally heavy, works well enough with a low amount of microphones and is easier to implement.
