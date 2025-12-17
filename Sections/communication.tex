@@ -3,7 +3,7 @@
 % https://mosquitto.org/man/mqtt-7.html <--- cool link
 % https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.pdf <-- also cool
 
-Communication between the different components in the system is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic) \cite{OASIS_MQTT5}. %This ensures a layered architecture where different components only know about the topics they need data from, instead of all other components, allowing for modularity and easy scalability. 
+Communication between the Raspberry Pi and the PC is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic) \cite{OASIS_MQTT5}. %This ensures a layered architecture where different components only know about the topics they need data from, instead of all other components, allowing for modularity and easy scalability. 
 
 MQTT messages consist of a fixed header, variable header and a payload. The fixed header contains information about the message type and flags, while the variable header contains topic name and packet identifier (if QoS $>$ 0).
 
@@ -33,15 +33,13 @@ A QoS of 1 means the message is delivered at least once, with acknowledgment, so
 
 A QoS of 2 means the message is delivered exactly once, with a four-step handshake to ensure no duplicates.
 
-All commands (Movement commands and audio data) are sent with a QoS of 1, to ensure they are received. 
+All commands in the project, movement commands and audio data, are sent with a QoS of 1, to ensure they are received. 
 
 The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in the table below:
 
 Max is 256 MB for MQTT, even when when using the mosquitto broker. 
 
-Therefore the limiting factor is the MTU (Maximum Transmission Unit) for TCP, which is around 1500 bytes, so MQTT messages should be kept below this size to avoid fragmentation.
-
-All of the MQTT logic is handled by the mosquitto library leveraged in the project. The library abstracts away the low-level details of MQTT message construction and parsing. 
+In this project the python library paho-mqtt handles the low-level details of the MQTT protocol and parsing. % Indsæt kilde for paho-mqtt
 
 \begin{figure}[H]
     \centering

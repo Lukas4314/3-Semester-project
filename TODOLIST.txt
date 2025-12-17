@@ -1,8 +1,17 @@
 Test, sound localization, robot commands (hvor præcist kører den, hvor meget afviger den)
 (evt. lave flere kommadoer robotten kan udføre, f.eks. return to home)
 
-Lav layered software architecture
-
 Diskussion (sound localization, whisper/faster whisper)
 
 Læs hele rapporten igennem som helhed og se om der mangler noget. Derefter lave introduktion og konklusion, når der er skabt overblik over hele rapporten.
+
+MAGNE:
+Billede af ESP mermaid i rapport
+
+RUNE:
+System_setup linje 91, kig om det er sandt.
+System_setup linje 93, kig om det er sandt.
+
+ALEX:
+Communication linje 38, der mangler et eksempel på PUBLISH table.
+Skriv om hvad mosquitto er.

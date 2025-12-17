@@ -6,13 +6,14 @@
 The highest level of movement command comes in the form of human speech but has the goal of controlling the movement of the robot:
 human speech → text → command → movement control.
 
-After a command is sent over MQTT to the Raspberry Pi, a ROS2 node converts the given distance into velocity commands that satisfy the requested command. The velocity command is published to the cmd\_vel topic, which the TurtleBot3 node subscribes to. The TurtleBot3 node then translates the velocity commands into motor control commands and sends them to the OpenCR board over UART. The OpenCR board can then control the motors using its built-in motor controller.
+After a command is sent over MQTT to the Raspberry Pi, a ROS2 node converts the given distance into velocity commands that satisfy the requested command. The velocity command is published to the cmdvel topic, which the TurtleBot3 node subscribes to. The TurtleBot3 node then translates the velocity commands into motor control commands and sends them to the OpenCR board over UART. The OpenCR board can then control the motors using its built-in motor controller.
 
-While the motors are driving, the OpenCR board sends positional data from the encoders on the board back to the ROS2 environment. This makes it possible to correct the motors at runtime by continuously checking the current position and adjusting the velocity of each motor to keep them synchronized.
+While the motors are driving, the OpenCR board sends positional data from the encoders on the board back to the ROS2 environment. This makes it possible to drive the exact distance by continuously checking for position until the goal is reached.
 
-The movement control node uses a P-regulating algorithm to calculate the difference in position between the two motors and adjust the velocity of each motor based on the size of the offset between them.
+Furthermore, the motor mounted on the TurtleBot has an inbuilt PID algorithm \cite{motor_Specifications} which makes sure the individual motor has more accruate velocity.
 
-This solution is necessary because the motors do not drive at exactly the same velocity, and over time this offset would create a curved path instead of a straight path. It is also necessary when the return command is used, as the robot must know its actual position, which would be lost if no regulation or position feedback were used.
+Both PID control and position-based driving are necessary if the robot should be able to trace back to its original position.
+
 
 
 

@@ -51,9 +51,21 @@ The normalised cross-spectrum can then be used to calculate the TDOA by first ap
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1.0\linewidth]{Pictures/GCC-PHAT_TDOA_Example.png}
-    \caption{Example of the GCC-PHAT TDOA calculation on two signals received from the ESP32, where the peak indicates the time delay between the two signals with the highest correlation.}
-    \label{fig:GCC-PHAT_TDOA_Example}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Pictures/Constructed-signal-GCC-PHAT_TDOA_Example.png}
+        \caption{Constructed signal with known offset}
+        \label{fig:Constructed-signal-GCC-PHAT_TDOA_Example}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Pictures/GCC-PHAT_TDOA_Example.png}
+        \caption{Real audio data from ESP32}
+        \label{fig:GCC-PHAT_TDOA_Example}
+    \end{subfigure}
+    \caption{Examples of GCC-PHAT TDOA calculation where the peak indicates the time delay between the two signals with the highest correlation. (a) shows a constructed signal with random noise shifted by a known sample amount to verify the calculation, while (b) shows real signals received from the ESP32.}
+    \label{fig:GCC-PHAT_combined}
 \end{figure}
 
 The difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
@@ -61,7 +73,7 @@ The difference is divided by the sample rate and then multiplied by the speed of
 Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation.
 
 \subsection{Triangulation}
-By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 10 cm between each point. The reason for a 3D grid is because the microphones create a plane in xy-plane, which could result in symmetrical solutions with a negative z-value (essentially underground). These solutions are automatically not found since the grid only searches for solutions between 0 and 2 meters. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit (the point with the smallest difference) is chosen as the calculated position of the sound source.
+By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 20 cm between each point. The reason for a 3D grid is because the microphones create a plane in xy-plane, which could result in symmetrical solutions with a negative z-value (essentially underground). These solutions are automatically not found since the grid only searches for solutions between 0 and 2 meters. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit (the point with the smallest difference) is chosen as the calculated position of the sound source. For a point to satisfy all three TDOA measurements, the TDOA value has to be perfect, therefore the calculated position is an estimation based on the imperfect TDOA-values.
 
 \begin{equation}
 \begin{align}
@@ -90,7 +102,7 @@ In total the formula for finding the position of the sound source becomes:
     \text{argmin}_{P} \sum_{(a,b)} (\|P - M_b\| - \|P - M_a\| - \Delta d^{measured}_{ab})^2
 \end{equation}
 
-In practice the 3D grid (10x10x2 meter) for traingulation is designed with a space of 10 cm between each point making the error margin a maximum of $\sqrt{5^2 + 5^2 + 5^2} = 8.66$ cm. However, an error of this size isn't a point of concern, since the error is relatively small. An example of the triangulation on perfect TDOA-values that match a certain point can be seen in \cref{fig:Triangulation_Example}.
+In practice a 3D grid, which is a cylinder with 15 meter radius and 2 meter height, is designed for triangulation with a space of 20 cm between each point making the error margin a maximum of $\sqrt{10^2 + 10^2} = 14.14$ cm. However, an error of this size isn't a point of concern, since the error is relatively small. An example of the triangulation on perfect TDOA-values that match a certain point can be seen in \cref{fig:Triangulation_Example}.
 
 \begin{figure}[H]
     \centering

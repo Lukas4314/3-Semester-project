@@ -27,6 +27,37 @@ The results are showed in \cref{tab:trancriptiontest}
 \subsection{Command identification}
 Small unit tests were created to test the command identification system. For each command different sentences were created to check the robustness of the process. The results are shown in \cref{tab:commandidentificationtest}.
 
+The results can be seen in \cref{tab:Sound_localisation_test_results}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c c c|}
+\hline
+\textbf{Parameter} & \textbf{tries} & \textbf{success} & \textbf{percentage} \\
+\hline
+GCC-PHAT with filter & $469$ & $459$ & $97.9 \%$\\
+GCC-PHAT without filter & $236$ & $229$ & $97 \%$\\
+GCC-Phat weight of 0.1 & $233$ & $230$ & $98.7\%$\\
+GCC-Phat weight of 0.2 & $216$ &  & $92.7\%$ \\
+GCC-Phat weight of 0.3 & $5$ &  & $2.1\%$\\
+GCC-Phat weight of 0.4 & $12$ &  & $5.2\%$ \\
+GCC-Phat weight of 0.5 & $3$ &  & $1.3\%$ \\
+GCC-Phat weight of 0.6 & $4$ &  & $1.7\%$ \\
+GCC-Phat weight of 0.7 & $2$ &  & $0.8\%$ \\
+GCC-Phat weight of 0.8 & $1$ &  & $0.4\%$ \\
+GCC-Phat weight of 0.9 & $1$ &  & $0.4\%$ \\
+GCC-Phat weight of 1.0 & $0$ &  & $0\%$ \\
+\hline
+2k samples & $242$ & $235$ & $97.2\%$ \\
+4k samples & $235$ & $235$ & $100\%$\\
+8k samples & $42$ & $42$ & $100\%$\\
+\hline
+\end{tabular}
+\caption{Test results for sound localisation with different parameters}
+\label{tab:Sound_localisation_test_results}
+\end{table}
+
+
 
 %Eksempel tabel
 \begin{table}
@@ -65,6 +96,57 @@ GCC Phat was tested using real time data from the 3 microphones while someone sa
 \end{figure}
 
 The trend shows the best configuration was 2048 samples, a phat weight of 0.9 and a bandpass filter from 300 Hz to 3400 Hz. 
+after the algorithm:
+the algorithm Successfully found the exact moment where "come" where said, which satisfyes out needs for later calculations with GGC_PHAT
+
+
+\subsection{Movement control}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Pictures/path.png}
+    \caption{path}
+    \label{fig:path}
+
+\end{figure}
+The blue line shows the path which was plotted based on the difference in encoding data between the two motors, which gives the position the TurtleBot thinks it has. The orange line shows 20 observed data points in the physical world. The graph has 10 different runs.
+
+It is noticeable that the deviation is exponential, which means the longer the motors are driving, the more inaccurate the system becomes compared to the physical world. The data also shows the randomness of the deviation, which makes it harder to correct.
+
+Note: physical observations were made with human observation, so small inaccuracies may occur.
+
+
+
+
+
+
 
 \subsection{Full system testing}
+
+%tabel start posotion
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l | l l}
+        \toprule
+        \textbf{movement command} & \textbf{actual position} & \textbf{diviation from (0,0)} \\
+        \midrule
+
+    +73 cm $\rightarrow$ -40 deg $\rightarrow$ +112 cm $\rightarrow$ return 3 & () & () \\
+
+    +45 cm $\rightarrow$ +160 deg $\rightarrow$ +30 cm $\rightarrow$ -95 deg $\rightarrow$ return 4 & () & () \\
+
+    +90 cm $\rightarrow$ -120 deg $\rightarrow$ +55 cm $\rightarrow$ +45 deg $\rightarrow$ +80 cm $\rightarrow$ return 5 & () & () \\
+
+    +25 cm $\rightarrow$ +90 deg $\rightarrow$ +70 cm $\rightarrow$ -135 deg $\rightarrow$ +40 cm $\rightarrow$ +30 deg $\rightarrow$ return 6 & () & () \\
+
+    +60 cm $\rightarrow$ -90 deg $\rightarrow$ +40 cm $\rightarrow$ +135 deg $\rightarrow$ +90 cm $\rightarrow$ -45 deg $\rightarrow$ +30 cm $\rightarrow$ return 7 & () & () \\
+
+
+        \bottomrule
+    \end{tabular}
+    \caption{return}
+    \label{tab:return}
+\end{table}
+
+% come here test
+
 
