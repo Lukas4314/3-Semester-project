@@ -57,8 +57,18 @@ the algorithm Successfully found the exact moment where "come" where said, which
 
 
 \subsection{Movement control}
-%striglt line plot m joint state
-%striglt line plot m actual data
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Pictures/path.png}
+    \caption{path}
+    \label{fig:path}
+
+\end{figure}
+The blue line shows the path which was plotted based on the difference in encoding data between the two motors, which gives the position the TurtleBot thinks it has. The orange line shows 20 observed data points in the physical world. The graph has 10 different runs.
+
+It is noticeable that the deviation is exponential, which means the longer the motors are driving, the more inaccurate the system becomes compared to the physical world. The data also shows the randomness of the deviation, which makes it harder to correct.
+
+Note: physical observations were made with human observation, so small inaccuracies may occur.
 
 
 
@@ -69,7 +79,7 @@ the algorithm Successfully found the exact moment where "come" where said, which
 \subsection{Full system testing}
 
 %tabel start posotion
-\begin{table}
+\begin{table}[H]
     \centering
     \begin{tabular}{l | l l}
         \toprule
