@@ -51,6 +51,9 @@ ACTIONS = {
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
     "dop": actionEnum.STOP,
+    "bob": actionEnum.STOP,
+    "bop": actionEnum.STOP,
+    "bock": actionEnum.STOP,
 
     "come": actionEnum.COME,    
     
@@ -300,7 +303,8 @@ def string_to_command(input_string):
         # unit handling
         # For MOVE: convert linear units to meters
         # For TURN: convert degrees/radians to radians
-        if action != "turn":
+        if action != "turn" and next_unit not in ("degrees", "radians"):
+            
             next_distance, next_unit = apply_unit_conversion(next_distance, next_unit)
         else:
             # next_unit is canonical "degrees" or "radians"
@@ -312,7 +316,7 @@ def string_to_command(input_string):
             else:
                 # invalid unit for a turn
                 print(f"Invalid unit '{next_unit}' for turn.")
-                return None
+                continue
         
         cmd = {
             "action": action,

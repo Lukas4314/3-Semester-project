@@ -64,13 +64,13 @@ struct I2SBuffer
 };
 
 // Called after a transaction is queued and ready for pickup by master. We use this to set the handshake line high.
-void my_post_setup_cb(spi_slave_transaction_t *trans)
+IRAM_ATTR void my_post_setup_cb(spi_slave_transaction_t *trans)
 {
     gpio_set_level(DATA_READY_GPIO, 1);
 }
 
 // Called after transaction is sent/received. We use this to set the handshake line low.
-void my_post_trans_cb(spi_slave_transaction_t *trans)
+IRAM_ATTR void my_post_trans_cb(spi_slave_transaction_t *trans)
 {
     gpio_set_level(DATA_READY_GPIO, 0);
 }
