@@ -98,7 +98,7 @@ def peak_lag(corr):
 def TDOA(cross_corr):
 	return peak_lag(cross_corr)
 
-def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = False, phat_weight_value=1.0):
+def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_value=0.9):
 	"""
 	Calculate TDOA between signal1 and signal2.
 	Returns: tdoa in samples where positive value means signal2 arrives AFTER signal1
