@@ -88,7 +88,7 @@ The transcribed text is then interpreted for commands on the application layer, 
 
 The Raspberry Pi similarly has a processing and communication layer. However, as the robot also has to control the motors, an additional physical interface layer is needed, while the application layer is not needed. The architecture of the Raspberry Pi is illustrated in \cref{fig:RPI_system_overview}.
 
-From the top, layer 2 is the processing layer. Here, a ROS2 node gets positional commands from the MQTT client in the communication layer and translates them into velocity commands that the turtlebot can interpret. Then the messages are published on a ROS2 topic. Furthermore, joint states from the Turtlebot are also read on a ROS2 topic and used for a P-regulator to ensure the motors are moving the correct speed. % Rune skal kigge her
+From the top, layer 2 is the processing layer. Here, a ROS2 node gets positional commands from the MQTT client in the communication layer and translates them into velocity commands that the turtlebot can interpret. Then the messages are published on a ROS2 topic. Furthermore, joint states from the Turtlebot are also read on a ROS2 topic and used for controlling the mortoes based on desired path.
 
 Layer 3 is the communication layer. Besides the MQTT client, that subscribes to positional commands from the PC, it also hosts the MQTT broker that all the clients are connected to. The velocity commands published on the ROS2 topic in the processing layer are picked up by the Turtlebot node, which forwards them via UART (Universal Asynchronous Receiver-Transmitter) to the OpenCR board for motor control, as well as reading joint states from the board and publishing them on a ROS2 topic for the processing layer to use.
 
