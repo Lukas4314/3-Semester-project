@@ -11,7 +11,7 @@ But since Whisper does not operate in the time domain, it is not possible to lin
 
 To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is ``come'', which is usually around 2--7 samples, depending on how clearly the word was said and the amount of noise. Then, the sample located in the middle of these 2--7 samples is chosen as the best possible sample to calculate the location of origin.
 
-This method requires heavy computing because Whisper has to decode segments 20--30 times before finding the optimal index. Therefore, the model is loaded into VRAM and processed by a GPU, which allows for parallel processing and much higher bandwidth. This is done using the CUDA driver (Compute Unified Device Architecture), which handles how each process is handled on a microarchitecture level.
+This method requires heavy computing because Whisper has to decode segments 20--30 times before finding the optimal index. Therefore, the model is loaded into VRAM and processed by a GPU, which allows for parallel processing and much higher bandwidth. This is done using the CUDA driver (Compute Unified Device Architecture), which allows efficiently schedule and execute tensor operations on the GPU \cite{cuda}.
 
 
 \subsection{GCC-PHAT}

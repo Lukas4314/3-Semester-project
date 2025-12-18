@@ -154,3 +154,42 @@ Note: physical observations were made with human observation, so small inaccurac
 % come here test
 
 
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l | l}
+        \toprule
+        \textbf{Command} & \textbf{Success Rate (\%)} \\
+        \midrule
+
+        Move Forward & 95 \\
+
+        Move backward & 95 \\
+
+        Turn Left & 92 \\
+
+        Turn Right & 90 \\
+
+        come here & 98 \\
+
+        return & 98 \\
+
+        Stop & 98 \\
+
+        \bottomrule
+    \end{tabular}
+    \caption{Robot Command Execution Accuracy}
+    \label{tab:command_accuracy}
+\end{table}
+
+This test was done using the whole system. A success is defined by human speech resulting in correct robot movement. For the ``come here'' command, an error of more than 30 degrees is counted as a fail. For ``move'' and ``turn'', an error of more than 5\% of the expected path is counted as a fail.
+
+
+
+
+
+
+
+
+
+
+
