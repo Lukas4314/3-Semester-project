@@ -120,38 +120,38 @@ Note: physical observations were made with human observation, so small inaccurac
 
 
 
-
-
-
-
-\subsection{Full system testing}
-
-%tabel start posotion
+% tabel start position
 \begin{table}[H]
     \centering
     \begin{tabular}{l | l l}
         \toprule
-        \textbf{movement command} & \textbf{actual position} & \textbf{diviation from (0,0)} \\
+        \textbf{movement command} & \textbf{actual position} & \textbf{deviation from (0,0)} \\
         \midrule
 
-    +73 cm $\rightarrow$ -40 deg $\rightarrow$ +112 cm $\rightarrow$ return 3 & () & () \\
+    +73 cm $\rightarrow$ -40 deg $\rightarrow$ +112 cm $\rightarrow$ return 3 & (15,1) & $15.03\,\text{cm}$ \\
 
-    +45 cm $\rightarrow$ +160 deg $\rightarrow$ +30 cm $\rightarrow$ -95 deg $\rightarrow$ return 4 & () & () \\
+    +45 cm $\rightarrow$ +160 deg $\rightarrow$ +30 cm $\rightarrow$ -95 deg $\rightarrow$ return 4 & (5,11) & $12.08\,\text{cm}$ \\
 
-    +90 cm $\rightarrow$ -120 deg $\rightarrow$ +55 cm $\rightarrow$ +45 deg $\rightarrow$ +80 cm $\rightarrow$ return 5 & () & () \\
+    +90 cm $\rightarrow$ -120 deg $\rightarrow$ +55 cm $\rightarrow$ +45 deg $\rightarrow$ +80 cm $\rightarrow$ return 5 & (20,9) & $21.93\,\text{cm}$ \\
 
-    +25 cm $\rightarrow$ +90 deg $\rightarrow$ +70 cm $\rightarrow$ -135 deg $\rightarrow$ +40 cm $\rightarrow$ +30 deg $\rightarrow$ return 6 & () & () \\
-
-    +60 cm $\rightarrow$ -90 deg $\rightarrow$ +40 cm $\rightarrow$ +135 deg $\rightarrow$ +90 cm $\rightarrow$ -45 deg $\rightarrow$ +30 cm $\rightarrow$ return 7 & () & () \\
-
+    +25 cm $\rightarrow$ +90 deg $\rightarrow$ +70 cm $\rightarrow$ -135 deg $\rightarrow$ +40 cm $\rightarrow$ +30 deg $\rightarrow$ return 6 & (22,15) & $26.63\,\text{cm}$ \\
 
         \bottomrule
     \end{tabular}
-    \caption{return}
+    \caption{Return test}
     \label{tab:return}
 \end{table}
 
-% come here test
+
+
+This test was done to show the accuracy of the return command; both the start and end position are expected to be at $(0,0)$.
+
+As shown in the straight path graph, the robot has less accuracy the longer it is driving. This is further proven by the deviation from $(0,0)$ being greater the longer the robot has to return.
+
+Besides the physical inaccuracies, the robot does return to the correct position 100\% of the time.
+
+
+\subsection{Full system testing}
 
 
 \begin{table}[H]
@@ -161,19 +161,19 @@ Note: physical observations were made with human observation, so small inaccurac
         \textbf{Command} & \textbf{Success Rate (\%)} \\
         \midrule
 
-        Move Forward & 95 \\
+        Move Forward & 80 \\
 
-        Move backward & 95 \\
+        Move backward & 85 \\
 
-        Turn Left & 92 \\
+        Turn Left & 80 \\
 
-        Turn Right & 90 \\
+        Turn Right & 75 \\
 
-        come here & 98 \\
+        come here & 40 \\
 
-        return & 98 \\
+        return & 85 \\
 
-        Stop & 98 \\
+        Stop & 10 \\
 
         \bottomrule
     \end{tabular}
@@ -181,8 +181,21 @@ Note: physical observations were made with human observation, so small inaccurac
     \label{tab:command_accuracy}
 \end{table}
 
-This test was done using the whole system. A success is defined by human speech resulting in correct robot movement. For the ``come here'' command, an error of more than 30 degrees is counted as a fail. For ``move'' and ``turn'', an error of more than 5\% of the expected path is counted as a fail.
+This test was done using the whole system while being in a semi-noisy environment, meaning other people talking and machines running in the background. A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
 
+For the ``come here'' command, an error of more than 30 degrees is counted as a fail.
+
+For ``move'' and ``turn'', an error of more than 10\% of the expected path is counted as a fail.
+
+For ``return'', an error of more than 20 cm from the expected position is counted as a fail. Return was always made after 3 other movement commands
+
+The ``stop'' command has to be said while the TurtleBot is moving.
+
+It was observed that the largest source of error was the Whisper model transcribing something incorrectly, which is likely due to bad microphone quality or random noise.
+
+It is noticeable that the ``stop'' command has a very low chance of working. This is because the motors are noisy while driving, which makes the already poor sound quality even worse and almost impossible for Whisper to transcribe correctly.
+
+%Note: to simulate a noisy environment, the robot was taken to a room where other people were doing robotics projects, which made noise. This noise is not constant or consistent, which means the results may differ depending on the amount of noise in the room at the time of the test.
 
 
 
