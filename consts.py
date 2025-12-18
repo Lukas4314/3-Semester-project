@@ -9,6 +9,6 @@ MQTT_TOPIC_BATCH = "I2SBatch"
 RED = "\033[31m"
 RED_END = "\033[0m"
 SAMPLE_RATE = 16000
-USE_GPU = True
+USE_GPU = False
 SHOULD_PLOT = False
 SHOULD_LOG = False

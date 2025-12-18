@@ -36,7 +36,7 @@
 
 #define SAMPLE_RATE 16000
 #define NUM_I2S_BUFFERS 10
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 960
 
 QueueHandle_t i2sQueue;
 
