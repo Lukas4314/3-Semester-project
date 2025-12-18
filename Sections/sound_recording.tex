@@ -1,4 +1,5 @@
 \section{Sound Recording}
+\label{sec:sound_recording}
 For soundrecording 3 I2S (Inter-Integrated-Circuit-Sound) MEMS (Micro-Electro-Mechanical-System) microphones are used \cite{DFRobot_Fermion_I2S_MEMS_Microphone}, as they have the ability to share the same clock, ensuring that the samples are taken at the same time, which later can be compared to find the phase difference between the signals. Since the microphones use I2S, an interface is needed to interact with the microphones, but unfortunately the Raspberry Pi only has one I2S interface. A single I2S interface can be used to handle 2 microphones, by using both the left and right channels which are normally used for stereo sound. To be able to use more than 2 microphones an ESP32 is used, as it has 2 I2S interfaces, allowing it to handle up to 4 microphones, but in this case only 3 are used, resulting in 1 stereo and 1 mono.
 
 The I2S protocol requires 3 lines \cite{ESP32_I2S}: \newline

@@ -2,25 +2,24 @@
 \label{SEC:sound_localisation}
 The sound localisation is done on the processing layer. The goal of the sound localisation is to find the position of the person giving commands. For this GCC-PHAT (Generalised Cross Correlation-Phase Transform) is used to find the TDOA (Time Delay Of Arrival) between each pair of microphones.
 
-\subsection{Locating time of command}\label{sec:Locating_time_of_command}
+\subsection{Word isolation procedure}\label{sec:Locating_time_of_command}
 
 %husk og ændre 80 sampels til det rigtige tal
-Before calculating the position of the sound source, the exact sample where the command was said must be found, to avoid accidentally calculating the position of random noise. To keep track of samples, the ESP32 gives every sample an ID number, which is also sent through MQTT alongside the data.
+Before calculating the position of the sound source, the exact sample where the command was said must be found, to avoid accidentally calculating the position of random noise. The data is already timestamped from the ESP32, as seen in \cref{sec:sound_recording}, this is used to reference all of the audio data, where a bucket has 960 samples and a single stamp.
 
-But since Whisper does not operate in the time domain, it is not possible to link a Whisper output with an ID number in the time domain. Therefore, the first and last ID number is saved for every segment sent to Whisper, making it possible to link a Whisper segment with an array of samples.
+Since the Whisper model does not operate in the time domain, it is not possible to directly link a text output with an timestamp in the time domain. Therefore, the first and last timestamp is saved for every new transcription, making it possible to link a Whisper segment with an array of samples.
 
-To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is ``come'', which is usually around 2--7 samples, depending on how clearly the word was said and the amount of noise. Then, the sample located in the middle of these 2--7 samples is chosen as the best possible sample to calculate the location of origin.
+To narrow down the audio data, which is known to contain ``come here'', Whisper is continuously given a smaller and smaller number of samples until the only detectable word is ``come'' which is usually around 2-7 buckets at a sample rate of 16 kHz. Then, the timestamp of the bucket located in the middle of the interval is chosen as the best possible timestamp for audio data to later be used for GCC-PHAT.
 
 This method requires heavy computing because Whisper has to decode segments 20--30 times before finding the optimal index. Therefore, the model is loaded into VRAM and processed by a GPU, which allows for parallel processing and much higher bandwidth. This is done using the CUDA driver (Compute Unified Device Architecture), which allows efficiently schedule and execute tensor operations on the GPU \cite{cuda}.
 
-
 \subsection{GCC-PHAT}
-GCC-PHAT is an algorithm that calculates the TDOA of a signal in relation to a reference signal \cite{MathWorks_gccphat}. This is used to calculate where the signal is coming from by finding the time delay between 2 different microphones spaced by a known distance and multiplying the time delay with the speed of sound. The time delay is found by comparing the phase difference for all frequencies between two signals using cross-correlation.
+GCC-PHAT is an algorithm that calculates the TDOA of one signal in relation to another signal \cite{MathWorks_gccphat}. This is used to calculate, where the signal is coming from by finding the time delay between 2 different microphones spaced by a known distance and multiplying the time delay with the speed of sound. The time delay is found by comparing the phase difference for all frequencies between two signals using cross-correlation.
 
 In order to calculate the TDOA of a signal, the signal must be converted to frequency domain which is done by using FFT (Fast Fourier Transform). When the signal is in the frequency domain, each frequency is represented by a complex number:
 
 \begin{equation}
-    a + bi
+    z = a + bi
 \end{equation}
 Where $a$ is the real part and $bi$ is the imaginary part. From this the amplitude and phase can be calculated:
 \begin{equation}
@@ -32,10 +31,9 @@ Where A is the amplitude, and
 \end{equation}
 Where $\phi$ is the phase.
 
-While in the frequency domain, a very precise band-pass filter can also easily be applied without wasting computing time. The chosen structure of the filter is based on the telephone speech band, which is 300-3400 Hz, because that is where human speech is most represented. To apply the filter, the frequency of every FFT bin is calculated with \( f_k = \frac{k\, f_s}{N} \) where both the amplitude and phase information is set to zero if it is not inside the telephone speech band. Filtering out frequencies other than human speech will increase the likelihood of GCC\_PHAT calculating the TDOA of a human speaking instead of the TDOA of some noise.
+While in the frequency domain, a perfect band-pass filter can also easily be applied, by zeroing out frequencies outside the desired range. The chosen structure of the filter is based on the telephone speech band, which is 300-3400 Hz, because that is where human speech is most represented. Filtering out frequencies other than human speech will increase the likelihood of GCC-PHAT calculating the TDOA of a human speaking instead of the TDOA of random noise.
 
-The signal can be compared to a reference signal by multiplying the signal with the complex conjugate of the reference signal. This is because multiplying the reference signal with the complex conjugate of another signal gives the phase difference between the two signals, as represented by the difference in the imaginary part:
-
+2 signals can be compared by finding the product of one signal with the complex conjugate of the other signal, this results in the phase differnece as represented by the difference in the imaginary part:
 \begin{equation}
 X_1(f) \cdot X_2^*(f) = (A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2}) = A_1 A_2 e^{i (\phi_1 - \phi_2)}
 \end{equation}
@@ -44,39 +42,28 @@ Where $X_1(f)$ is the reference signal, $X_2^*(f)$ is the complex conjugate of t
 $A_1$ and $A_2$ are the amplitudes of the signals.
 $\phi_1$ and $\phi_2$ are the phases of the signals.
 
-This is the standard cross-spectrum, which is used in standard cross-correlation known as xcorr. As seen in the formula the standard cross-correlation compares the magnitude of the signals (since the amplitudes are multiplied by the phase difference) which can vary a lot depending on the environment. In this project GCC-PHAT is instead used, because it only keeps the phase difference by normalising the cross-spectrum. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. The formula therefore becomes:
+This is the standard cross-spectrum, which is used in standard cross-correlation known as xcorr (INDSÆT KILDE). As seen in the formula the standard cross-correlation compares the magnitude of the signals, since the amplitudes are multiplied by the phase difference, which can vary a lot depending on the environment. In this project GCC-PHAT is instead used, because it only keeps the phase difference by normalising the cross-spectrum. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. 
+
+Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation.
+The formula therefore becomes:
 
 \begin{equation}
-    \frac{X_1(f) \cdot X_2^*(f)}{|X_1(f) \cdot X_2^*(f)|} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{|(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})|} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{A_1 A_2} = e^{i (\phi_1 - \phi_2)}
+    \frac{X_1(f) \cdot X_2^*(f)}{|X_1(f) \cdot X_2^*(f)|^{\beta}} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{|(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})| ^{\beta}} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{(A_1 A_2)^{\beta}} = \frac{e^{i (\phi_1 - \phi_2)}}{(A_1 A_2)^{\beta-1}}
 \end{equation}
 
-The normalised cross-spectrum can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. The TDOA of the signal is then found by calculating at which sample the maximum amplitude occurs, as seen in \cref{fig:GCC-PHAT_TDOA_Example}.
+The normalised cross-spectrum can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. The sample offset of the signal is then found by calculating at which sample the maximum amplitude occurs, as seen in \cref{fig:GCC-PHAT_TDOA_Example}.
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{Pictures/Constructed-signal-GCC-PHAT_TDOA_Example.png}
-        \caption{Constructed signal with known offset}
-        \label{fig:Constructed-signal-GCC-PHAT_TDOA_Example}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{Pictures/GCC-PHAT_TDOA_Example.png}
-        \caption{Real audio data from ESP32}
-        \label{fig:GCC-PHAT_TDOA_Example}
-    \end{subfigure}
-    \caption{Examples of GCC-PHAT TDOA calculation where the peak indicates the time delay between the two signals with the highest correlation. (a) shows a constructed signal with random noise shifted by a known sample amount to verify the calculation, while (b) shows real signals received from the ESP32.}
-    \label{fig:GCC-PHAT_combined}
+    \includegraphics[width=0.8\linewidth]{Pictures/GCC-PHAT_TDOA_Example.png}
+    \caption{Example of the GCC-PHAT TDOA calculation on two signals received from the microphones on the robot, where the peak indicates the time delay between the two signals with the highest correlation.}
+    \label{fig:GCC-PHAT_TDOA_Example}
 \end{figure}
 
-The difference is divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different ways of comparing signals (microphone pair: 0 and 1, 0 and 2 and 1 and 2). 
-
-Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation.
+The sample offset is then divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different pairs, corresponding to the microphone pairs: 1 and 2, 1 and 3 and 2 and 3. 
 
 \subsection{Triangulation}
-By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 20 cm between each point. The reason for a 3D grid is because the microphones create a plane in xy-plane, which could result in symmetrical solutions with a negative z-value (essentially underground). These solutions are automatically not found since the grid only searches for solutions between 0 and 2 meters. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit (the point with the smallest difference) is chosen as the calculated position of the sound source. For a point to satisfy all three TDOA measurements, the TDOA value has to be perfect, therefore the calculated position is an estimation based on the imperfect TDOA-values.
+By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 20 cm between each point. By having all the microphones on the xy-plane, a solution mirrored in this plane would therefore exist with a negatve z-value. These solutions are automatically not found since the grid only searches for solutions between 0 and 2 meters on the z-axis. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit, the point with the smallest difference, is chosen as the calculated position of the sound source. Since the TDOA values are not perfect, there will not be a point corresponds to all three TDOA pairs simultaneously. The point of sound origin is therefore estimated, by calculating the theoretical TDOA for each point in the grid and comparing it to the measured TDOA. The expected TDOA for each microphone pair can be calculated by finding the distance from the point P to each microphone and finding the difference:
 
 \begin{equation}
 \begin{align}
@@ -85,6 +72,7 @@ By knowing the distance between the three microphones and the TDOA between each 
 \Delta d^{expected}_{23} = \|P - M_3\| - \|P - M_2\| \\
 \end{align}
 \end{equation}
+Here P is the point in the grid being evaluated and $M_a$ is the position of microphone a.
 
 We also have the calculated TDOA from GCC-PHAT which can be used to find the measured distance by multiplying with the speed of sound:
 
@@ -105,7 +93,7 @@ In total the formula for finding the position of the sound source becomes:
     \text{argmin}_{P} \sum_{(a,b)} (\|P - M_b\| - \|P - M_a\| - \Delta d^{measured}_{ab})^2
 \end{equation}
 
-In practice a 3D grid, which is a cylinder with 15 meter radius and 2 meter height, is designed for triangulation with a space of 20 cm between each point making the error margin a maximum of $\sqrt{10^2 + 10^2} = 14.14$ cm. However, an error of this size isn't a point of concern, since the error is relatively small. An example of the triangulation on perfect TDOA-values that match a certain point can be seen in \cref{fig:Triangulation_Example}.
+In practice a 3D grid, which is a cylinder with a 15 meter radius and a 2 meter height, is designed for triangulation with a space of 20 cm between each point making the error margin a maximum of $\sqrt{10^2 + 10^2} = 14.14$ cm. However, an error of this size isn't a point of concern, since the error is relatively small. An example of the triangulation on perfect TDOA-values that match a certain point can be seen in \cref{fig:Triangulation_Example}.
 
 \begin{figure}[H]
     \centering
