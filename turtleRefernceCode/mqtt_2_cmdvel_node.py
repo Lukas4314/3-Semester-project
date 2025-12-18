@@ -1,102 +1,418 @@
+#!/usr/bin/env python3
+import json
+import math
+import time
+import csv
+from pathlib import Path
+from collections import deque
+from dataclasses import dataclass
+from typing import Optional
+import threading
+
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
+from sensor_msgs.msg import JointState
 import paho.mqtt.client as mqtt
-import json
 
+# TurtleBot3 Burger defaults
 BURGER_MAX_LIN_VEL = 0.22
 BURGER_MAX_ANG_VEL = 2.84
 
-def constrain(input_vel, low_bound, high_bound):
-    if input_vel < low_bound:
-        input_vel = low_bound
-    elif input_vel > high_bound:
-        input_vel = high_bound
-    else:
-        input_vel = input_vel
-    
-    return input_vel
-
-def check_linear_limit_velocity(velocity):
-    return constrain(velocity, -BURGER_MAX_LIN_VEL, BURGER_MAX_LIN_VEL)
-    
+WHEEL_RADIUS = 0.033
+WHEEL_SEPARATION = 0.160
 
 
-def check_angular_limit_velocity(velocity):
-    return constrain(velocity, -BURGER_MAX_ANG_VEL, BURGER_MAX_ANG_VEL)
-    
+def constrain(x, lo, hi):
+    return max(lo, min(hi, x))
+
+
+def check_linear_limit_velocity(v):
+    return constrain(v, -BURGER_MAX_LIN_VEL, BURGER_MAX_LIN_VEL)
+
+
+def check_angular_limit_velocity(w):
+    return constrain(w, -BURGER_MAX_ANG_VEL, BURGER_MAX_ANG_VEL)
+
+
+@dataclass
+class Command:
+    # "distance" or "turn"
+    kind: str
+    # meters for distance, radians for turn
+    value: float
+    # optional overrides
+    speed: Optional[float] = None
+    turn_rate: Optional[float] = None
 
 
 class MqttToCmdVelNode(Node):
     def __init__(self):
-        super().__init__('mqtt_to_cmd_vel')
-        
-        # Create a ROS2 publisher to publish on the cmd_vel topic
-        self.publisher = self.create_publisher(TwistStamped, 'cmd_vel', 10)
-        
-        # MQTT client setup
+        super().__init__("mqtt_to_cmd_vel")
+
+        # Publish TwistStamped on /cmd_vel
+        self.publisher = self.create_publisher(TwistStamped, "cmd_vel", 10)
+
+        # Joint feedback
+        self.left_pos = None
+        self.right_pos = None
+        self.create_subscription(JointState, "joint_states", self._js_cb, 10)
+
+        # Goal state
+        self.active = False
+        self.mode = None          # "distance" or "turn"
+        self.goal_value = 0.0     # meters (distance) or radians (turn)
+        self.start_left = 0.0
+        self.start_right = 0.0
+
+        # Motion parameters (can be overridden per MQTT message)
+        self.lin_speed = 0.10     # m/s
+        self.turn_rate = 0.60     # rad/s
+
+        # Positive angular.z = turn left, negative = turn right.
+        self.known_drift_ang = -0.0  # rad/s
+
+        # Simple accel / decel profile (distance mode)
+        self.ramp_up_time = 0.4       # seconds to reach full linear speed
+        self.decel_distance = 0.1     # meters from goal where we start slowing down
+        self.ramp_start_time = None
+
+        # ---- Command queue (FIFO) ----
+        self.cmd_queue = deque(maxlen=1000)  # raise/lower as you like
+        self.cmd_lock = threading.Lock()
+
+        # Control timer (50 Hz)
+        self.timer = self.create_timer(0.02, self._control_loop)
+
+        # MQTT setup
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
 
-        # Define MQTT connection details
-        mqtt_server = "127.0.0.1"  # Alternatively replace with your MQTT server address
-        mqtt_port = 1883           # Replace with your MQTT server port
-        mqtt_topic = "mqtt_vel"    # Replace with the MQTT topic to subscribe to
-        
-        # Connect to the MQTT broker
+        mqtt_server = "127.0.0.1"
+        mqtt_port = 1883
+        self.mqtt_topic = "mqtt_vel"
+
         self.mqtt_client.connect(mqtt_server, mqtt_port, 60)
-        
-        # Start the MQTT client loop in a non-blocking way
         self.mqtt_client.loop_start()
-        
-        # Subscribe to the MQTT topic
-        self.mqtt_client.subscribe(mqtt_topic)
-        
-        self.get_logger().info(f"Subscribed to MQTT topic: {mqtt_topic}")
+        self.mqtt_client.subscribe(self.mqtt_topic)
+
+        self.get_logger().info(f"Subscribed to MQTT topic: {self.mqtt_topic}")
+        self.get_logger().info(
+            f"Drift feed-forward ang.z (NOT applied in ramp-down): {self.known_drift_ang:.4f} rad/s"
+        )
+
+        # ---- JointState logging (TXT / CSV) ----
+        log_dir = Path("/home/pi/rb3_ws/src/mqtt_2_cmd_pkg/mqtt_2_cmd_pkg")
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        self.log_path = log_dir / f"joint_states_{int(time.time())}.txt"
+        self.log_f = open(self.log_path, "w", newline="")
+        self.log_csv = csv.writer(self.log_f)
+
+        self.log_csv.writerow([
+            "t_sec",
+            "left_pos_rad",
+            "right_pos_rad",
+            "traveled_m",
+            "yaw_rad",
+            "active",
+            "mode"
+        ])
+        self.log_f.flush()
+
+        # Log only every N joint_state messages
+        self.log_every_n = 20
+        self._js_count = 0
+
+        self.get_logger().info(f"JointState logging to: {self.log_path}")
+        self.get_logger().info(f"Logging every {self.log_every_n} joint_states messages")
+
+    def _js_cb(self, js: JointState):
+        """Update wheel positions every message, but log only every N messages."""
+
+        # always update positions
+        try:
+            li = js.name.index("wheel_left_joint")
+            ri = js.name.index("wheel_right_joint")
+            self.left_pos = js.position[li]
+            self.right_pos = js.position[ri]
+        except Exception:
+            if len(js.position) >= 2:
+                self.left_pos = js.position[0]
+                self.right_pos = js.position[1]
+
+        """
+        # log only every Nth message
+        self._js_count += 1
+        if (self._js_count % self.log_every_n) != 0:
+            return
+
+        # timestamp (ROS time preferred)
+        if js.header.stamp.sec != 0 or js.header.stamp.nanosec != 0:
+            t_sec = js.header.stamp.sec + js.header.stamp.nanosec * 1e-9
+        else:
+            t_sec = time.time()
+
+        traveled = ""
+        yaw = ""
+        if self.left_pos is not None and self.right_pos is not None and self.active:
+            dL = self.left_pos - self.start_left
+            dR = self.right_pos - self.start_right
+            traveled = WHEEL_RADIUS * (dL + dR) / 2.0
+            yaw = WHEEL_RADIUS * (dR - dL) / WHEEL_SEPARATION
+
+        self.log_csv.writerow([
+            f"{t_sec:.9f}",
+            "" if self.left_pos is None else f"{self.left_pos:.9f}",
+            "" if self.right_pos is None else f"{self.right_pos:.9f}",
+            "" if traveled == "" else f"{traveled:.9f}",
+            "" if yaw == "" else f"{yaw:.9f}",
+            int(self.active),
+            "" if self.mode is None else self.mode
+        ])
+        self.log_f.flush()
+        """
+
+    def _publish_cmd_vel(self, lin_x: float, ang_z: float):
+        msg = TwistStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = ""
+        msg.twist.linear.x = float(lin_x)
+        msg.twist.linear.y = 0.0
+        msg.twist.linear.z = 0.0
+        msg.twist.angular.x = 0.0
+        msg.twist.angular.y = 0.0
+        msg.twist.angular.z = float(ang_z)
+        self.publisher.publish(msg)
+
+    def _stop(self):
+        self._publish_cmd_vel(0.0, 0.0)
+        self.active = False
+        self.mode = None
+        self.ramp_start_time = None
+
+    def _start_next_if_idle(self):
+        """If not active, pop next queued command and start it."""
+        if self.active:
+            return
+
+        with self.cmd_lock:
+            if not self.cmd_queue:
+                return
+            cmd = self.cmd_queue.popleft()
+
+        # Need joint_states for goals
+        if self.left_pos is None or self.right_pos is None:
+            self.get_logger().error("No /joint_states yet. Can't start queued command.")
+            return
+
+        if cmd.kind == "distance":
+            self.mode = "distance"
+            self.goal_value = float(cmd.value)
+
+            if cmd.speed is not None:
+                spd = float(cmd.speed)
+                self.lin_speed = constrain(abs(spd), 0.0, BURGER_MAX_LIN_VEL)
+
+        elif cmd.kind == "turn":
+            self.mode = "turn"
+            self.goal_value = float(cmd.value)  # radians
+
+            if cmd.turn_rate is not None:
+                rate = float(cmd.turn_rate)
+                self.turn_rate = constrain(abs(rate), 0.0, BURGER_MAX_ANG_VEL)
+
+        else:
+            self.get_logger().error(f"Unknown queued command kind: {cmd.kind}")
+            return
+
+        # Start goal tracking
+        self.start_left = self.left_pos
+        self.start_right = self.right_pos
+        self.active = True
+        self.ramp_start_time = time.time()
+
+        unit = "m" if self.mode == "distance" else "rad"
+        self.get_logger().info(f"Starting queued goal: mode={self.mode}, value={self.goal_value:.3f} {unit}")
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.get_logger().info("Connected to MQTT broker successfully.")
         else:
-            self.get_logger().error("Failed to connect to MQTT broker, return code: %d", rc)
+            self.get_logger().error(f"Failed to connect to MQTT broker, return code: {rc}")
 
     def on_message(self, client, userdata, msg):
+        """
+        ACCEPTED MQTT PAYLOADS ONLY:
+
+          Stop:
+            {"stop": true}
+
+          Drive distance (meters):
+            {"distance": 1.0, "speed": 0.12}   # speed optional
+
+          Turn in place (degrees):
+            {"turn_deg": 180, "turn_rate": 0.8}  # turn_rate optional
+        """
         try:
-            # Assuming the MQTT message payload is a JSON with 'linear' and 'angular' fields
             payload = json.loads(msg.payload.decode())
 
-            #Check if messages fit within constraints
-            linear_vel = check_linear_limit_velocity(payload['linear']['x'])
-            angular_vel = check_angular_limit_velocity(payload['angular']['z'])
-            
-            # Create a Twist message
-            twist_msg = TwistStamped()
-            twist_msg.header.stamp = self.get_clock().now().to_msg()
-            twist_msg.header.frame_id = ""
-            twist_msg.twist.linear.x = float(linear_vel)
-            twist_msg.twist.angular.z = float(angular_vel)
-            
-            # Publish to cmd_vel topic
-            self.publisher.publish(twist_msg)
-            self.get_logger().info(f"Published cmd_vel: linear={twist_msg.twist.linear.x}, angular={twist_msg.twist.angular.z}")
-        
+            # STOP: immediate stop + clear queue
+            if payload.get("stop", False) is True:
+                self.get_logger().info("STOP command received: stopping and clearing queue.")
+                with self.cmd_lock:
+                    self.cmd_queue.clear()
+                self._stop()
+                return
+
+            # Build a queued command (do NOT overwrite current goal)
+            if "distance" in payload:
+                cmd = Command(
+                    kind="distance",
+                    value=float(payload["distance"]),
+                    speed=payload.get("speed", None),
+                )
+            elif "turn_deg" in payload:
+                cmd = Command(
+                    kind="turn",
+                    value=math.radians(float(payload["turn_deg"])),
+                    turn_rate=payload.get("turn_rate", None),
+                )
+            else:
+                self.get_logger().error(
+                    "MQTT payload must be one of:\n"
+                    "  {'stop': true}\n"
+                    "  {'distance': <meters>, 'speed': <m/s optional>}\n"
+                    "  {'turn_deg': <degrees>, 'turn_rate': <rad/s optional>}"
+                )
+                return
+
+            with self.cmd_lock:
+                self.cmd_queue.append(cmd)
+                qlen = len(self.cmd_queue)
+
+            self.get_logger().info(f"Queued {cmd.kind}. Queue size={qlen}")
+
+            # If idle, start immediately
+            self._start_next_if_idle()
+
         except json.JSONDecodeError:
             self.get_logger().error("Failed to decode JSON from MQTT message.")
-        except KeyError as e:
-            self.get_logger().error(f"Missing expected key in MQTT message: {e}")
+        except Exception as e:
+            self.get_logger().error(f"on_message error: {e}")
+
+    def _control_loop(self):
+        # If idle, automatically start next queued command
+        if not self.active:
+            self._start_next_if_idle()
+            return
+
+        if self.left_pos is None or self.right_pos is None:
+            self.get_logger().error("Lost /joint_states. Stopping and clearing queue.")
+            with self.cmd_lock:
+                self.cmd_queue.clear()
+            self._stop()
+            return
+
+        dL = self.left_pos - self.start_left
+        dR = self.right_pos - self.start_right
+
+        if self.mode == "distance":
+            traveled = WHEEL_RADIUS * (dL + dR) / 2.0
+
+            # Stop condition
+            if (self.goal_value >= 0 and traveled >= self.goal_value) or \
+               (self.goal_value < 0 and traveled <= self.goal_value):
+                self.get_logger().info(f"Distance reached. traveled={traveled:.3f} m")
+                self._stop()
+                self._start_next_if_idle()
+                return
+
+            # Target speed sign
+            sign = 1.0 if self.goal_value >= 0 else -1.0
+            target_speed = self.lin_speed * sign
+
+            # Ramp up
+            if self.ramp_start_time is None:
+                self.ramp_start_time = time.time()
+            t = time.time() - self.ramp_start_time
+            ramp_up = min(t / self.ramp_up_time, 1.0) if self.ramp_up_time > 0 else 1.0
+
+            # Ramp down
+            remaining = abs(self.goal_value - traveled)
+            if self.decel_distance > 0 and remaining < self.decel_distance:
+                ramp_down = remaining / self.decel_distance
+            else:
+                ramp_down = 1.0
+
+            # Final commanded linear speed
+            scale = min(ramp_up, ramp_down)
+            lin = check_linear_limit_velocity(target_speed * scale)
+
+            # Drift compensation
+            if self.decel_distance > 0 and remaining < self.decel_distance:
+                ang = 0.0
+            else:
+                ang = self.known_drift_ang
+
+            self._publish_cmd_vel(lin, ang)
+
+        elif self.mode == "turn":
+            yaw = WHEEL_RADIUS * (dR - dL) / WHEEL_SEPARATION
+
+            if (self.goal_value >= 0 and yaw >= self.goal_value) or \
+               (self.goal_value < 0 and yaw <= self.goal_value):
+                self.get_logger().info(f"Turn reached. yaw={yaw:.3f} rad")
+                self._stop()
+                self._start_next_if_idle()
+                return
+
+            ang = self.turn_rate if self.goal_value >= 0 else -self.turn_rate
+            ang = check_angular_limit_velocity(ang)
+
+            self._publish_cmd_vel(0.0, ang)
+
+        else:
+            # Unknown mode -> stop safely
+            self.get_logger().error("Unknown mode while active. Stopping.")
+            self._stop()
+            self._start_next_if_idle()
+
 
 def main(args=None):
     rclpy.init(args=args)
     node = MqttToCmdVelNode()
+
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
-        node.mqtt_client.loop_stop()  # Stop the MQTT loop
+        try:
+            node.mqtt_client.loop_stop()
+        except Exception:
+            pass
+
+        try:
+            with node.cmd_lock:
+                node.cmd_queue.clear()
+        except Exception:
+            pass
+
+        try:
+            node._stop()
+        except Exception:
+            pass
+
+        try:
+            node.log_f.close()
+        except Exception:
+            pass
+
         node.destroy_node()
         rclpy.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

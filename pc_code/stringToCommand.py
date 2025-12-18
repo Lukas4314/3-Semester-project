@@ -10,9 +10,10 @@ import re
   
 class actionEnum(enum.Enum):
     MOVE = "move"
-    COME = "come here"
+    COME = "come"
     TURN = "turn"
     STOP = "stop"
+    RETURN = "return"
     
 
 class directionEnum(enum.Enum):
@@ -20,6 +21,7 @@ class directionEnum(enum.Enum):
     BACKWARD = "backward"
     LEFT = "left"
     RIGHT = "right"
+    HERE = "here"
     
 
 class unitEnum(enum.Enum):
@@ -42,13 +44,20 @@ ACTIONS = {
     "turn": actionEnum.TURN,
     "rotate": actionEnum.TURN,
     "spin": actionEnum.TURN,
+    "urn": actionEnum.TURN,
     
     "stop": actionEnum.STOP,
     "halt": actionEnum.STOP,
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
+    "dop": actionEnum.STOP,
+    "bob": actionEnum.STOP,
+    "bop": actionEnum.STOP,
+    "bock": actionEnum.STOP,
 
-    "come here": actionEnum.COME
+    "come": actionEnum.COME,    
+    
+    "return": actionEnum.RETURN
 }
 
 DIRECTIONS = {
@@ -70,6 +79,8 @@ DIRECTIONS = {
     "lift": directionEnum.LEFT,
     
     "right": directionEnum.RIGHT,
+    
+    "here": directionEnum.HERE,
 }
 UNITS = {
     "meter":     unitEnum.METERS,
@@ -102,6 +113,7 @@ UNITS = {
     "radians":   unitEnum.RADIANS,
     "rad":       unitEnum.RADIANS,
 }
+
 
 # Defaults used when distance/unit aren't included
 DEFAULTS = {
@@ -165,6 +177,7 @@ def string_to_command(input_string):
         "zero": "0",
         "one": "1",
         "two": "2",
+        "to": "2",
         "three": "3",
         "four": "4",
         "five": "5",
@@ -219,9 +232,12 @@ def string_to_command(input_string):
     if any(action == "stop" for _, action in actions_found):
         return {"action": "stop", "direction": None, "distance": None, "unit": None}
 
-    # If a 'come' action was spoken, return come immediately (no direction/distance)
-    if any(action == "come here" for _, action in actions_found):
-        return {"action": "come here", "direction": None, "distance": None, "unit": None}
+
+    # If "return" in action return with distance
+    if any(action == "return" for _, action in actions_found) and distances_found:
+        return {"action": "return", "direction": None, "distance": int(distances_found[0][1]), "unit": None}
+    
+    
 
     if actions_found == [] or directions_found == []:
         print("No actions or directions found.")
@@ -257,6 +273,7 @@ def string_to_command(input_string):
             "move": {directionEnum.FORWARD.value, directionEnum.BACKWARD.value},
             "turn": {directionEnum.LEFT.value, directionEnum.RIGHT.value},
             "stop": set(),
+            "come": {directionEnum.HERE.value},
         }
         # find the first direction after the action that is valid for this action
         for di, direction in directions_found:
@@ -286,7 +303,8 @@ def string_to_command(input_string):
         # unit handling
         # For MOVE: convert linear units to meters
         # For TURN: convert degrees/radians to radians
-        if action != "turn":
+        if action != "turn" and next_unit not in ("degrees", "radians"):
+            
             next_distance, next_unit = apply_unit_conversion(next_distance, next_unit)
         else:
             # next_unit is canonical "degrees" or "radians"
@@ -298,7 +316,7 @@ def string_to_command(input_string):
             else:
                 # invalid unit for a turn
                 print(f"Invalid unit '{next_unit}' for turn.")
-                return None
+                continue
         
         cmd = {
             "action": action,

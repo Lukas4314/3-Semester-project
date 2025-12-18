@@ -31,24 +31,20 @@ class MQTTInterface:
         else:
             print(f"Failed to connect to MQTT broker")
 
-    def publish_command(self, linear_x, angular_z):
-        # Prepare the payload to match a Twist message structure
-        payload = {
-            "linear": {
-                "x": linear_x,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "angular": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": angular_z
-            }
-        }
-    
-        # Publish the payload to the MQTT topic
+    def publish_stop(self):
+        self.client.publish(self.topic, json.dumps({"stop": True}), qos=1)
+
+    def publish_distance(self, meters, speed=None):
+        payload = {"distance": float(meters)}
+        if speed is not None:
+            payload["speed"] = float(speed)
         self.client.publish(self.topic, json.dumps(payload), qos=1)
-        print(f"Published to {self.topic}: {payload}")
+
+    def publish_turn_deg(self, deg, turn_rate=None):
+        payload = {"turn_deg": float(deg)}
+        if turn_rate is not None:
+            payload["turn_rate"] = float(turn_rate)
+        self.client.publish(self.topic, json.dumps(payload), qos=1)
 
     def publish_buffer(self, buffer):
         # Publish raw buffer data as a JSON array
@@ -56,7 +52,6 @@ class MQTTInterface:
     
     def listen(self, output_queue):
         def on_message(client, userdata, msg):
-            
             # number of int16 values
             count = len(msg.payload) // 2  
 
@@ -102,7 +97,6 @@ class MQTTInterface:
 
             # Combine into a 32-bit unsigned integer
             message_index = (int(big_u) << 16) | int(small_u)
-            
             #arr = arr[1::2]
             output_queue1.put((message_index, arr))
             output_queue2.put((message_index, arr))
@@ -131,26 +125,88 @@ class MQTTInterface:
 
             # Combine into a 32-bit unsigned integer
             message_index = (int(big_u) << 16) | int(small_u)
+            #print(f"Message index: {message_index}")
             
             
             
             output_queue1.put((message_index, arr[0::2]))
             output_queue2.put((message_index, arr[1::2]))
-            self.recorded_data.append(arr[1::2])
+            self.recorded_data.append(arr)
             
         self.client.subscribe(self.topic)
         self.client.on_message = on_message
         self.client.loop_start()    
     
+    
+    def listen_into_3_outputs(self, output_queue1, output_queue2, output_queue3):
+        def on_message(client, userdata, msg):
+            
+            # number of int16 values
+            count = len(msg.payload) // 2  
+
+            values = struct.unpack('<' + 'h'*count, msg.payload)
+            arr = np.array(values, dtype=np.int16)
+
+            
+
+            bigInt16 = arr[1]
+            smallInt16 = arr[0]
+            arr = arr[2:]
+
+            # Convert to unsigned 16-bit integers
+            big_u = np.uint16(bigInt16)
+            small_u = np.uint16(smallInt16)
+
+
+
+            # Combine into a 32-bit unsigned integer
+            message_index = (int(big_u) << 16) | int(small_u)
+            
+            
+            
+            output_queue1.put((message_index, arr[0::2]))
+            output_queue2.put((message_index, arr[1::2]))
+            self.recorded_data.append(arr)
+            
+        self.client.subscribe(self.topic)
+        self.client.on_message = on_message
+        self.client.loop_start()    
+    
+    
     def disconnect(self):
-        self.publish_command(0.0, 0.0)
+        try:
+            self.publish_stop()
+        except Exception:
+            pass
         self.client.loop_stop()
         self.client.disconnect()
         print("Disconnected from MQTT broker.")
 
-    def save_to_wav(self, filename="output.wav"):
+    def save_to_wav(self, filename="output.wav", amount_of_channels=1):
         # Normalize to int16 range
         audio_data = np.concatenate(self.recorded_data).astype(np.int16)
+
+        if amount_of_channels == 2:
+            mic1 = audio_data[0::2]
+            mic2 = audio_data[1::2]
+            # Write to WAV file
+            filename = filename.replace(".wav", "channel1.wav")
+            with wave.open(filename, 'wb') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)  # 2 bytes for int16
+                wf.setframerate(SAMPLE_RATE)
+                wf.writeframes(mic1.tobytes())
+            print(f"Audio saved to {filename}")
+            
+            filename = filename.replace("channel1.wav", "channel2.wav")
+            with wave.open(filename, 'wb') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)  # 2 bytes for int16
+                wf.setframerate(SAMPLE_RATE)
+                wf.writeframes(mic2.tobytes())
+            print(f"Audio saved to {filename}")
+            return
+        
         # Write to WAV file
         with wave.open(filename, 'wb') as wf:
             wf.setnchannels(1)
@@ -162,14 +218,13 @@ class MQTTInterface:
 
 if __name__ == "__main__":
     # Define MQTT connection details
-    MQTT_SERVER = "10.250.34.201"
+    MQTT_SERVER = "192.168.1.20"
     MQTT_PORT = 1883
-    MQTT_TOPIC = "DUMMY"
+    MQTT_TOPIC = "I2S0"
     mqtt_interface = MQTTInterface(MQTT_SERVER, MQTT_PORT, MQTT_TOPIC)
     time.sleep(3)
     qeueie1 = queue.Queue()
-    qeueie2 = queue.Queue()
-    mqtt_interface.listen_and_clone_into_2_outputs(qeueie1, qeueie2)
+    mqtt_interface.listen(qeueie1)
 
     try:
         while True:
