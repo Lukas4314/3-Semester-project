@@ -49,31 +49,26 @@ def calculate_score(a12, a13, a23, measured_d1, measured_d2, measured_d3):
     score += (a23 - measured_d3) ** 2
     return score
 
-def create_grid(search_range=10.0, grid_size=0.1):
-    """
-    Create a spherical grid of points with constraints:
-    - X and Y: ±search_range meters
-    - Z: 0 to 2 meters (above ground)
-    - Only includes points within a sphere of radius search_range
-    
-    Parameters:
-    - search_range: radius of the sphere in meters
-    - grid_size: spacing between grid points in meters
-    """
-    grid_points = []
-    
+def create_grid(search_range=15.0, grid_size=0.2):
+    # Axes
     x_vals = np.arange(-search_range, search_range + grid_size, grid_size)
     y_vals = np.arange(-search_range, search_range + grid_size, grid_size)
-    z_vals = np.arange(0, 2.0 + grid_size, grid_size)  # Z: 0 to 2 meters
-    
-    for x in x_vals:
-        for y in y_vals:
-            for z in z_vals:
-                r = np.sqrt(x**2 + y**2 + z**2)
-                if r <= search_range:  # Only include points inside sphere
-                    grid_points.append(np.array([x, y, z]))
-    
-    return grid_points
+    z_vals = np.arange(0.0, 2.0 + grid_size, grid_size)
+
+    # 3D grid
+    X, Y, Z = np.meshgrid(x_vals, y_vals, z_vals, indexing='ij')
+
+    # Cylinder mask in XY plane
+    xy_r = np.sqrt(X**2 + Y**2)
+    inside_cylinder = xy_r <= search_range
+
+    mask = inside_cylinder
+
+    # Stack into (N, 3)
+    points = np.column_stack((X[mask], Y[mask], Z[mask]))
+
+    # Return as list of vectors (if your downstream expects list)
+    return [points[i] for i in range(points.shape[0])]
 
 def find_all_possible_sound_positions(mic_positions, tdoa_estimates, speed_of_sound=343.0):
     measured_d1 = tdoa_estimates[0] * speed_of_sound  # mic1 - mic2
@@ -117,7 +112,7 @@ def plot_microphone_data(mic_1, mic_2, mic_3, name="microphone_signals"):
         plt.show()
 
 
-def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
+def triangulate_from_sound(mic1_data, mic2_data, mic3_data, called_by_logger = False):
     
     plot_microphone_data(mic1_data, mic2_data, mic3_data)
     
@@ -156,7 +151,6 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
     tdoa_13 = gcc.PHAT_GCC_TDOA(mic1_data, mic3_data)  # If positive, mic3 is after mic1
     tdoa_23 = gcc.PHAT_GCC_TDOA(mic2_data, mic3_data)  # If positive, mic3 is after mic2
     
-    print("TDOA Estimates:", tdoa_12, tdoa_13, tdoa_23)
 
     if SHOULD_LOG:
         weights = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
@@ -175,13 +169,7 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
                     tdoa_23_log = gcc.PHAT_GCC_TDOA(mic2_data, mic3_data, telephone_band_filter=True, phat_weight_value=weight)
                 # Log this combination
                 weight_int = int(weight * 10)
-                sample_size_name = ""
-                if Logger.current_samples_size == 2048:
-                    sample_size_name = "2K"
-                elif Logger.current_samples_size == 4096:
-                    sample_size_name = "4K"
-                elif Logger.current_samples_size == 8192:
-                    sample_size_name = "8K"
+                sample_size_name = str(Logger.current_samples_size)+ "K"
 
 
                 const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{sample_size_name}_SAMPLES_{filter_state}"
@@ -194,103 +182,10 @@ def triangulate_from_sound(mic1_data, mic2_data, mic3_data):
                     Logger.set_value(column_key, f"{TDOAs[0]};{TDOAs[1]};{TDOAs[2]}")
                 except AttributeError:
                     print(f"Warning: Logger constant {const_name} not found")
-    """
-    allowed_max_tdoa = 160
-    
-    good_tdoa_01 = None
-    good_tdoa_02 = None
-    good_tdoa_12 = None
-    
-    tdoa_01, r_01, lags_01 = gccphat_matlab(mic0_data, mic1_data)
-    tdoa_02, r_02, lags_02 = gccphat_matlab(mic0_data, mic2_data)
-    tdoa_12, r_12, lags_12 = gccphat_matlab(mic1_data, mic2_data)
-    # 01
-    r_temp = r_01.copy()
-    for _ in range(len(lags_01)):
 
-        idx = np.argmax(np.abs(r_temp))
-        tau = lags_01[idx]
-
-        if abs(tau) < allowed_max_tdoa:
-            good_tdoa_01 = tau
-            break
-
-        # zero out the peak that caused the invalid tau
-        r_temp[idx] = 0
-
-
-    # 02
-    r_temp = r_02.copy()
-    for _ in range(len(lags_02)):
-
-        idx = np.argmax(np.abs(r_temp))
-        tau = lags_02[idx]
-
-        if abs(tau) < allowed_max_tdoa:
-            good_tdoa_02 = tau
-            break
-
-        r_temp[idx] = 0
-
-
-    # 12
-    r_temp = r_12.copy()
-    for _ in range(len(lags_12)):
-
-        idx = np.argmax(np.abs(r_temp))
-        tau = lags_12[idx]
-
-        if abs(tau) < allowed_max_tdoa:
-            good_tdoa_12 = tau
-            break
-
-        r_temp[idx] = 0
-
-    
-    
-    print(f"Previous TDOA Estimates: {tdoa_01}, {tdoa_02}, {tdoa_12}")
-    print(f"Good TDOA Estimates: {good_tdoa_01}, {good_tdoa_02}, {good_tdoa_12}")
-   
-    tdoa_01 = good_tdoa_01
-    tdoa_02 = good_tdoa_02
-    tdoa_12 = good_tdoa_12
-    
-    
-    
-    
-    integral_tdoa_01 = smallestIntegral.get_TDOA(filtered_mic0_data, filtered_mic1_data, name="integral_tdoa_01")
-    integral_tdoa_02 = smallestIntegral.get_TDOA(filtered_mic0_data, filtered_mic2_data, name="integral_tdoa_02")
-    integral_tdoa_12 = smallestIntegral.get_TDOA(filtered_mic1_data, filtered_mic2_data, name="integral_tdoa_12")
-    
-    print(f"Integral TDOA Estimates: {integral_tdoa_01}, {integral_tdoa_02}, {integral_tdoa_12}")
-    
-    print(f"TDOA Estimates: {tdoa_01}, {tdoa_02}, {tdoa_12}")
-    
-    # Printing which micophones are closer based on TDOA signs
-    if (tdoa_01 < 0):
-        print("Mic 0 is before Mic 1")
-    elif (tdoa_01 > 0):
-        print("Mic 1 is before Mic 0")
-    else:
-        print("Mic 0 and Mic 1 are at the same time")
-    
-    if (tdoa_02 < 0):
-        print("Mic 0 is before Mic 2")
-    elif (tdoa_02 > 0):
-        print("Mic 2 is before Mic 0")
-    else:
-        print("Mic 0 and Mic 2 are at the same time")
-
-    if (tdoa_12 < 0):
-        print("Mic 1 is before Mic 2")
-    elif (tdoa_12 > 0):
-        print("Mic 2 is before Mic 1")
-    else:
-        print("Mic 1 and Mic 2 are at the same time")
-    
-    """
     tdoa_estimates = [tdoa_12, tdoa_13, tdoa_23]
-    print(f"TDOA Estimates 1-2: {tdoa_12}, 1-3: {tdoa_13}, 2-3: {tdoa_23}")
+    if not called_by_logger:
+        print(f"TDOA Estimates (seconds): {tdoa_estimates}")
     mic_positions = microphone_placement()
 
     best_point, best_score = find_sound_origin(mic_positions, tdoa_estimates)

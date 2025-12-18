@@ -10,7 +10,7 @@ import re
   
 class actionEnum(enum.Enum):
     MOVE = "move"
-    COME = "come here"
+    COME = "come"
     TURN = "turn"
     STOP = "stop"
     RETURN = "return"
@@ -21,6 +21,7 @@ class directionEnum(enum.Enum):
     BACKWARD = "backward"
     LEFT = "left"
     RIGHT = "right"
+    HERE = "here"
     
 
 class unitEnum(enum.Enum):
@@ -49,7 +50,7 @@ ACTIONS = {
     "pause": actionEnum.STOP,
     "brake": actionEnum.STOP,
 
-    "come here": actionEnum.COME,    
+    "come": actionEnum.COME,    
     
     "return": actionEnum.RETURN
 }
@@ -73,6 +74,8 @@ DIRECTIONS = {
     "lift": directionEnum.LEFT,
     
     "right": directionEnum.RIGHT,
+    
+    "here": directionEnum.HERE,
 }
 UNITS = {
     "meter":     unitEnum.METERS,
@@ -223,10 +226,7 @@ def string_to_command(input_string):
     if any(action == "stop" for _, action in actions_found):
         return {"action": "stop", "direction": None, "distance": None, "unit": None}
 
-    # If a 'come' action was spoken, return come immediately (no direction/distance)
-    if any(action == "come here" for _, action in actions_found):
-        return {"action": "come here", "direction": None, "distance": None, "unit": None}
-    
+
     # If "return" in action return with distance
     if any(action == "return" for _, action in actions_found) and distances_found:
         return {"action": "return", "direction": None, "distance": int(distances_found[0][1]), "unit": None}
@@ -267,6 +267,7 @@ def string_to_command(input_string):
             "move": {directionEnum.FORWARD.value, directionEnum.BACKWARD.value},
             "turn": {directionEnum.LEFT.value, directionEnum.RIGHT.value},
             "stop": set(),
+            "come": {directionEnum.HERE.value},
         }
         # find the first direction after the action that is valid for this action
         for di, direction in directions_found:
