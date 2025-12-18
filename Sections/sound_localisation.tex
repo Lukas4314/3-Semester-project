@@ -9,7 +9,10 @@ Before calculating the position of the sound source, the exact sample where the 
 
 But since Whisper does not operate in the time domain, it is not possible to link a Whisper output with an ID number in the time domain. Therefore, the first and last ID number is saved for every segment sent to Whisper, making it possible to link a Whisper segment with an array of samples.
 
-To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is “come” which is usually around 2-10 samples. Then, the sample located in the middle of these 10 samples is chosen as the best possible sample to calculate the location of origin.
+To find the best possible sample in the array of 80 samples, Whisper is continuously given a smaller and smaller number of samples until the only detectable word is ``come'', which is usually around 2--7 samples, depending on how clearly the word was said and the amount of noise. Then, the sample located in the middle of these 2--7 samples is chosen as the best possible sample to calculate the location of origin.
+
+This method requires heavy computing because Whisper has to decode segments 20--30 times before finding the optimal index. Therefore, the model is loaded into VRAM and processed by a GPU, which allows for parallel processing and much higher bandwidth. This is done using the CUDA driver (Compute Unified Device Architecture), which handles how each process is handled on a microarchitecture level.
+
 
 \subsection{GCC-PHAT}
 GCC-PHAT is an algorithm that calculates the TDOA of a signal in relation to a reference signal \cite{MathWorks_gccphat}. This is used to calculate where the signal is coming from by finding the time delay between 2 different microphones spaced by a known distance and multiplying the time delay with the speed of sound. The time delay is found by comparing the phase difference for all frequencies between two signals using cross-correlation.

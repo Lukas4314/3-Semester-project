@@ -78,13 +78,9 @@ GCC-Phat weight of 1.0 & $0$ &  & $0\%$ \\
 \end{table}
 
 \subsection{Sound localisation}
-The algorithm for finding where the command was said, was tested using real data from one of the 3 microphones. The expected output 
+The algorithm for finding where the command was said was tested using real data from one of the three microphones. The input is a 4 second clip where it is known that ``come'' was said, and the output should be a $<1$ second clip of the word ``come''. This folder has five tests where ``best\_segment'' is the output and ``iteration\_1'' is the input \cite{find_voice}.
 
-Before the algorithm:
-This is the segment we know "come here" was said
-
-after the algorithm, :
-the algorithm Successfully found the exact moment where ``come'' was said, which satisfies our needs for later calculations with GCC\_PHAT
+The algorithm successfully finds the index where the word ``come'' was said, but sometimes, as seen in test\_4, it finds the whole ``come here'', which based on these tests happens 20\% of the time. This, however, is not a significant problem, since both ``come'' and ``here'' have the same sound origin.
 
 GCC Phat was tested using real time data from the 3 microphones while someone said the ``come here'' command from different points around the robot. Then the TDOA is calculated using a variety phat weight, sample size and filter settings, and the output angle was compared to the actual angle. On \cref{fig:GCC-PHAT-Real-Data-Testing} the angle error trend for different configurations is shown. Additional graphs and plots from the testing can be found in \cref{app:GCC-Phat-testing}.
 
@@ -111,8 +107,8 @@ With this, the configuration chosen for the final system is 2048 samples, a phat
 \subsection{Movement control}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\linewidth]{Pictures/path.png}
-    \caption{path}
+    \includegraphics[width=0.7\linewidth]{Pictures/path.png}
+    \caption{positional cordinates of the turtlebot messures in meter}
     \label{fig:path}
 
 \end{figure}
