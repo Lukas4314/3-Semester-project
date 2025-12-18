@@ -8,7 +8,7 @@ human speech → text → command → movement control.
 
 After a command is sent over MQTT to the Raspberry Pi, a ROS2 node converts the given distance into velocity commands that satisfy the requested command. The velocity command is published to the cmdvel topic, which the TurtleBot3 node subscribes to. The TurtleBot3 node then translates the velocity commands into motor control commands and sends them to the OpenCR board over UART. The OpenCR board can then control the motors using its built-in motor controller.
 
-While the motors are driving, the OpenCR board sends positional data from the encoders on the board back to the ROS2 environment. This makes it possible to drive the exact distance by continuously checking for position until the goal is reached.
+While the motors are driving, the OpenCR board sends positional data from the encoders on the board back to the ROS2 environment. This makes it possible to drive the exact distance by continuously checking for position until the goal is reached. By calculating the position in the desired path, it also becomes possible to ramp up slowly at the start and ramp down at the end, which eliminates overshooting due to momentum.
 
 Furthermore, the motor mounted on the TurtleBot has an inbuilt PID algorithm \cite{motor_Specifications} which makes sure the individual motor has more accruate velocity.
 
