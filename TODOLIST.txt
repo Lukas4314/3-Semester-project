@@ -10,6 +10,8 @@ Billede af ESP mermaid i rapport
 Billede af log-mel spektrogram
 Billede af trasnsribberen append_without_overlap
 Lav 2 figure i testing til 2 subfigure
+Find kilder til VAP og NLP
+
 
 RUNE:
 System_setup linje 91, kig om det er sandt.
