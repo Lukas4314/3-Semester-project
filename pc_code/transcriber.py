@@ -146,7 +146,7 @@ class transcriber:
 			result = whisper.decode(self.model, mel, options)
 			return result.text
 	
-	def find_nearest_here(self, start_index, end_index):
+	def find_nearest_here(self, start_index, end_index, fix_bug):
 		end_found = False
 		satisfied = False
 		factor = 0.25
@@ -154,7 +154,9 @@ class transcriber:
 		context_buffer = 15  # to avoid cutting too close to the word (later cutted out again)
 		start = None
 		end = None
-		start_index = start_index - ceil(self.samples_overlap/1024)
+		
+		if fix_bug == False:
+			start_index = start_index - ceil(self.samples_overlap/1024)
 		offset = None
 		print(f"Searching for here between {start_index} and {end_index}")
 		best_start_score = float('inf')
