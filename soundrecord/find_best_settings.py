@@ -199,11 +199,11 @@ def find_best_whisper_settings_for_files(audio_files, expected_commands):
             "params": opt_kwargs,
             "per_clip": per_clip,
         })
-
+                                        
     # Sort and print
     results.sort(key=lambda r: r["avg_score"], reverse=True)
 
-    print("\n========== BEST SETTINGS (TOP 10) ==========")
+    print("\nBEST SETTINGS (TOP 10)")
     for r in results[:10]:
         print(f"{r['cfg']}  avg_score={r['avg_score']:.3f}")
 
