@@ -3,7 +3,7 @@
 % https://mosquitto.org/man/mqtt-7.html <--- cool link
 % https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.pdf <-- also cool
 
-Communication between the Raspberry Pi and the PC is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic) \cite{OASIS_MQTT5}. %This ensures a layered architecture where different components only know about the topics they need data from, instead of all other components, allowing for modularity and easy scalability. 
+Communication between the Raspberry Pi and the PC is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic) \cite{OASIS_MQTT5}.
 
 MQTT messages consist of a fixed header, variable header and a payload. The fixed header contains information about the message type and flags, while the variable header contains topic name and packet identifier (if QoS $>$ 0).
 
@@ -13,7 +13,7 @@ Examples for variable header fields for different MQTT message types are shown i
     \centering
     \begin{tabular}{l c c l}
         \toprule
-        \textbf{Packet Type} & \textbf{Bits (7-4)} & \textbf{Hex} & \textbf{Purpose in the System} \\
+        \textbf{Packet Type} & \textbf{Packet Type (Bits 7-4)} & \textbf{Hex} & \textbf{Purpose in the System} \\
         \midrule
         CONNECT  & 0001 & 0x10 & PC establishing connection to the broker. \\
         PUBLISH  & 0011 & 0x3\_ & \makecell[l]{Pi sends audio.\\PC sends commands.} \\
@@ -37,9 +37,9 @@ All commands in the project, movement commands and audio data, are sent with a Q
 
 The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in the table below:
 
-Max is 256 MB for MQTT, even when when using the mosquitto broker. 
+The maximum packet size is 256 MB for MQTT, which can be limited by modifying configurations for the chosen broker. In this project the mosquitto broker is used, which by default doesn't limit the maximum packet size \cite{mosquitto}. Mosquitto is the MQTT broker, which means it is the server that handles all messages being sent between clients. It ensures messages are sent to all subscribers of a topic when a publisher sends a message to that topic. Additionally, configurations like the QoS level can be set for each topic individually to ensure the desired reliability for each type of data.
 
-In this project the python library paho-mqtt handles the low-level details of the MQTT protocol and parsing. % Indsæt kilde for paho-mqtt
+In this project the python library paho-mqtt is used, which handles the low-level details of the MQTT protocol and parsing. Paho-mqtt ensures the components can connect to the mosquitto broker, which combined with the broker enables the transfer of data over TCP/IP, which in this project is done over WiFi \cite{paho-mqtt}.
 
 \begin{figure}[H]
     \centering
