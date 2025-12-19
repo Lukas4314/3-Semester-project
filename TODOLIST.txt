@@ -21,3 +21,6 @@ Skriv om hvad mosquitto er.
 Fix GCC PHAT TDOA EXAMPLE BILLEDE ER COOKED (ikke beskæret)
 indsæt kilde ved "(INDSÆT KILDE)"
 på eksempel på traingulation sæt krydset oven på cirklen
+
+LUKAS:
+Testing, både flere resultater, men også skaf et eksempel med lyddata som Toan skriver om i Notion.
