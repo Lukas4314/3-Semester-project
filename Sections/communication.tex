@@ -3,11 +3,11 @@
 % https://mosquitto.org/man/mqtt-7.html <--- cool link
 % https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.pdf <-- also cool
 
-Communication between the Raspberry Pi and the PC is handled using MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which then is sent to all subscribers (all components that need data from that topic) \cite{OASIS_MQTT5}.
+Communication between the Raspberry Pi and the PC is handled using the MQTT (Message Queuing Telemetry Transport) protocol. MQTT uses a publisher-subscriber model, where a publisher sends messages to a topic hosted on a broker, which are then delivered to all subscribers of that topic \cite{OASIS_MQTT5}.
 
-MQTT messages consist of a fixed header, variable header and a payload. The fixed header contains information about the message type and flags, while the variable header contains topic name and packet identifier (if QoS $>$ 0).
+An MQTT message consists of a fixed header, a variable header, and a payload. The fixed header contains information about the message type and control flags, while the variable header contains the topic name and a packet identifier (if QoS $>$ 0).
 
-Examples for variable header fields for different MQTT message types are shown in table \cref{tab:mqtt_packet_types}.
+Examples of variable header fields for different MQTT message types used in the system are shown in Table \ref{tab:mqtt_packet_types}.
 
 \begin{table}[htbp]
     \centering
@@ -25,19 +25,19 @@ Examples for variable header fields for different MQTT message types are shown i
     \label{tab:mqtt_packet_types}
 \end{table}
 
-The PUBLISH packet type is used for all application data. The last four bits of its fixed header are the DUP, RETAIN and the QoS (Quality of Service) level. 
+The PUBLISH packet type is used for all application data. The last four bits of its fixed header define the DUP flag, RETAIN flag, and the QoS (Quality of Service) level.
 
-A QoS of 0 means the message is delivered a maximum of one time, with no acknowledgment, so if it is lost it will not be retransmitted. 
+QoS 0: The message is delivered at most once, with no acknowledgment. If lost, it will not be retransmitted.
 
-A QoS of 1 means the message is delivered at least once, with acknowledgment, so if it is lost it will be retransmitted until acknowledged. 
+QoS 1: The message is delivered at least once, with acknowledgment. If lost, it will be retransmitted until acknowledged.
 
-A QoS of 2 means the message is delivered exactly once, with a four-step handshake to ensure no duplicates.
+QoS 2: The message is delivered exactly once, using a four-step handshake to guarantee no duplication.
 
-All data in the project, movement commands and audio data, are sent with a QoS of 1, to ensure they are received. 
+All data in this project—both movement commands and audio—are sent with a QoS of 1 to ensure reliable delivery.
 
-The DUP flag is used for QOS 1 and 2 messages to indicate if the transmitted message is a duplicate of a previous attempt to send the same message. The RETAIN flag indicates if the broker should retain the last message sent to a topic, meaning the broker stores the last message, so if a new client subscribes to that topic, it immediately receives the last retained message.
+The DUP flag is used for QoS 1 and 2 messages to indicate whether the transmitted message is a duplicate of a previous attempt. The RETAIN flag indicates whether the broker should retain the last message sent to a topic. A retained message is stored by the broker and delivered immediately to any new client that subscribes to that topic.
 
-The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in table \cref{tab:mqtt_publish_example_bytes}.
+The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in Table \ref{tab:mqtt_publish_example_bytes}.
 
 \begin{table}[htbp]
     \centering
@@ -59,13 +59,13 @@ The payload contains the actual data being transmitted. An example of an MQTT PU
     \label{tab:mqtt_publish_example_bytes}
 \end{table}
 
-The maximum packet size is 256 MB for MQTT, which can be limited by modifying configurations for the chosen broker. In this project the mosquitto broker is used, which by default doesn't limit the maximum packet size \cite{mosquitto}. Mosquitto is the MQTT broker, which means it is the server that handles all messages being sent between clients. It ensures messages are sent to all subscribers of a topic when a publisher sends a message to that topic. Additionally, configurations like the QoS level can be set for each topic individually to ensure the desired reliability for each type of data.
+The maximum packet size in MQTT is 256 MB, though this can be limited by broker configuration. This project uses the Mosquitto broker, which by default imposes no packet size limit \cite{mosquitto}. Mosquitto acts as the central server that routes all messages between clients, ensuring messages are delivered to all subscribers of a topic. It also allows configuration of QoS levels and other parameters on a per-topic basis to tailor reliability for different data types.
 
-In this project the python library paho-mqtt is used, which handles the low-level details of the MQTT protocol and parsing. Paho-mqtt ensures the components can connect to the mosquitto broker, which combined with the broker enables the transfer of data over TCP/IP, which in this project is done over WiFi \cite{paho-mqtt}.
+The Paho-MQTT Python library is used to handle the low-level details of the MQTT protocol, including message construction, parsing, and network management. It enables each component to connect to the Mosquitto broker and communicate over TCP/IP, which in this project is implemented over a Wi-Fi network \cite{paho-mqtt}.
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\linewidth]{Pictures/pubsub.png}
-    \caption{MQTT topic setup for communication between the ESP32, PC, and Raspberry Pi.}
-    \label{fig:mqtt_topic_setup}
+\centering
+\includegraphics[width=0.8\linewidth]{Pictures/pubsub.png}
+\caption{MQTT topic setup for communication between the ESP32, PC, and Raspberry Pi.}
+\label{fig:mqtt_topic_setup}
 \end{figure}
