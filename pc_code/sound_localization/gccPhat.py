@@ -138,10 +138,11 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 		time_axis = np.arange(len(signal1)) / SAMPLE_RATE
 		plt.plot(time_axis, signal1, label="Signal 1", alpha=0.7)
 		plt.plot(time_axis, signal2, label="Signal 2", alpha=0.7)
-		plt.title("Original Time-Domain Signals")
-		plt.xlabel("Time (s)")
-		plt.ylabel("Amplitude")
-		plt.legend()
+		plt.title("Original Time-Domain Signals", fontsize=30)
+		plt.xlabel("Time (s)", fontsize=30)
+		plt.ylabel("Amplitude", fontsize=30)
+		plt.tick_params(axis='both', labelsize=30)
+		plt.legend(fontsize=30)
 		plt.grid(True)
 		plt.tight_layout()
 		#plt.show()
@@ -155,15 +156,17 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 
 		plt.subplot(2,1,1)
 		plt.plot(frequency_axis, np.abs(fft1))
-		plt.title("Signal 1 FFT Magnitude")
-		plt.xlabel("Frequency (Hz)")
-		plt.ylabel("Magnitude")
+		plt.title("Signal 1 FFT Magnitude", fontsize=30)
+		plt.xlabel("Frequency (Hz)", fontsize=30)
+		plt.ylabel("Magnitude", fontsize=30)
+		plt.tick_params(axis='both', labelsize=30)
 
 		plt.subplot(2,1,2)
 		plt.plot(frequency_axis, np.abs(fft2))
-		plt.title("Signal 2 FFT Magnitude")
-		plt.xlabel("Frequency (Hz)")
-		plt.ylabel("Magnitude")
+		plt.title("Signal 2 FFT Magnitude", fontsize=30)
+		plt.xlabel("Frequency (Hz)", fontsize=30)
+		plt.ylabel("Magnitude", fontsize=30)
+		plt.tick_params(axis='both', labelsize=30)
 
 		plt.tight_layout()
 		#plt.show()
@@ -176,15 +179,17 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 
 		plt.subplot(2,1,1)
 		plt.plot(frequency_axis, np.abs(filtered_fft1))
-		plt.title("Filtered FFT (Signal 1)")
-		plt.xlabel("Frequency (Hz)")
-		plt.ylabel("Magnitude")
+		plt.title("Filtered FFT (Signal 1)", fontsize=30)
+		plt.xlabel("Frequency (Hz)", fontsize=30)
+		plt.ylabel("Magnitude", fontsize=30)
+		plt.tick_params(axis='both', labelsize=30)
 
 		plt.subplot(2,1,2)
 		plt.plot(frequency_axis, np.abs(filtered_fft2))
-		plt.title("Filtered FFT (Signal 2)")
-		plt.xlabel("Frequency (Hz)")
-		plt.ylabel("Magnitude")
+		plt.title("Filtered FFT (Signal 2)", fontsize=30)
+		plt.xlabel("Frequency (Hz)", fontsize=30)
+		plt.ylabel("Magnitude", fontsize=30)
+		plt.tick_params(axis='both', labelsize=30)
 
 		plt.tight_layout()
 		#plt.show()
@@ -197,15 +202,17 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 
 		plt.subplot(2,1,1)
 		plt.plot(frequency_axis, np.abs(R))
-		plt.title("GCC Magnitude (Before PHAT)")
-		plt.xlabel("Frequency (Hz)")
-		plt.ylabel("Magnitude")
+		plt.title("GCC Magnitude (Before PHAT)", fontsize=30)
+		plt.xlabel("Frequency (Hz)", fontsize=30)
+		plt.ylabel("Magnitude", fontsize=30)
+		plt.tick_params(axis='both', labelsize=30)
 
 		plt.subplot(2,1,2)
 		plt.plot(frequency_axis, np.angle(R))
-		plt.title("GCC Phase (Before PHAT)")
-		plt.xlabel("Frequency (Hz)")
-		plt.ylabel("Phase (rad)")
+		plt.title("GCC Phase (Before PHAT)", fontsize=30)
+		plt.xlabel("Frequency (Hz)", fontsize=30)
+		plt.ylabel("Phase (rad)", fontsize=30)
+		plt.tick_params(axis='both', labelsize=30)
 
 		plt.tight_layout()
 		#plt.show()
@@ -218,15 +225,17 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 
 		plt.subplot(2,1,1)
 		plt.plot(frequency_axis, np.abs(R_phat))
-		plt.title(f"GCC-PHAT Magnitude (Weight = {phat_weight_value})")
-		plt.xlabel("Frequency (Hz)")
-		plt.ylabel("Magnitude")
+		plt.title(f"GCC-PHAT Magnitude (Weight = {phat_weight_value})", fontsize=30)
+		plt.xlabel("Frequency (Hz)", fontsize=30)
+		plt.ylabel("Magnitude", fontsize=30)
+		plt.tick_params(axis='both', labelsize=30)
 
 		plt.subplot(2,1,2)
 		plt.plot(frequency_axis, np.angle(R_phat))
-		plt.title(f"GCC-PHAT Phase (Weight = {phat_weight_value})")
-		plt.xlabel("Frequency (Hz)")
-		plt.ylabel("Phase (rad)")
+		plt.title(f"GCC-PHAT Phase (Weight = {phat_weight_value})", fontsize=30)
+		plt.xlabel("Frequency (Hz)", fontsize=30)
+		plt.ylabel("Phase (rad)", fontsize=30)
+		plt.tick_params(axis='both', labelsize=30)
 
 		plt.tight_layout()
 		#plt.show()
@@ -245,9 +254,9 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 		plt.grid(True)
 
 		# Add TDOA as text annotation
-		plt.text(0.05, 0.95, f"TDOA: {tdoa:.2f} samples",
+		plt.text(0.15, 0.95, f"Sample offset: {tdoa:.2f}",
         transform=plt.gca().transAxes,
-        fontsize=40, verticalalignment='top',
+        fontsize=36, verticalalignment='top',
         bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
 
 
@@ -332,14 +341,15 @@ def visualize_signals_with_delays(signals, tdoa_samples, sample_rate=SAMPLE_RATE
 	
 	for i, (ax, signal, color) in enumerate(zip(axes, signals, colors)):
 		ax.plot(time * 1000, signal, color=color, linewidth=1.5)
-		ax.set_ylabel(f'Mic {i}', fontsize=12)
+		ax.set_ylabel(f'Mic {i}', fontsize=30)
+		ax.tick_params(axis='both', labelsize=30)
 		ax.grid(True, alpha=0.3)
 		ax.set_xlim(0, len(signal) / sample_rate * 1000)
 		
 		# Add red reference line at Mic 0's peak
 		if i == 0:
 			ax.axvline(peak_time_0, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Reference Peak')
-			ax.legend()
+			ax.legend(fontsize=30)
 		else:
 			# Add reference line and delayed line
 			ax.axvline(peak_time_0, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Ref (Mic 0)')
@@ -354,12 +364,12 @@ def visualize_signals_with_delays(signals, tdoa_samples, sample_rate=SAMPLE_RATE
 			delayed_peak_time = peak_time_0 + delay_ms
 			
 			ax.axvline(delayed_peak_time, color='orange', linestyle='--', linewidth=2, alpha=0.7, label=f'Delayed Peak ({delay_samples} samples)')
-			ax.legend()
+			ax.legend(fontsize=30)
 	
 	# Add labels
-	axes[0].set_title('Three Microphone Signals with GCC-PHAT Delays', fontsize=14)
-	axes[2].set_xlabel('Time / ms', fontsize=12)
-	axes[1].set_ylabel('Amplitude', fontsize=12)
+	axes[0].set_title('Three Microphone Signals with GCC-PHAT Delays', fontsize=30)
+	axes[2].set_xlabel('Time / ms', fontsize=30)
+	axes[1].set_ylabel('Amplitude', fontsize=30)
 	
 	# Add delay information as text
 	delay_text = (f"Measured TDOAs:\n"
@@ -368,7 +378,7 @@ def visualize_signals_with_delays(signals, tdoa_samples, sample_rate=SAMPLE_RATE
 				  f"Mic2 vs Mic1: {tdoa_samples['tdoa_12']} samples ({tdoa_samples['tdoa_12']/sample_rate*1000:.4f} ms)")
 	
 	fig.text(0.02, 0.98, delay_text, transform=fig.transFigure, 
-			 fontsize=25, verticalalignment='top',
+			 fontsize=30, verticalalignment='top',
 			 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
 	
 	plt.tight_layout()
@@ -481,13 +491,14 @@ def visualize_cross_correlations(signals, sample_rate=SAMPLE_RATE):
 		ax.axhline(0, color='black', linestyle='-', linewidth=0.5, alpha=0.3)
 		ax.axvline(0, color='gray', linestyle='--', linewidth=1, alpha=0.5)
 		
-		ax.set_ylabel('Correlation', fontsize=12)
-		ax.set_title(f'{pair_name} - Cross-Correlation Function', fontsize=13, fontweight='bold')
+		ax.set_ylabel('Correlation', fontsize=30)
+		ax.set_title(f'{pair_name} - Cross-Correlation Function', fontsize=30, fontweight='bold')
+		ax.tick_params(axis='both', labelsize=30)
 		ax.grid(True, alpha=0.3)
-		ax.legend(fontsize=11)
+		ax.legend(fontsize=30)
 	
-	axes[2].set_xlabel('Time Delay / ms', fontsize=12)
-	fig.suptitle('GCC-PHAT Cross-Correlation Output (Peak shows TDOA)', fontsize=14, fontweight='bold')
+	axes[2].set_xlabel('Time Delay / ms', fontsize=30)
+	fig.suptitle('GCC-PHAT Cross-Correlation Output (Peak shows TDOA)', fontsize=30, fontweight='bold')
 	
 	plt.tight_layout()
 	plt.show()

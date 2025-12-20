@@ -403,7 +403,9 @@ def test123():
     ax.text(point[0] + dx, point[1] + dy, point[2] + dz, "true", color='red', fontsize=10)
     ax.text(best_point[0] + dx, best_point[1] + dy, best_point[2] + dz, "best", color='black', fontsize=10)
 
-    ax.set_xlabel('x (m)'); ax.set_ylabel('y (m)'); ax.set_zlabel('z (m)')
+    ax.set_xlabel('x (m)', fontsize=25, labelpad=20); ax.set_ylabel('y (m)', fontsize=25, labelpad=15); ax.set_zlabel('z (m)', fontsize=25, labelpad=15)
+    ax.tick_params(axis='both', labelsize=25)
+    ax.tick_params(axis='z', labelsize=25)
     # Optional: equalish aspect by box extents
     ax.set_box_aspect([np.ptp(coords[:,0]) + 1e-6, np.ptp(coords[:,1]) + 1e-6, np.ptp(coords[:,2]) + 1e-6])
 
@@ -413,10 +415,11 @@ def test123():
     # Keep only ticks near 0 and 2 (or create custom ticks)
     ax.set_zticks([0, 2])
     # Optionally format them nicely
-    ax.set_zticklabels(['0', '2'])
+    ax.set_zticklabels(['0', '2'], fontsize=25)
 
-    cbar = fig.colorbar(sc, ax=ax, shrink=0.6)
-    cbar.set_label('score (m^2)')
+    cbar = fig.colorbar(sc, ax=ax, shrink=0.6, pad=0.12)
+    cbar.set_label('score (m^2)', fontsize=25, labelpad=15)
+    cbar.ax.tick_params(labelsize=20)
 
     ax2 = fig.add_subplot(1,2,2)
     sc2 = ax2.scatter(coords[:,0], coords[:,1], c=scores, cmap='viridis_r', s=6)
@@ -440,8 +443,11 @@ def test123():
     ax2.text(point[0] + dx2, point[1] + dy2, "true", color='red', fontsize=30, ha='left', va='bottom')
     ax2.text(best_point[0] + dx2, best_point[1] + dy2, "best", color='black', fontsize=30, ha='left', va='top')
 
-    ax2.set_xlabel('x (m)'); ax2.set_ylabel('y (m)')
-    fig.colorbar(sc2, ax=ax2, label='score (m^2)')
+    ax2.set_xlabel('x (m)', fontsize=25); ax2.set_ylabel('y (m)', fontsize=25)
+    ax2.tick_params(axis='both', labelsize=25)
+    cbar2 = fig.colorbar(sc2, ax=ax2, label='score (m^2)')
+    cbar2.set_label('score (m^2)', fontsize=25, labelpad=15)
+    cbar2.ax.tick_params(labelsize=20)
 
-    plt.tight_layout()
+    plt.subplots_adjust(left=0.05, right=0.95, wspace=0.15)
     plt.show()
