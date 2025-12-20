@@ -110,84 +110,16 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 	fft2 = FFT(signal2)
 	
 	if telephone_band_filter == True:
-		fft1 = filter_telephone_band(fft1)
-		fft2 = filter_telephone_band(fft2)
-	
-	R = GCC(fft1, fft2)
-	"""
-	if SHOULD_LOG:
-		weights = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-		filter_states = ["WITHOUT_FILTER", "WITH_FILTER"]
-		
-		for filter_state in filter_states:
-			# Apply or skip filter
-			if filter_state == "WITH_FILTER":
-				filtered_fft1 = filter_telephone_band(fft1)
-				filtered_fft2 = filter_telephone_band(fft2)
-			else:
-				filtered_fft1 = fft1
-				filtered_fft2 = fft2
-			
-			R = GCC(filtered_fft1, filtered_fft2)
-			
-			# Test all weights
-			for weight in weights:
-				R_phat = phat_weight(R, weight=weight)
-				cross_corr = IFFT(R_phat)
-				tdoa = TDOA(cross_corr)
-				
-				# Log this combination
-				weight_int = int(weight * 10)
-				sample_size_name = ""
-				if logger.Logger.current_samples_size == 2048:
-					sample_size_name = "2K"
-				elif logger.Logger.current_samples_size == 4096:
-					sample_size_name = "4K"
-				elif logger.Logger.current_samples_size == 8192:
-					sample_size_name = "8K"
+		filtered_fft1 = filter_telephone_band(fft1)
+		filtered_fft2 = filter_telephone_band(fft2)
+	else:
+		filtered_fft1 = fft1
+		filtered_fft2 = fft2
+ 
+	R = GCC(filtered_fft1, filtered_fft2)
 
-
-				const_name = f"TDOA_PHAT_WEIGHT_{weight_int:02d}_{sample_size_name}_SAMPLES_{filter_state}"
-				try:
-					column_key = getattr(logger, const_name)
-					logger.Logger.set_value(column_key, tdoa)
-				except AttributeError:
-					print(f"Warning: Logger constant {const_name} not found")
-				
-		return tdoa
-		"""
 			
 	R_phat = phat_weight(R, weight=phat_weight_value)
-	"""
-	fig = plt.figure()
-	plt.subplot(2, 1, 1)
-	plt.plot(np.abs(R))
-	plt.title("GCC-PHAT Magnitude Spectrum")
-	plt.xlabel("Frequency (Hz)")
-	plt.ylabel("Magnitude")
-	
-	plt.subplot(2, 1, 2)
-	plt.plot(np.angle(R))
-	plt.title("GCC-PHAT Phase Spectrum")
-	plt.xlabel("Frequency (Hz)")
-	plt.ylabel("Phase (radians)")
-	plt.savefig(f"gcc_phat_before_weight{PHAT_GCC_TDOA.counter}.png")    
-	
-	
-	fig = plt.figure()
-	plt.subplot(2, 1, 1)
-	plt.plot(np.abs(R_phat))
-	plt.title("GCC-PHAT Magnitude Spectrum")
-	plt.xlabel("Frequency (Hz)")
-	plt.ylabel("Magnitude")
-	
-	plt.subplot(2, 1, 2)
-	plt.plot(np.angle(R_phat))
-	plt.title("GCC-PHAT Phase Spectrum")
-	plt.xlabel("Frequency (Hz)")
-	plt.ylabel("Phase (radians)")
-	plt.savefig(f"gcc_phat_after_weight{PHAT_GCC_TDOA.counter}.png")
-	"""
 	PHAT_GCC_TDOA.counter += 1
 	
 	
@@ -243,13 +175,13 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 		fig = plt.figure(figsize=(10,8))
 
 		plt.subplot(2,1,1)
-		plt.plot(frequency_axis, np.abs(fft1))
+		plt.plot(frequency_axis, np.abs(filtered_fft1))
 		plt.title("Filtered FFT (Signal 1)")
 		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
 
 		plt.subplot(2,1,2)
-		plt.plot(frequency_axis, np.abs(fft2))
+		plt.plot(frequency_axis, np.abs(filtered_fft2))
 		plt.title("Filtered FFT (Signal 2)")
 		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
@@ -286,13 +218,13 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 
 		plt.subplot(2,1,1)
 		plt.plot(frequency_axis, np.abs(R_phat))
-		plt.title("GCC-PHAT Magnitude (After Weighting)")
+		plt.title(f"GCC-PHAT Magnitude (Weight = {phat_weight_value})")
 		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Magnitude")
 
 		plt.subplot(2,1,2)
 		plt.plot(frequency_axis, np.angle(R_phat))
-		plt.title("GCC-PHAT Phase (After Weighting)")
+		plt.title(f"GCC-PHAT Phase (Weight = {phat_weight_value})")
 		plt.xlabel("Frequency (Hz)")
 		plt.ylabel("Phase (rad)")
 
@@ -314,9 +246,9 @@ def PHAT_GCC_TDOA(signal1, signal2, telephone_band_filter = True, phat_weight_va
 
 		# Add TDOA as text annotation
 		plt.text(0.05, 0.95, f"TDOA: {tdoa:.2f} samples",
-         transform=plt.gca().transAxes,
-         fontsize=40, verticalalignment='top',
-         bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+        transform=plt.gca().transAxes,
+        fontsize=40, verticalalignment='top',
+        bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
 
 
 		plt.tight_layout()
