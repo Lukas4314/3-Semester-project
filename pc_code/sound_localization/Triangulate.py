@@ -388,9 +388,13 @@ def test123():
     ax.plot([0, 0], [0, np.max(coords[:,1])], [0, 0], 'k-', alpha=0.3)
     ax.plot([0, 0], [0, 0], [0, np.max(coords[:,2])], 'k-', alpha=0.3)
 
-    # True and best points
-    ax.scatter(point[0], point[1], point[2], c='red', marker='x', s=80)
-    ax.scatter(best_point[0], best_point[1], best_point[2], c='white', edgecolors='k', marker='o', s=60)
+    # Plot BEST point FIRST (will be in background)
+    ax.scatter(best_point[0], best_point[1], best_point[2], 
+            c='white', edgecolors='k', marker='o', s=60, zorder=2)
+
+    # Plot TRUE point SECOND (will be on top) with larger size and higher zorder
+    ax.scatter(point[0], point[1], point[2], 
+            c='red', marker='x', s=120, linewidths=2, zorder=3)
 
     # Inline labels near points (with small offset for readability)
     dx = 0.02 * (np.max(coords[:,0]) - np.min(coords[:,0]) + 1e-6)
@@ -403,6 +407,14 @@ def test123():
     # Optional: equalish aspect by box extents
     ax.set_box_aspect([np.ptp(coords[:,0]) + 1e-6, np.ptp(coords[:,1]) + 1e-6, np.ptp(coords[:,2]) + 1e-6])
 
+    # CLEAN UP Z-AXIS TICKS - Only show 0 and 2
+    # Get current z-ticks
+    z_ticks = ax.get_zticks()
+    # Keep only ticks near 0 and 2 (or create custom ticks)
+    ax.set_zticks([0, 2])
+    # Optionally format them nicely
+    ax.set_zticklabels(['0', '2'])
+
     cbar = fig.colorbar(sc, ax=ax, shrink=0.6)
     cbar.set_label('score (m^2)')
 
@@ -414,9 +426,13 @@ def test123():
     ax2.axhline(0, color='k', linewidth=0.5, alpha=0.5)
     ax2.axvline(0, color='k', linewidth=0.5, alpha=0.5)
 
-    # True and best points
-    ax2.scatter(point[0], point[1], c='red', marker='x', s=160)
-    ax2.scatter(best_point[0], best_point[1], c='white', edgecolors='k', marker='o', s=160)
+    # Plot BEST point FIRST for 2D plot too
+    ax2.scatter(best_point[0], best_point[1], 
+                c='white', edgecolors='k', marker='o', s=160, zorder=2)
+
+    # Plot TRUE point SECOND with higher zorder
+    ax2.scatter(point[0], point[1], 
+                c='red', marker='x', s=200, linewidths=2, zorder=3)
 
     # Inline labels near points (small offset)
     dx2 = 0.02 * (np.max(coords[:,0]) - np.min(coords[:,0]) + 1e-6)
