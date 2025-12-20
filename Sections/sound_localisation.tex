@@ -42,7 +42,7 @@ Where $X_1(f)$ is the reference signal, $X_2^*(f)$ is the complex conjugate of t
 $A_1$ and $A_2$ are the amplitudes of the signals.
 $\phi_1$ and $\phi_2$ are the phases of the signals.
 
-This is the standard cross-spectrum, which is used in standard cross-correlation known as xcorr (INDSÆT KILDE). As seen in the formula the standard cross-correlation compares the magnitude of the signals, since the amplitudes are multiplied by the phase difference, which can vary a lot depending on the environment. In this project GCC-PHAT is instead used, because it only keeps the phase difference by normalising the cross-spectrum. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. 
+This is the standard cross-spectrum, which is used in standard cross-correlation known as xcorr \cite{Bimodial_sound_source}. As seen in the formula the standard cross-correlation compares the magnitude of the signals, since the amplitudes are multiplied by the phase difference, which can vary a lot depending on the environment. In this project GCC-PHAT is instead used, because it only keeps the phase difference by normalising the cross-spectrum. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. 
 
 Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation.
 The formula therefore becomes:

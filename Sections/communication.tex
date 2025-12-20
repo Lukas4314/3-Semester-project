@@ -7,7 +7,7 @@ Communication between the Raspberry Pi and the PC is handled using MQTT (Message
 
 MQTT messages consist of a fixed header, variable header and a payload. The fixed header contains information about the message type and flags, while the variable header contains topic name and packet identifier (if QoS $>$ 0).
 
-Examples for variable header fields for different MQTT message types are shown in the table below:
+Examples for variable header fields for different MQTT message types are shown in table \cref{tab:mqtt_packet_types}.
 
 \begin{table}[htbp]
     \centering
@@ -25,7 +25,7 @@ Examples for variable header fields for different MQTT message types are shown i
     \label{tab:mqtt_packet_types}
 \end{table}
 
-The PUBLISH packet type is used for all application data. The last four bits of its fixed header is the QoS (Quality of Service) level. 
+The PUBLISH packet type is used for all application data. The last four bits of its fixed header are the DUP, RETAIN and the QoS (Quality of Service) level. 
 
 A QoS of 0 means the message is delivered a maximum of one time, with no acknowledgment, so if it is lost it will not be retransmitted. 
 
@@ -33,9 +33,31 @@ A QoS of 1 means the message is delivered at least once, with acknowledgment, so
 
 A QoS of 2 means the message is delivered exactly once, with a four-step handshake to ensure no duplicates.
 
-All commands in the project, movement commands and audio data, are sent with a QoS of 1, to ensure they are received. 
+All data in the project, movement commands and audio data, are sent with a QoS of 1, to ensure they are received. 
 
-The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in the table below:
+The DUP flag is used for QOS 1 and 2 messages to indicate if the transmitted message is a duplicate of a previous attempt to send the same message. The RETAIN flag indicates if the broker should retain the last message sent to a topic, meaning the broker stores the last message, so if a new client subscribes to that topic, it immediately receives the last retained message.
+
+The payload contains the actual data being transmitted. An example of an MQTT PUBLISH message structure is shown in table \cref{tab:mqtt_publish_example_bytes}.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{l l l}
+        \toprule
+        \textbf{Packet Section} & \textbf{Hex Bytes} & \textbf{Interpretation} \\
+        \midrule
+        Fixed Header & \texttt{0x30} & PUBLISH (0x3), QoS 1, DUP=0, RETAIN=0 \\
+        Remaining Length & \texttt{0x1D} & 29 bytes to follow \\
+        \midrule
+        Variable Header & \texttt{0x00 0x07} & Topic Name Length: 7 bytes \\
+        (Topic Name) & \texttt{0x63 0x6d 0x64 0x5f 0x76 0x65 0x6c} & Topic: cmd\_vel \\
+        (Packet Identifier) & \texttt{0x00 0x19} & Packet ID: 25 \\
+        \midrule
+        Payload & \makecell[l]{\texttt{0x47 0x6f 0x20 \dots \space 0x74 0x65 0x72}} & Data: ``Go forward 1 meter" \\
+        \bottomrule
+    \end{tabular}
+    \caption{Example byte breakdown of an MQTT PUBLISH packet (QoS 1, topic: ``cmd\_vel", payload: ``Go forward 1 meter").}
+    \label{tab:mqtt_publish_example_bytes}
+\end{table}
 
 The maximum packet size is 256 MB for MQTT, which can be limited by modifying configurations for the chosen broker. In this project the mosquitto broker is used, which by default doesn't limit the maximum packet size \cite{mosquitto}. Mosquitto is the MQTT broker, which means it is the server that handles all messages being sent between clients. It ensures messages are sent to all subscribers of a topic when a publisher sends a message to that topic. Additionally, configurations like the QoS level can be set for each topic individually to ensure the desired reliability for each type of data.
 
