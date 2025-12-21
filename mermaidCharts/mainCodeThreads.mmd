@@ -1,1 +1,46 @@
 flowchart TB
+    %% =============== STYLING ===============
+    %%classDef queue fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    %%classDef thread fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    %%classDef output fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    
+    %% =============== QUEUES ===============
+    subgraph QUEUES["Audio Queues"]
+        direction LR
+        QMic1["Mic1 Queue"]:::queue
+        QMic2["Mic2 Queue"]:::queue
+        QMic3["Mic3 Queue"]:::queue
+        QMic3Clone["Mic3 Clone Queue"]:::queue
+    end
+    
+    QTransOut["Transcription Queue"]:::output
+    
+    %% =============== THREADS ===============
+    subgraph PRODUCERS["MQTT Threads"]
+        Thread12["Mic1 & Mic2 Producer"]:::thread
+        Thread3["Mic3 Producer"]:::thread
+    end
+    
+    Transcriber["Transcriber Thread"]:::thread
+    
+    subgraph MAIN[" "]
+    GCC-PHAT
+    Commandfinder["Command Finder"]
+
+    end
+
+
+    %% =============== DATA FLOW ===============
+    Thread12 -- Mic1 Data --> QMic1
+    Thread12 -- Mic2 Data --> QMic2
+    
+    Thread3 -- Mic3 Data --> QMic3
+    Thread3 -- Mic3 Clone --> QMic3Clone
+    
+    QMic3Clone --> Transcriber
+    Transcriber -- Any new transcriptions --> QTransOut
+
+    QMic1 --> GCC-PHAT
+    QMic2 --> GCC-PHAT
+    QMic3 --> GCC-PHAT
+    QTransOut --> Commandfinder
