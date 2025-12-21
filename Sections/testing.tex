@@ -141,23 +141,28 @@ Besides the physical inaccuracies, the robot does return to the correct position
         & \textbf{Semi-Noisy (\%)} 
         & \textbf{Noisy (\%)} \\
         \midrule
-        Move Forward   & 80 & 85 & 65 \\
-        Move Backward  & 85 & 80 & 75 \\
-        Turn Left      & 80 & 75 & 60 \\
-        Turn Right     & 75 & 70 & 55 \\
+        Move Forward   & 80 & 85 & 60 \\
+        Move Backward  & 85 & 80 & 65 \\
+        Turn Left      & 80 & 75 & 55 \\
+        Turn Right     & 75 & 70 & 50 \\
         Come Here      & 60 & 60 & 40 \\
-        Return         & 90 & 85 & 70 \\
+        Return         & 90 & 85 & 65 \\
         Stop           & 10 & 15 & 5 \\
-        averge         & 68.8 & 67.1 & 52.9 \\       
+        averge         & 68.8 & 67.1 & 48.6 \\       
         \bottomrule
     \end{tabular}
     \caption{Robot Command Execution Accuracy Across Different Noise Environments}
     \label{tab:command_accuracy_all}
 \end{table}
-Video footage of test environment:
-Quiet: 
-Semi-Noisy:
-Noisy:
+\textbf{Video footage of test environment:}
+
+\href{https://youtube.com/shorts/-Jo3rEJsfjg?feature=share}{Quiet Environment Video link}
+
+\href{https://youtube.com/shorts/5an6NhUYo2M?feature=share}{Semi-Noisy Environment Video link}
+
+\href{https://youtube.com/shorts/m3pxYh3Ubt0?feature=share}{Noisy Environment Video link}
+
+Can also be found in \cref{app:recordings}.
 
 This test was done using the whole system, in three different levels of noisy environments. A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
 
