@@ -5,7 +5,7 @@ The transcription system using the Whisper model was tested using a variety of v
 spoken by different people and in different environments.
 
 %Eksempel tabel
-\begin{table}
+\begin{table} [h]
     \centering
     \begin{tabular}{l l l | l}
         \toprule
@@ -129,32 +129,31 @@ Besides the physical inaccuracies, the robot does return to the correct position
 
 \begin{table}[H]
     \centering
-    \begin{tabular}{l | l}
+    \begin{tabular}{l | c c c}
         \toprule
-        \textbf{Command} & \textbf{Success Rate (\%)} \\
+        \textbf{Command} 
+        & \textbf{Quiet (\%)} 
+        & \textbf{Semi-Noisy (\%)} 
+        & \textbf{Noisy (\%)} \\
         \midrule
-
-        Move Forward & 80 \\
-
-        Move backward & 85 \\
-
-        Turn Left & 80 \\
-
-        Turn Right & 75 \\
-
-        come here & 40 \\
-
-        return & 85 \\
-
-        Stop & 10 \\
-
+        Move Forward   & 80 & 85 & 65 \\
+        Move Backward  & 85 & 80 & 75 \\
+        Turn Left      & 80 & 75 & 60 \\
+        Turn Right     & 75 & 70 & 55 \\
+        Come Here      & 60 & 60 & 40 \\
+        Return         & 90 & 85 & 70 \\
+        Stop           & 10 & 15 & 5 \\
+        averge         & 68.8 & 67.1 & 52.9 \\       
         \bottomrule
     \end{tabular}
-    \caption{Robot Command Execution Accuracy}
-    \label{tab:command_accuracy}
-\end{table} 
+    \caption{Robot Command Execution Accuracy Across Different Noise Environments}
+    \label{tab:command_accuracy_all}
+\end{table}
 
-This test was done using the whole system while being in a semi-noisy environment, meaning other people talking and machines running in the background. A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
+
+
+
+This test was done using the whole system. \cref{tab:command_accuracy_noisy} was done while being in a semi-noisy environment, meaning other people talking and machines running in the background. \cref{tab:command_accuracy_quiet} was done in a perfect quit environment. A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
 
 For the ``come here'' command, an error of more than 30 degrees is counted as a fail.
 
