@@ -25,39 +25,9 @@ spoken by different people and in different environments.
 The results are shown in \cref{tab:trancriptiontest}
 
 \subsection{Command identification}
-Small unit tests were created to test the command identification system. For each command different sentences were created to check the robustness of the process. The results are shown in \cref{tab:commandidentificationtest}.
+Small tests were created to test the command identification system. For each command different sentences were created to check the robustness of the process. The results are shown in \cref{tab:commandidentificationtest}.
 
 The results can be seen in \cref{tab:Sound_localisation_test_results}.
-
-\begin{table}[h]
-\centering
-\begin{tabular}{|l|c c c|}
-\hline
-\textbf{Parameter} & \textbf{tries} & \textbf{success} & \textbf{percentage} \\
-\hline
-GCC-PHAT with filter & $469$ & $459$ & $97.9 \%$\\
-GCC-PHAT without filter & $236$ & $229$ & $97 \%$\\
-GCC-Phat weight of 0.1 & $233$ & $230$ & $98.7\%$\\
-GCC-Phat weight of 0.2 & $216$ &  & $92.7\%$ \\
-GCC-Phat weight of 0.3 & $5$ &  & $2.1\%$\\
-GCC-Phat weight of 0.4 & $12$ &  & $5.2\%$ \\
-GCC-Phat weight of 0.5 & $3$ &  & $1.3\%$ \\
-GCC-Phat weight of 0.6 & $4$ &  & $1.7\%$ \\
-GCC-Phat weight of 0.7 & $2$ &  & $0.8\%$ \\
-GCC-Phat weight of 0.8 & $1$ &  & $0.4\%$ \\
-GCC-Phat weight of 0.9 & $1$ &  & $0.4\%$ \\
-GCC-Phat weight of 1.0 & $0$ &  & $0\%$ \\
-\hline
-2k samples & $242$ & $235$ & $97.2\%$ \\
-4k samples & $235$ & $235$ & $100\%$\\
-8k samples & $42$ & $42$ & $100\%$\\
-\hline
-\end{tabular}
-\caption{Test results for sound localisation with different parameters}
-\label{tab:Sound_localisation_test_results}
-\end{table}
-
-
 
 %Eksempel tabel
 \begin{table}
@@ -78,33 +48,32 @@ GCC-Phat weight of 1.0 & $0$ &  & $0\%$ \\
 \end{table}
 
 \subsection{Sound localisation}
-The algorithm for finding where the command was said was tested using real data from one of the three microphones. The input is a 4 second clip where it is known that ``come'' was said, and the output should be a $<1$ second clip of the word ``come''. This folder has five tests where ``best\_segment'' is the output and ``iteration\_1'' is the input \cite{find_voice}.
+The algorithm for finding where the command was said was tested using real data from one of the three microphones. The input is a 4 second clip where it is known that ``come'' was said, and the output should be a $<1$ second clip of the word ``come''. This folder has five tests where ``best\_segment'' is the output and ``iteration\_1'' is the input. The sound can be found in \cref{app:sound-clips}.
 
 The algorithm successfully finds the index where the word ``come'' was said, but sometimes, as seen in test\_4, it finds the whole ``come here'', which based on these tests happens 20\% of the time. This, however, is not a significant problem, since both ``come'' and ``here'' have the same sound origin.
-
-Before the algorithm:
-This is the segment we know "come here" was said
-
-after the algorithm, :
-the algorithm Successfully found the exact moment where ``come'' was said, which satisfies our needs for later calculations with GCC-PHAT
 
 GCC Phat was tested using real-time data from the 3 microphones while someone said the ``come here'' command from different points around the robot. Then the TDOA is calculated using a variety PHAT weight, sample size and filter settings, and the output angle was compared to the actual angle. On \cref{fig:GCC-PHAT-Real-Data-Testing} the angle error trend for different configurations is shown. Additional graphs and plots from the testing can be found in \cref{app:GCC-Phat-testing}.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{Pictures/GCC-Angle-Error-Trend-one-graph.png}
-    \caption{GCC-PHAT angle error trend for different configurations tested with real data, more graphs are available in \cref{app:GCC-Phat-testing}}
-    \label{fig:GCC-PHAT-Real-Data-Testing}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Pictures/GCC-Angle-Error-Trend-one-graph.png}
+        \caption{GCC-PHAT angle error trend for different configurations tested with real data}
+        \label{fig:GCC-PHAT-Real-Data-Testing}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Pictures/GCC-Phat-Filter-vs-No-Filter.png}
+        \caption{Comparison of GCC-PHAT angle error with and without filter for best configuration}
+        \label{fig:GCC-Phat-filter-vs-no-filter}
+    \end{subfigure}
+    \caption{GCC-PHAT real data testing results. More graphs are available in \cref{app:GCC-Phat-testing}}
+    \label{fig:GCC-PHAT-combined}
 \end{figure}
 
 The trend shows the best configuration was 2048 samples, a PHAT weight of 0.9. Similar, yet worse results are seen at 0.6 to 0.8 PHAT weights. While a PHAT weight of 1.0 shows a significant decline in performance. As does the weights with and below 0.5. Smaller sample sizes also corrolates with a lower error, with 2048 samples being the best. Similarly, the effect of the filter was tested, and the results can be seen in \cref{fig:GCC-Phat-filter-vs-no-filter}. The graph shows that using the filter reduces the angle error slightly yet consistently across all weights.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.5\linewidth]{Pictures/GCC-Phat-Filter-vs-No-Filter.png}
-    \caption{Comparison of GCC-PHAT angle error with and without filter for best configuration tested with real data, more graphs are available in \cref{app:GCC-Phat-testing}}
-    \label{fig:GCC-Phat-filter-vs-no-filter}
-\end{figure}
 
 With this, the configuration chosen for the final system is 2048 samples, a PHAT weight of 0.9 and using the filter. This should result in a mean angle error of about 16 degrees.
 
@@ -112,7 +81,7 @@ With this, the configuration chosen for the final system is 2048 samples, a PHAT
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\linewidth]{Pictures/path.png}
-    \caption{positional cordinates of the turtlebot messures in meter}
+    \caption{Positional coordinates of the TurtleBot measured in meters}
     \label{fig:path}
 
 \end{figure}

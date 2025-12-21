@@ -3,13 +3,12 @@
 
 %While the ROS daemon is running a pub sub architecture, it is not the main way of communicating with the robot, instead a separate MQTT server is used to send commands to the robot from an external computer. This service is being run using the mosquitto client. Onboard the robot the MQTT commands are then handled by a python script that updates the appropriate ROS topic to move the robot.
 
-The highest level of movement command comes in the form of human speech but has the goal of controlling the movement of the robot:
-human speech → text → command → movement control.
+The highest-level movement command originates as human speech with the ultimate goal of controlling the robot. This process follows a logical chain: human speech → transcribed text $\rightarrow$ interpreted command $\rightarrow$ movement control.
 
-After a command is sent over MQTT to the Raspberry Pi, a ROS2 node converts the given distance into velocity commands that satisfy the requested command. The velocity command is published to the cmd\_vel topic, which the TurtleBot3 node subscribes to. The TurtleBot3 node then translates the velocity commands into motor control commands and sends them to the OpenCR board over UART. The OpenCR board can then control the motors using its built-in motor controller.
+Once a command is sent via MQTT to the Raspberry Pi, a ROS2 node converts the specified distance or movement into velocity commands. These velocity commands are published to the cmd\_vel topic, to which the TurtleBot3 node subscribes. This node then translates the velocity commands into specific motor control instructions, which are sent to the OpenCR board via UART. Finally, the OpenCR board executes these commands using its integrated motor controller.
 
-While the motors are driving, the OpenCR board sends positional data from the encoders on the board back to the ROS2 environment. This makes it possible to drive the exact distance by continuously checking for position until the goal is reached. By calculating the position in the desired path, it also becomes possible to ramp up slowly at the start and ramp down at the end, which eliminates overshooting due to momentum.
+During movement, the OpenCR board sends positional feedback from its motor encoders back to the ROS2 system. This closed-loop feedback enables the robot to drive an exact distance by continuously monitoring its position until the target is reached. It also allows for the implementation of acceleration and deceleration ramps at the start and end of a movement, which prevents overshoot caused by the robot's momentum.
 
-Furthermore, the motor mounted on the TurtleBot has an inbuilt PID regulation \cite{motor_Specifications}, which regulates the motors' velocity.
+Furthermore, the motors mounted on the TurtleBot feature built-in PID regulation for velocity control \cite{motor_Specifications}, ensuring stable and precise speed management.
 
-Both PID control and position-based driving are necessary for the robot to drive in a straight line or as instructed. These instruction can then be kept in a list to backtrace the robot's path if needed.
+Both the PID control and the position-based driving strategy are essential for the robot to execute movements accurately and in a straight line. The sequence of these movement instructions can also be logged, enabling the robot's path to be retraced if necessary.

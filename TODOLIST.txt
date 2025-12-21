@@ -6,11 +6,7 @@ Diskussion (sound localization, whisper/faster whisper)
 Læs hele rapporten igennem som helhed og se om der mangler noget. Derefter lave introduktion og konklusion, når der er skabt overblik over hele rapporten.
 
 MAGNE:
-Billede af ESP mermaid i rapport
-Billede af log-mel spektrogram
 Billede af trasnsribberen append_without_overlap
-Lav 2 figure i testing til 2 subfigure
-Find kilder til VAP og NLP
 
 
 RUNE:
@@ -19,8 +15,7 @@ få lydfil til at virke
  
 
 ALEX:
-Communication linje 38, der mangler et eksempel på PUBLISH table.
-Skriv om hvad mosquitto er.
-Fix GCC PHAT TDOA EXAMPLE BILLEDE ER COOKED (ikke beskæret)
-indsæt kilde ved "(INDSÆT KILDE)"
-på eksempel på traingulation sæt krydset oven på cirklen
+Flere plots i GCC-PHAT.
+
+LUKAS:
+Testing, både flere resultater, men også skaf et eksempel med lyddata som Toan skriver om i Notion.
