@@ -20,7 +20,7 @@ An example of two raw signals received from the microphones on the robot can be 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\linewidth]{Pictures/GCC_Raw_signal_data.png}
+    \includegraphics[width=0.8\linewidth]{Pictures/GCC/Figure_1.png}
     \caption{Example of two raw signals received from the microphones on the robot.}
     \label{fig:GCC-PHAT_Raw_Signal_Example}
 \end{figure}
@@ -29,9 +29,9 @@ In order to calculate the TDOA of a signal in comparison to another, both signal
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\linewidth]{Pictures/fft_of_old_44k_downsampled_to_16k_without_filter.png}
-    \caption{Example of the frequency domain representation of two signals received from the microphones on the robot.}
-    \label{fig:GCC-PHAT_Frequency_Domain_Example}
+    \includegraphics[width=0.8\linewidth]{Pictures/GCC/Figure_2.png}
+    \caption{Example of the frequency domain representation of two signals received from the microphones on the robot, with and without band-pass filtering.}
+    \label{fig:GCC-Phat-filter-vs-no-filter}
 \end{figure}
 
 When the signal is in the frequency domain, each frequency is represented by a complex number:
@@ -49,7 +49,26 @@ Where A is the amplitude, and
 \end{equation}
 Where $\phi$ is the phase.
 
-While in the frequency domain, a perfect band-pass filter can also easily be applied, by zeroing out frequencies outside the desired range. The chosen structure of the filter is based on the telephone speech band, which is 300-3400 Hz, because that is where human speech is most represented. Filtering out frequencies other than human speech will increase the likelihood of GCC-PHAT calculating the TDOA of a human speaking instead of the TDOA of random noise.
+While in the frequency domain, a perfect band-pass filter can also easily be applied, by zeroing out frequencies outside the desired range. The chosen structure of the filter is based on the telephone speech band, which is 300-3400 Hz, because that is where human speech is most represented. Filtering out frequencies other than human speech will increase the likelihood of GCC-PHAT calculating the TDOA of a human speaking instead of the TDOA of random noise. The difference between unfiltered and filtered FFT can be seen in \cref{fig:GCC-PHAT_filter_vs_no_filter}.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{Pictures/GCC/Figure_2.png}
+        \caption{}
+        \label{fig:GCC-PHAT_Frequency_Domain_Example_a}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{Pictures/GCC/Figure_3.png}
+        \caption{}
+        \label{fig:GCC-PHAT_Frequency_Domain_Example_b}
+    \end{subfigure}
+    \caption{The difference in frequency domain representation of the two signals received from the microphones on the robot. a) shows the frequency domain represantation without applying the band-pass filter, while b) shows the frequency domain representation after applying the band-pass filter. The effectiveness of the band-pass filter in comparison to the result of GCC-PHAT without a filter can be seen in \cref{sec:testing}.}
+    \label{fig:GCC-PHAT_filter_vs_no_filter}
+\end{figure}
 
 2 signals can be compared by finding the product of one signal with the complex conjugate of the other signal, this results in the phase differnece as represented by the difference in the imaginary part:
 \begin{equation}
@@ -62,8 +81,8 @@ $\phi_1$ and $\phi_2$ are the phases of the signals.
 
 This is the standard cross-spectrum, which is used in standard cross-correlation known as xcorr \cite{Bimodial_sound_source}. As seen in the formula the standard cross-correlation compares the magnitude of the signals, since the amplitudes are multiplied by the phase difference, which can vary a lot depending on the environment. In this project GCC-PHAT is instead used, because it only keeps the phase difference by normalising the cross-spectrum. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. 
 
-Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation.
-The formula therefore becomes:
+Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation. The weight that is most suitable for this project can be tested and found experimentally, which is done in \cref{sec:testing}.
+The formula with weighting therefore becomes:
 
 \begin{equation}
     \frac{X_1(f) \cdot X_2^*(f)}{|X_1(f) \cdot X_2^*(f)|^{\beta}} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{|(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})| ^{\beta}} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{(A_1 A_2)^{\beta}} = \frac{e^{i (\phi_1 - \phi_2)}}{(A_1 A_2)^{\beta-1}}
@@ -73,7 +92,7 @@ The normalised cross-spectrum can then be used to calculate the TDOA by first ap
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\linewidth]{Pictures/GCC_PHAT_of_old_44k_downsampled_to_16k.png}
+    \includegraphics[width=0.8\linewidth]{Pictures/GCC/Figure_6.png}
     \caption{Example of the GCC-PHAT TDOA calculation on two signals received from the microphones on the robot, where the peak indicates the time delay between the two signals with the highest correlation.}
     \label{fig:GCC-PHAT_TDOA_Example}
 \end{figure}

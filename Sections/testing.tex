@@ -1,8 +1,6 @@
 \section{Testing}\label{sec:testing}
 
 \subsection{Transcribing}
-The transcription system using the Whisper model was tested using a variety of voice commands  
-spoken by different people and in different environments.
 
 \begin{table}[H]
     \centering
@@ -20,22 +18,19 @@ spoken by different people and in different environments.
         Come Here      & 85 & 80 & 70 \\
         Return         & 90 & 90 & 75 \\
         Stop           & 95 & 90 & 80 \\
-        averge         & 84.3 & 82.1 & 63.6 \\       
+        average         & 84.3 & 82.1 & 63.6 \\       
         \bottomrule
     \end{tabular}
     \caption{Robot Command transcribtiong Accuracy Across Different Noise Environments}
     \label{tab:command_accuracy_transcribe}
 \end{table}
 
-The test was done using the 3 microphones mounted on the TurtleBot. 
+The Whisper-based transcription system was evaluated using the 7 different commands in quiet, semi-noisy, and noisy environments. Audio was captured using the three microphones mounted on the TurtleBot, and a transcription was considered correct if the recognized command matched the spoken command.
 
 \subsection{Command identification}
 Small tests were created to test the command identification system. For each command different sentences were created to check the robustness of the process. The results are shown in \cref{tab:commandidentificationtest}.
 
-The results can be seen in \cref{tab:Sound_localisation_test_results}.
-
-%Eksempel tabel
-\begin{table}
+\begin{table} [h]
     \centering
     \begin{tabular}{l l | l}
         \toprule
@@ -53,7 +48,11 @@ The results can be seen in \cref{tab:Sound_localisation_test_results}.
 \end{table}
 
 \subsection{Sound localisation}
-The algorithm for finding where the command was said was tested using real data from one of the three microphones. The input is a 4 second clip where it is known that ``come'' was said, and the output should be a $<1$ second clip of the word ``come''. This folder has five tests where ``best\_segment'' is the output and ``iteration\_1'' is the input. The sound can be found in \cref{app:sound-clips}.
+The algorithm for finding where the command was said was tested using real data from one of the three microphones. The input is a 4 second clip where it is known that ``come'' was said, and the output should be a $<1$ second clip of the word ``come''. This folder has five tests where ``best\_segment'' is the output and ``iteration\_1'' is the input. 
+
+\textbf{Folder link:} \\
+\href{https://github.com/Lukas4314/3-Semester-project/tree/main/find_voice}{Find-voice-test link} \\
+The link can be found in \cref{app:sound-clips}.
 
 The algorithm successfully finds the index where the word ``come'' was said, but sometimes, as seen in test\_4, it finds the whole ``come here'', which based on these tests happens 20\% of the time. This, however, is not a significant problem, since both ``come'' and ``here'' have the same sound origin.
 
@@ -141,23 +140,28 @@ Besides the physical inaccuracies, the robot does return to the correct position
         & \textbf{Semi-Noisy (\%)} 
         & \textbf{Noisy (\%)} \\
         \midrule
-        Move Forward   & 80 & 85 & 65 \\
-        Move Backward  & 85 & 80 & 75 \\
-        Turn Left      & 80 & 75 & 60 \\
-        Turn Right     & 75 & 70 & 55 \\
+        Move Forward   & 80 & 85 & 60 \\
+        Move Backward  & 85 & 80 & 65 \\
+        Turn Left      & 80 & 75 & 55 \\
+        Turn Right     & 75 & 70 & 50 \\
         Come Here      & 60 & 60 & 40 \\
-        Return         & 90 & 85 & 70 \\
+        Return         & 90 & 85 & 65 \\
         Stop           & 10 & 15 & 5 \\
-        averge         & 68.8 & 67.1 & 52.9 \\       
+        averge         & 68.8 & 67.1 & 48.6 \\       
         \bottomrule
     \end{tabular}
     \caption{Robot Command Execution Accuracy Across Different Noise Environments}
     \label{tab:command_accuracy_all}
 \end{table}
-Video footage of test environment:
-Quiet: 
-Semi-Noisy:
-Noisy:
+\textbf{Video footage of test environment:}
+
+\href{https://youtube.com/shorts/-Jo3rEJsfjg?feature=share}{Quiet Environment Video link}
+
+\href{https://youtube.com/shorts/5an6NhUYo2M?feature=share}{Semi-Noisy Environment Video link}
+
+\href{https://youtube.com/shorts/m3pxYh3Ubt0?feature=share}{Noisy Environment Video link}
+
+Can also be found in \cref{app:recordings}.
 
 This test was done using the whole system, in three different levels of noisy environments. A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
 
@@ -168,14 +172,6 @@ For ``move'' and ``turn'', an error of more than 10\% of the expected path is co
 For ``return'', an error of more than 20\,cm from the expected position is counted as a fail. Return was always made after three other movement commands.
 
 The ``stop'' command has to be said while the TurtleBot is moving.
-
-By comparing the full system test with the transcribe test in \cref{tab:command_accuracy_transcribe}, it is noticeable how similar the data looks. This is because the main source of error is the Whisper model incorrectly transcribing sound from the microphone, likely due to poor sound quality and noise.
-
-It is noticeable that the ``stop'' command has a very low chance of working. This is because the motors are noisy while driving, which makes the already poor sound quality even worse and almost impossible for Whisper to transcribe correctly.
-
-
-%Note: to simulate a noisy environment, the robot was taken to a room where other people were doing robotics projects, which made noise. This noise is not constant or consistent, which means the results may differ depending on the amount of noise in the room at the time of the test.
-
 
 
 
