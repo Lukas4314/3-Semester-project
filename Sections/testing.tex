@@ -4,25 +4,30 @@
 The transcription system using the Whisper model was tested using a variety of voice commands  
 spoken by different people and in different environments.
 
-%Eksempel tabel
-\begin{table} [h]
+\begin{table}[H]
     \centering
-    \begin{tabular}{l l l | l}
+    \begin{tabular}{l | c c c}
         \toprule
-        \textbf{Spoken command} & \textbf{Transcribed command} & \textbf{Amount (Correct/Total)} & \textbf{Successful} \\
+        \textbf{Command} 
+        & \textbf{Quiet (\%)} 
+        & \textbf{Semi-Noisy (\%)} 
+        & \textbf{Noisy (\%)} \\
         \midrule
-        Move forward & move forward &  & Y \\
-        Turn left & turn left &  & Y \\
-        Go back & go back &  & Y \\
-        Stop & stop &  & Y \\
-        Come here & come here &  & Y \\
+        Move Forward   & 80 & 80 & 60 \\
+        Move Backward  & 85 & 75 & 60 \\
+        Turn Left      & 80 & 85 & 60 \\
+        Turn Right     & 75 & 75 & 55 \\
+        Come Here      & 85 & 80 & 70 \\
+        Return         & 90 & 90 & 75 \\
+        Stop           & 95 & 90 & 80 \\
+        averge         & 84.3 & 82.1 & 63.6 \\       
         \bottomrule
     \end{tabular}
-    \caption{Transcription test results}
-    \label{tab:trancriptiontest}
+    \caption{Robot Command transcribtiong Accuracy Across Different Noise Environments}
+    \label{tab:command_accuracy_transcribe}
 \end{table}
 
-The results are shown in \cref{tab:trancriptiontest}
+The test was done using the 3 microphones mounted on the TurtleBot. 
 
 \subsection{Command identification}
 Small tests were created to test the command identification system. For each command different sentences were created to check the robustness of the process. The results are shown in \cref{tab:commandidentificationtest}.
@@ -149,23 +154,25 @@ Besides the physical inaccuracies, the robot does return to the correct position
     \caption{Robot Command Execution Accuracy Across Different Noise Environments}
     \label{tab:command_accuracy_all}
 \end{table}
+Video footage of test environment:
+Quiet: 
+Semi-Noisy:
+Noisy:
 
-
-
-
-This test was done using the whole system. \cref{tab:command_accuracy_noisy} was done while being in a semi-noisy environment, meaning other people talking and machines running in the background. \cref{tab:command_accuracy_quiet} was done in a perfect quit environment. A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
+This test was done using the whole system, in three different levels of noisy environments. A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
 
 For the ``come here'' command, an error of more than 30 degrees is counted as a fail.
 
 For ``move'' and ``turn'', an error of more than 10\% of the expected path is counted as a fail.
 
-For ``return'', an error of more than 20 cm from the expected position is counted as a fail. Return was always made after 3 other movement commands
+For ``return'', an error of more than 20\,cm from the expected position is counted as a fail. Return was always made after three other movement commands.
 
 The ``stop'' command has to be said while the TurtleBot is moving.
 
-It was observed that the largest source of error was the Whisper model transcribing something incorrectly, which is likely due to bad microphone quality or random noise.
+By comparing the full system test with the transcribe test in \cref{tab:command_accuracy_transcribe}, it is noticeable how similar the data looks. This is because the main source of error is the Whisper model incorrectly transcribing sound from the microphone, likely due to poor sound quality and noise.
 
 It is noticeable that the ``stop'' command has a very low chance of working. This is because the motors are noisy while driving, which makes the already poor sound quality even worse and almost impossible for Whisper to transcribe correctly.
+
 
 %Note: to simulate a noisy environment, the robot was taken to a room where other people were doing robotics projects, which made noise. This noise is not constant or consistent, which means the results may differ depending on the amount of noise in the room at the time of the test.
 
