@@ -6,7 +6,6 @@ Diskussion (sound localization, whisper/faster whisper)
 Læs hele rapporten igennem som helhed og se om der mangler noget. Derefter lave introduktion og konklusion, når der er skabt overblik over hele rapporten.
 
 MAGNE:
-Billede af log-mel spektrogram
 Billede af trasnsribberen append_without_overlap
 
 
