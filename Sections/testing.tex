@@ -133,26 +133,30 @@ Besides the physical inaccuracies, the robot does return to the correct position
 
 \begin{table}[H]
     \centering
-    \begin{tabular}{l | c c c}
-        \toprule
-        \textbf{Command} 
-        & \textbf{Quiet (\%)} 
-        & \textbf{Semi-Noisy (\%)} 
-        & \textbf{Noisy (\%)} \\
-        \midrule
-        Move Forward   & 80 & 85 & 60 \\
-        Move Backward  & 85 & 80 & 65 \\
-        Turn Left      & 80 & 75 & 55 \\
-        Turn Right     & 75 & 70 & 50 \\
-        Come Here      & 60 & 60 & 40 \\
-        Return         & 90 & 85 & 65 \\
-        Stop           & 10 & 15 & 5 \\
-        averge         & 68.8 & 67.1 & 48.6 \\       
-        \bottomrule
-    \end{tabular}
+    \resizebox{0.7\textwidth}{!}{%
+        \begin{tabular}{l | c c c}
+            \toprule
+            \textbf{Command} 
+            & \textbf{Quiet (\%)} 
+            & \textbf{Semi-Noisy (\%)} 
+            & \textbf{Noisy (\%)} \\
+            \midrule
+            Move Forward   & 80 & 85 & 60 \\
+            Move Backward  & 85 & 80 & 65 \\
+            Turn Left      & 80 & 75 & 55 \\
+            Turn Right     & 75 & 70 & 50 \\
+            Come Here      & 60 & 60 & 40 \\
+            Return         & 90 & 85 & 65 \\
+            Stop           & 10 & 15 & 5 \\
+            \textbf{Average} & 68.8 & 67.1 & 48.6 \\       
+            \bottomrule
+        \end{tabular}
+    }
     \caption{Robot Command Execution Accuracy Across Different Noise Environments}
     \label{tab:command_accuracy_all}
 \end{table}
+
+
 \textbf{Video footage of test environment:}
 
 \href{https://youtube.com/shorts/-Jo3rEJsfjg?feature=share}{Quiet Environment Video link}
