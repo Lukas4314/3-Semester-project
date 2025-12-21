@@ -37,6 +37,11 @@ For identification of commands, a less strict system could be implemented. Inste
 % Instead of using an AI model like Whisper, a template based voice recognition system could have been implemented. This could possibly have made the transcription on the Raspberry Pi possible. A template based system would also be more difficult to expand in the future, as it would require new templates for new commands. Using an AI like Whisper is easier to implement and more flexible. Whisper is also better suited for an environment like a workshop with different sounds and works with any human, opposed to template based voice recognition, which only works for the person who created the templates.
 
 \subsection{Full system}
-%By comparing the full system test in x with the transcribe test in x, it is noticeable how similar the data looks. This is because the main source of error in the system is the Whisper model incorrectly transcribing sound from the microphone, due to poor sound quality and noise. 
+By comparing the full system test in \cref{tab:command_accuracy_all} with the transcribe test in \cref{tab:command_accuracy_transcribe}, it is noticeable how similar the data looks. This is because the main source of error in the system is the Whisper model incorrectly transcribing sound from the microphone, due to poor sound quality and noise.
 
-%Overall the system performs well in both a quiet and a semi-noisy environments given the contrains decipted under x. The system performs significany worse in a noisy environment, which is to be scpeted and 
+As mentioned above and seen in \cref{tab:command_accuracy_all}, the stop command performs significantly worse when the whole system is set up and the wheels are creating noise. Therefore, a physical stop button could be implemented on the top of the robot to force the motors to stop its motion, or the noise from the motors could be reduced by simply building a physical shield under the microphones.
+
+The come here command also performed slightly worse than the rest of the movement commands. This is because both the transcription and the sound localization have to work within a maximum deviation of 30 degrees for the test to count as a success, and as seen in \cref{tab:command_accuracy_transcribe} and \cref{fig:GCC-PHAT-Real-Data-Testing}, they both have a margin of error.
+
+Overall, the system performs well in both quiet and semi-noisy environments with an average success rate of 68.8\% and 67.1\%, given the constraints described under \cref{tab:command_accuracy_all}. The system performs significantly worse in a noisy environment with an average success rate of 48.6\%, which is to be expected, knowing that the transcriber performs worse in noisy environments.
+
