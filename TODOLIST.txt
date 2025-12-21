@@ -14,7 +14,7 @@ Find kilder til VAP og NLP
 
 
 RUNE:
-Indsæt lydfil i Sound localisation i testing
+få lydfil til at virke
 
  
 
