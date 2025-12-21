@@ -25,6 +25,15 @@ In the processing layer, the received audio data is analyzed. OpenAI's Whisper m
 
 At the top, the application layer interprets the transcribed text for valid commands. When a command like "come here" is identified, it uses the triangulated sound source position to calculate a specific turn and drive command, which is then sent back down through the communication layer to the robot.
 
+Furthermore the code is divided into differnet threads, 2 threads to handle incomming audio data from the 3 microphones, one thread to handle the transcription in the background and the main thread to handle sound localisation and sending commands to the robot. To communicate safely between the threads queues are used. An overview of the threading architecture is shown in \cref{fig:PC_threading_overview}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{Pictures/ThreadsOverview.png}
+\caption{Overview of the PC threading architecture.}
+\label{fig:PC_threading_overview}
+\end{figure}
+
 \subsection{Turtlebot and Raspberry Pi}
 
 \begin{figure}[H]
