@@ -19,7 +19,7 @@ An application layer that interprets processed data and makes high-level decisio
 \label{fig:PC_system_overview}
 \end{figure}
 
-The PC's architecture, illustrated in \cref{fig:PC_system_overview}, spans the communication, processing, and application layers. At the base, the communication layer handles all network traffic via an MQTT (Message Queuing Telemetry Transport) client connected to the broker on the Turtlebot. This client subscribes to the audio data streams from the ESP32 and publishes movement commands for the Turtlebot. One microphone stream is dedicated to transcription, while all three are used for sound localization.
+The PC's architecture, illustrated in \cref{fig:PC_system_overview}, spans the communication, processing, and application layers. At the base, the communication layer handles all network traffic via an MQTT (Message Queuing Telemetry Transport) client connected to the broker on the Turtlebot. This client subscribes to the audio data streams from the ESP32 and publishes movement commands for the Turtlebot. One microphone stream is dedicated to transcription, while all three are used for sound localisation.
 
 In the processing layer, the received audio data is analyzed. OpenAI's Whisper model performs speech-to-text transcription, while the GCC-PHAT (Generalized Cross-Correlation with Phase Transform) algorithm calculates the TDOA (Time Difference of Arrival) between microphone pairs. These TDOA values are used to triangulate the estimated position of the sound source.
 
@@ -70,4 +70,4 @@ The physical interface layer connects to the three microphones using the I2S (In
 
 In the communication layer, audio data is read from the I2S DMA (Direct Memory Access) buffers. Initially, this data was sent directly to the PC via the ESP32's Wi-Fi module using MQTT. However, this method introduced variable latency and occasional buffer overflows. To ensure consistent and reliable data transfer, the system was redesigned to use SPI (Serial Peripheral Interface) to send the audio data to the Raspberry Pi, which then forwards it via MQTT to the PC, moving the primary wireless communication burden to the more capable Raspberry Pi.
 
-Within the processing layer, a timestamp is applied to each audio segment as it is packaged. This is critical for maintaining synchronization across the three channels during processing on the PC.
+Within the processing layer, a timestamp is applied to each audio segment as it is packaged. This is critical for maintaining synchronisation across the three channels during processing on the PC.
