@@ -77,7 +77,7 @@ GCC Phat was tested using real-time data from the 3 microphones while someone sa
     \label{fig:GCC-PHAT-combined}
 \end{figure}
 
-The trend shows the best configuration was 2048 samples, a PHAT weight of 0.9. Similar, yet worse results are seen at 0.6 to 0.8 PHAT weights. While a PHAT weight of 1.0 shows a significant decline in performance. As does the weights with and below 0.5. Smaller sample sizes also corrolates with a lower error, with 2048 samples being the best. Similarly, the effect of the filter was tested, and the results can be seen in \cref{fig:GCC-Phat-filter-vs-no-filter}. The graph shows that using the filter reduces the angle error slightly yet consistently across all weights.
+The trend shows the best configuration was 2048 samples, a PHAT weight of 0.9 and a telephone bandpass filter. Similar, yet worse results are seen at 0.6 to 0.8 PHAT weights. While a PHAT weight of 1.0 shows a significant decline in performance. As does the weights with and below 0.5. Smaller sample sizes also corrolates with a lower error, with 2048 samples being the best. Similarly, the effect of the filter was tested, and the results can be seen in \cref{fig:GCC-Phat-filter-vs-no-filter}. The graph shows that using the filter reduces the angle error slightly yet consistently across all weights.
 
 With this, the configuration chosen for the final system is 2048 samples, a PHAT weight of 0.9 and using the filter. This should result in a mean angle error of about 16 degrees.
 
