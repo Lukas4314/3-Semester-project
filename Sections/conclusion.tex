@@ -1,9 +1,9 @@
 \section{Conclusion}
-In conclusion, a functional voice-controlled robot was developed, which had a succes rate of 68.8\% in quiet environments across all commands, including sound localisation. When in a noisey environment the succes rate dropped to 67.1\% and in heavy noise dropped further to 50\%. 
+In conclusion, a functional voice-controlled robot was developed, which had a succes rate of 68.8\% in quiet environments across all commands, including sound localisation. When in a noisy environment the succes rate dropped to 67.1\% and in heavy noise dropped further to 50\%. 
 
 The sound localisation system achieved an angle error of approximately 16 degrees under optimal conditions. To further improve results, a higher sample rate and better quality microphones could be used, but would require higher data transfer rates and potentially more advanced hardware. 
 
-The voice command interface worked well in quiet environments, but struggled in noisy environments, the ``stop'' command also had problems when the robot was moving due to motor noise. Implementing noise reduction techniques and a more flexible command identification system using an LLM could enhance performance in noisy settings. Overall, while the project demonstrated the feasibility of a voice-controlled robot with sound localisation capabilities, there are several areas for improvement to enhance accuracy and reliability.
+The voice command interface worked well in quiet environments, but struggled in noisy environments, the ``stop'' command also had problems when the robot was moving due to motor noise. Implementing noise reduction techniques and a more flexible command identification system using an LLM could enhance performance in noisy settings. Overall, while the project demonstrated the feasibility of a voice-controlled robot with sound localisation capabilities, while there are several areas for improvement to enhance accuracy and reliability.
 
 MQTT worked sufficiently for real-time data transfer of audio data, despite not being designed for that purpose. However, the ESP32, did not have the computational power to use MQTT, and the microphone data was therefore sent using SPI to the Raspberry Pi. 
 
