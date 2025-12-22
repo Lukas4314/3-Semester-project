@@ -17,7 +17,6 @@ To synchronize all three microphones, one I2S interface on the ESP32 is configur
 When the microphones transmit data to the ESP32, it is written directly into a DMA (Direct Memory Access) buffer. This allows efficient data transfer without continuous CPU intervention. By supplying multiple DMA buffers to an I2S interface, data can be streamed into one buffer while the CPU processes the previous one.
 
 The microphone resolution is set to 16 bits, meaning each sample is represented by two bytes. The master clock drives the WS line, and each microphone, configured as left or right, outputs its data starting with the most significant bit. The I2S protocol timing is illustrated in \cref{fig:I2S_protocol}.
-The microphone resolution is set to 16 bits, meaning each sample is represented by two bytes. The master clock drives the WS line, and each microphone, configured as left or right, outputs its data starting with the most significant bit. The I2S protocol timing is illustrated in \cref{fig:I2S_protocol}.
 
 \begin{figure}[H]
 \centering
