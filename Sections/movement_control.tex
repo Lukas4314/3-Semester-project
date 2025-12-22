@@ -5,10 +5,10 @@
 
 The highest-level movement command originates as human speech with the ultimate goal of controlling the robot. This process follows a logical chain: human speech → transcribed text $\rightarrow$ interpreted command $\rightarrow$ movement control.
 
-Once a command is sent via MQTT to the Raspberry Pi, a ROS2 node converts the specified distance or movement into velocity commands. These velocity commands are published to the cmd\_vel topic, to which the TurtleBot3 node subscribes. This node then translates the velocity commands into specific motor control instructions, which are sent to the OpenCR board via UART. Finally, the OpenCR board executes these commands using its integrated motor controller.
+Once a command is sent via MQTT (Message Queuing Telemetry Transport) to the Raspberry Pi, a ROS2 node converts the specified distance or movement into velocity commands. These velocity commands are published to the cmd\_vel topic, to which the TurtleBot3 node subscribes. This node then translates the velocity commands into specific motor control instructions, which are sent to the OpenCR (Open-source Control Robot) board via UART (Universal Asynchronous Receiver-Transmitter). Finally, the OpenCR board executes these commands using its integrated motor controller.
 
 During movement, the OpenCR board sends positional feedback from its motor encoders back to the ROS2 system. This closed-loop feedback enables the robot to drive an exact distance by continuously monitoring its position until the target is reached. It also allows for the implementation of acceleration and deceleration ramps at the start and end of a movement, which prevents overshoot caused by the robot's momentum.
 
-Furthermore, the motors mounted on the TurtleBot feature built-in PID regulation for velocity control \cite{motor_Specifications}, ensuring stable and precise speed management.
+Furthermore, the motors mounted on the TurtleBot feature built-in PID (Proportional-Integral-Derivative) regulation for velocity control \cite{motor_Specifications}, ensuring stable and precise speed management.
 
 Both the PID control and the position-based driving strategy are essential for the robot to execute movements accurately and in a straight line. The sequence of these movement instructions can also be logged, enabling the robot's path to be retraced if necessary.
