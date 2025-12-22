@@ -33,7 +33,7 @@ QoS 1: The message is delivered at least once, with acknowledgment. If lost, it 
 
 QoS 2: The message is delivered exactly once, using a four-step handshake to guarantee no duplication.
 
-All data in this project—both movement commands and audio—are sent with a QoS of 1 to ensure reliable delivery.
+All data in this project, both movement commands and audio, are sent with a QoS of 1 to ensure reliable delivery.
 
 The DUP flag is used for QoS 1 and 2 messages to indicate whether the transmitted message is a duplicate of a previous attempt. The RETAIN flag indicates whether the broker should retain the last message sent to a topic. A retained message is stored by the broker and delivered immediately to any new client that subscribes to that topic.
 
