@@ -125,12 +125,12 @@ In total the formula for finding the position of the sound source becomes:
     \text{argmin}_{P} \sum_{(a,b)} (\|P - M_b\| - \|P - M_a\| - \Delta d^{measured}_{ab})^2
 \end{equation}
 
-In practice a 3D grid, which is a cylinder with a 15 meter radius and a 2 meter height, is designed for triangulation with a space of 20 cm between each point making the error margin a maximum of $\sqrt{10^2 + 10^2} = 14.14$ cm. However, an error of this size isn't a point of concern, since the error is relatively small. An example of the triangulation on perfect TDOA-values that match a certain point can be seen in \cref{fig:Triangulation_Example}.
+In practice a 3D grid, which is a cylinder with a 15 meter radius and a 2 meter height, is designed for triangulation with a space of 20 cm between each point making the error margin a maximum of $\sqrt{10^2 + 10^2} = 14.14$ cm. However, an error of this size isn't a point of concern, since the error is relatively small. An example of the triangulation on TDOA-values from the robot, in comparison to the correct theoretical values from the point, can be seen in \cref{fig:Triangulation_Example}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1.0\linewidth]{Pictures/Triangulation_Example.png}
-    \caption{Example of the triangulation algorithm used on a random point.}
+    \caption{Example of the triangulation algorithm used on TDOA-values from the robot, in comparison to the correct theoretical values from the point. Here it is seen there is a quite large distance error of 0.98 m, however the angle error is only 2.1 degrees. This demonstrates that the algorithm is able to find the angle with small error, but that the distance estimation is quite inaccurate in comparison.}
     \label{fig:Triangulation_Example}
 \end{figure}
 
