@@ -81,7 +81,7 @@ The formula with weighting therefore becomes:
 \begin{equation}
     \frac{X_1(f) \cdot X_2^*(f)}{|X_1(f) \cdot X_2^*(f)|^{\beta}} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{|(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})| ^{\beta}} = \frac{(A_1 \cdot e^{i \cdot \phi_1}) \cdot (A_2 \cdot e^{-i \phi_2})}{(A_1 A_2)^{\beta}} = \frac{e^{i (\phi_1 - \phi_2)}}{(A_1 A_2)^{\beta-1}}
 \end{equation}
-
+Here $\beta$ is the weighting factor between 0 and 1.
 The normalised cross-spectrum can then be used to calculate the TDOA by first applying an IFFT (Inverse Fast Fourier Transform) to convert the signal back to time domain. The sample offset of the signal is then found by calculating at which sample the maximum amplitude occurs, as seen in \cref{fig:GCC-PHAT_TDOA_Example}.
 
 \begin{figure}[H]
@@ -134,3 +134,5 @@ In practice a 3D grid, which is a cylinder with a 15 meter radius and a 2 meter 
 \end{figure}
 
 This figure shows that the triangulation algorithm works as intended when given perfect TDOA values. Since this algorithm is easily understood and quick to execute on a relatively small grid, it was chosen instead of implementing a more complex algorithm. If this was the biggest error source in the system, it could either have been tweaked to be a denser grid, which would make the calculation slower, or replaced with a more advanced algorithm.
+
+When the position of the sound source, and therefore the speaking human, has been estimated, the robot only needs to rotate the angle towards the found point and drive forward to reach the person. This can be done by changing the points from Cartesian coordinates to polar coordinates, where the angle is the angle the robot needs to turn and the radius is the distance it needs to drive forward.
