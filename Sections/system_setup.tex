@@ -1,6 +1,6 @@
 \section{System Setup}
 
-The overall system architecture is divided into three main components: the PC, the Raspberry Pi onboard the Turtlebot, and the ESP32 microcontroller. Each component is structured into distinct functional layers. These layers are designed to interact only with the layers directly above or below them, ensuring modularity and a clear separation of responsibilities. The architecture comprises:
+The overall system architecture is divided into three main components: the PC, the Raspberry Pi onboard the Turtlebot, and the ESP32 microcontroller. Each component is structured into distinct functional layers. These layers are designed to interact only with the layers directly above or below them, ensuring modularity and a clear separation of responsibilities. The architecture comprises of:
 
 A physical interface layer that handles direct communication with hardware components.
 
@@ -19,13 +19,13 @@ An application layer that interprets processed data and makes high-level decisio
 \label{fig:PC_system_overview}
 \end{figure}
 
-The PC's architecture, illustrated in \cref{fig:PC_system_overview}, spans the communication, processing, and application layers. At the base, the communication layer handles all network traffic via an MQTT client connected to the broker on the Turtlebot. This client subscribes to the audio data streams from the ESP32 and publishes movement commands for the Turtlebot. One microphone stream is dedicated to transcription, while all three are used for sound localization.
+The PC's architecture, illustrated in \cref{fig:PC_system_overview}, spans the communication, processing, and application layers. At the base, the communication layer handles all network traffic via an MQTT (Message Queuing Telemetry Transport) client connected to the broker on the Turtlebot. This client subscribes to the audio data streams from the ESP32 and publishes movement commands for the Turtlebot. One microphone stream is dedicated to transcription, while all three are used for sound localization.
 
-In the processing layer, the received audio data is analyzed. OpenAI's Whisper model performs speech-to-text transcription, while the GCC-PHAT algorithm calculates the Time Difference of Arrival (TDOA) between microphone pairs. These TDOA values are used to triangulate the estimated position of the sound source.
+In the processing layer, the received audio data is analyzed. OpenAI's Whisper model performs speech-to-text transcription, while the GCC-PHAT (Generalized Cross-Correlation with Phase Transform) algorithm calculates the TDOA (Time Difference of Arrival) between microphone pairs. These TDOA values are used to triangulate the estimated position of the sound source.
 
 At the top, the application layer interprets the transcribed text for valid commands. When a command like "come here" is identified, it uses the triangulated sound source position to calculate a specific turn and drive command, which is then sent back down through the communication layer to the robot.
 
-Furthermore the code is divided into differnet threads, 2 threads to handle incomming audio data from the 3 microphones, and therefore just listens on the topic, one thread to handle the transcription in the background, and the main thread which checks all transcriptions for any commands, and sends movement commands to the robot including any calculations for GCC-PHAT. This is programmed in python, so to communicate safely between the threads queues are used, where each queue has a writer and a reader. An overview of the threading architecture is shown in \cref{fig:PC_threading_overview}.
+Furthermore, the code is divided into different threads, 2 threads to handle incoming audio data from the 3 microphones, and therefore just listens on the topic, one thread to handle the transcription in the background, and the main thread which checks all transcriptions for any commands, and sends movement commands to the robot including any calculations for GCC-PHAT. This is programmed in python, so queues are used to communicate safely between the threads, where each queue has a writer and a reader. An overview of the threading architecture is shown in \cref{fig:PC_threading_overview}.
 
 \begin{figure}[H]
 \centering
@@ -57,16 +57,16 @@ Furthermore the code is divided into differnet threads, 2 threads to handle inco
 
 The Raspberry Pi manages the communication, processing, and physical interface layers, with the application layer handled by the PC. Its architecture is shown in \cref{fig:RPI_system_overview}.
 
-The processing layer contains a ROS2 node that translates positional commands received from the PC's MQTT client into velocity commands understandable by the Turtlebot. These commands are published on a ROS2 topic. This layer also subscribes to a ROS2 topic for joint state feedback from the robot, which is used for precise motion control.
+The processing layer contains a ROS2 (Robot Operating System 2) node that translates positional commands received from the PC's MQTT client into velocity commands understandable by the Turtlebot. These commands are published on a ROS2 topic. This layer also subscribes to a ROS2 topic for joint state feedback from the robot, which is used for precise motion control.
 
-Beneath this, the communication layer hosts the central MQTT broker for the entire system and runs the MQTT client that subscribes to commands from the PC. The velocity commands published on the ROS2 topic are received by the Turtlebot's ROS2 node, which forwards them via UART (Universal Asynchronous Receiver-Transmitter) to the OpenCR control board. The sensor data from the OpenCR board is then back up the same way.
+Beneath this, the communication layer hosts the central MQTT broker for the entire system and runs the MQTT client that subscribes to commands from the PC. The velocity commands published on the ROS2 topic are received by the Turtlebot's ROS2 node, which forwards them via UART (Universal Asynchronous Receiver-Transmitter) to the OpenCR (Open-source Control Module for ROS) control board. The sensor data from the OpenCR board is then back up the same way.
 
 The foundational physical interface layer is managed by the OpenCR board. It receives the high-level velocity commands and performs low-level motor control, translating them into precise PWM (Pulse Width Modulation) signals to drive the wheels.
 
 \subsection{ESP32}
 The ESP32 serves as the interface for the microphone array and therefore implements only the physical interface, communication, and processing layers, as shown in \cref{fig:ESP32_system_overview}.
 
-The physical interface layer connects to the three microphones using the I2S protocol, which provides synchronized, high-quality audio sampling.
+The physical interface layer connects to the three microphones using the I2S (Inter-Integrated Circuit Sound) protocol, which provides synchronized, high-quality audio sampling.
 
 In the communication layer, audio data is read from the I2S DMA (Direct Memory Access) buffers. Initially, this data was sent directly to the PC via the ESP32's Wi-Fi module using MQTT. However, this method introduced variable latency and occasional buffer overflows. To ensure consistent and reliable data transfer, the system was redesigned to use SPI (Serial Peripheral Interface) to send the audio data to the Raspberry Pi, which then forwards it via MQTT to the PC, moving the primary wireless communication burden to the more capable Raspberry Pi.
 

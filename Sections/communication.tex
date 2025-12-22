@@ -61,7 +61,7 @@ The payload contains the actual data being transmitted. An example of an MQTT PU
 
 The maximum packet size in MQTT is 256 MB, though this can be limited by broker configuration. This project uses the Mosquitto broker, which by default imposes no packet size limit \cite{mosquitto}. Mosquitto acts as the central server that routes all messages between clients, ensuring messages are delivered to all subscribers of a topic. It also allows configuration of QoS levels and other parameters on a per-topic basis to tailor reliability for different data types.
 
-The Paho-MQTT Python library is used to handle the low-level details of the MQTT protocol, including message construction, parsing, and network management. It enables each component to connect to the Mosquitto broker and communicate over TCP/IP, which in this project is implemented over a Wi-Fi network \cite{paho-mqtt}.
+The Paho-MQTT Python library is used to handle the low-level details of the MQTT protocol, including message construction, parsing, and network management. It enables each component to connect to the Mosquitto broker and communicate over TCP/IP (Transmission Control Protocol/Internet Protocol), which in this project is implemented over a Wi-Fi network \cite{paho-mqtt}.
 
 \begin{figure}[H]
 \centering
