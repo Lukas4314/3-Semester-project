@@ -1,7 +1,9 @@
 import os
+import glob
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 WHEEL_RADIUS = 0.033
 WHEEL_SEPARATION = 0.160
@@ -40,91 +42,103 @@ def compute_xy(df):
 
 def read_observations(obs_path):
     obs = pd.read_csv(obs_path, sep=",", engine="python", encoding="utf-8-sig")
-
     obs_x = pd.to_numeric(obs["x_m"], errors="coerce").to_numpy()
     obs_y = pd.to_numeric(obs["y_m"], errors="coerce").to_numpy()
-
     m = np.isfinite(obs_x) & np.isfinite(obs_y)
     return obs_x[m], obs_y[m]
 
 
-def plot_compare_many(joint_log_path, obs_paths, connect_points=True):
+def list_observation_files(obs_folder):
+
+    patterns = [
+        os.path.join(obs_folder, "*.txt"),
+        os.path.join(obs_folder, "*.csv"),
+    ]
+    files = []
+    for p in patterns:
+        files.extend(glob.glob(p))
+    files.sort()
+    return files
+
+
+def plot_compare_many(joint_log_path, obs_folder, connect_points=True):
     if not os.path.exists(joint_log_path):
         raise FileNotFoundError(f"Joint log not found: {joint_log_path}")
+
+    obs_paths = list_observation_files(obs_folder)
+    if not obs_paths:
+        raise FileNotFoundError(f"No observation files found in: {obs_folder}")
 
     df = pd.read_csv(joint_log_path, sep=",", engine="python", encoding="utf-8-sig")
     x_enc, y_enc = compute_xy(df)
 
     plt.figure(figsize=(8, 5))
 
-    # ---- Observation paths FIRST (ORANGE, behind) ----
-    first_obs = True
+ 
     for obs_path in obs_paths:
-        if not os.path.exists(obs_path):
-            print(f"Skipping missing observation file: {obs_path}")
+        try:
+            obs_x, obs_y = read_observations(obs_path)
+        except Exception as e:
+            print(f"Skipping unreadable observation file {obs_path}: {e}")
             continue
-
-        obs_x, obs_y = read_observations(obs_path)
-
-        label = "Observations" if first_obs else None
-        first_obs = False
 
         if connect_points:
             plt.plot(
-                obs_x,
-                obs_y,
+                obs_x, obs_y,
                 "-o",
                 color="tab:orange",
                 alpha=0.7,
                 markersize=4,
                 linewidth=1.5,
-                zorder=1,
-                label=label
+                zorder=1
             )
         else:
             plt.scatter(
-                obs_x,
-                obs_y,
+                obs_x, obs_y,
                 color="tab:orange",
                 alpha=0.7,
-                zorder=1,
-                label=label
+                zorder=1
             )
 
-    # ---- Encoder path LAST (BLUE, on top) ----
+ 
     plt.plot(
-        x_enc,
-        y_enc,
+        x_enc, y_enc,
         color="tab:blue",
         linewidth=3.0,
-        zorder=10,
-        label="Encoder path"
+        zorder=10
     )
 
     plt.axis("equal")
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
-    plt.title("Encoder path vs observations")
-    #plt.legend()
+    plt.title("Encoder path vs observed path")
     plt.grid(True, alpha=0.3)
+
+   
+    handles = [
+        Line2D([0], [0], color="tab:blue", lw=3, label="Blue = Plotted encoder data"),
+        Line2D([0], [0], color="tab:orange", lw=1.5, marker="o", markersize=4,
+               label="Orange = Plotted observed data"),
+    ]
+    plt.legend(
+    handles=handles,
+    loc="best",
+    fontsize=13,
+    handlelength=3,
+    handletextpad=1.0,
+    borderpad=0.8
+)
+
+
     plt.tight_layout()
     plt.show()
 
 
 if __name__ == "__main__":
-    joint_file = r"joint_states.txt"
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    obs_files = [
-        r"observations_1.txt",
-        r"observations_2.txt",
-        r"observations_3.txt",
-        r"observations_4.txt",
-        r"observations_5.txt",
-        r"observations_6.txt",
-        r"observations_7.txt",
-        r"observations_8.txt",
-        r"observations_9.txt",
-        r"observations_10.txt",
-    ]
+    obs_folder = os.path.join(BASE_DIR, "..", "observations")
+    joint_file = os.path.join(obs_folder, "joint_states.txt")
 
-    plot_compare_many(joint_file, obs_files, connect_points=True)
+    plot_compare_many(joint_file, obs_folder, connect_points=True)
+

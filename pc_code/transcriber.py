@@ -12,7 +12,6 @@ import torch
 import torchaudio
 from consts import SAMPLE_RATE, USE_GPU
 from math import floor, ceil
-#for debbing
 import os
 from scipy.io.wavfile import write
 

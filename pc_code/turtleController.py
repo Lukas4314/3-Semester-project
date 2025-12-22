@@ -29,7 +29,6 @@ class TurtleController:
 	def __init__(self, mqtt_interface, queue1=None, queue2=None, queue3=None):
 		self.mqtt_interface = mqtt_interface
 
-		# Optional microphone queues (only needed if you call go_to_human)
 		self.queue1 = queue1
 		self.queue2 = queue2
 		self.queue3 = queue3
@@ -70,7 +69,6 @@ class TurtleController:
 	def go_to_human(self, start_index, end_index, distance):
 		"""
 		Uses queued mic data to triangulate a point, then turns and drives towards it.
-		Requires queue1/queue2/queue3 in __init__.
 		"""
 		if self.queue1 is None or self.queue2 is None or self.queue3 is None:
 			print("go_to_human() requires queue1, queue2, queue3 passed to TurtleController.")

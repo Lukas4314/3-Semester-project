@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import json
 import math
 import time
@@ -41,7 +40,7 @@ class Command:
     kind: str
     # meters for distance, radians for turn
     value: float
-    # optional overrides
+    # overrides
     speed: Optional[float] = None
     turn_rate: Optional[float] = None
 
@@ -66,18 +65,18 @@ class MqttToCmdVelNode(Node):
         self.start_right = 0.0
 
         # Motion parameters (can be overridden per MQTT message)
-        self.lin_speed = 0.10     # m/s
-        self.turn_rate = 0.60     # rad/s
+        self.lin_speed = 0.10 # m/s
+        self.turn_rate = 0.60 # rad/s
 
         # Positive angular.z = turn left, negative = turn right.
         self.known_drift_ang = -0.0  # rad/s
 
         # Simple accel / decel profile (distance mode)
-        self.ramp_up_time = 0.4       # seconds to reach full linear speed
-        self.decel_distance = 0.1     # meters from goal where we start slowing down
+        self.ramp_up_time = 0.4  # seconds to reach full linear speed
+        self.decel_distance = 0.1  # meters from goal where we start slowing down
         self.ramp_start_time = None
 
-        # ---- Command queue (FIFO) ----
+        
         self.cmd_queue = deque(maxlen=1000)  # raise/lower as you like
         self.cmd_lock = threading.Lock()
 
@@ -102,7 +101,7 @@ class MqttToCmdVelNode(Node):
             f"Drift feed-forward ang.z (NOT applied in ramp-down): {self.known_drift_ang:.4f} rad/s"
         )
 
-        # ---- JointState logging (TXT / CSV) ----
+        
         log_dir = Path("/home/pi/rb3_ws/src/mqtt_2_cmd_pkg/mqtt_2_cmd_pkg")
         log_dir.mkdir(parents=True, exist_ok=True)
 
