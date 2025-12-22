@@ -92,6 +92,8 @@ UNITS = {
     "minute":    unitEnum.METERS,
     "minutes":   unitEnum.METERS,
     "media":     unitEnum.METERS,
+    "meetup":    unitEnum.METERS,
+    "meaner":    unitEnum.METERS,
 
     "centimeter":    unitEnum.CENTIMETERS,
     "centimeters":   unitEnum.CENTIMETERS,
@@ -179,6 +181,7 @@ def string_to_command(input_string):
         "two": "2",
         "to": "2",
         "three": "3",
+        "free": "3",
         "four": "4",
         "five": "5",
         "six": "6",
@@ -303,7 +306,7 @@ def string_to_command(input_string):
         # unit handling
         # For MOVE: convert linear units to meters
         # For TURN: convert degrees/radians to radians
-        if action != "turn" and next_unit not in ("degrees", "radians"):
+        if action != "turn" and next_unit not in ("degrees", "radians", "degree", "radian"):
             
             next_distance, next_unit = apply_unit_conversion(next_distance, next_unit)
         else:
