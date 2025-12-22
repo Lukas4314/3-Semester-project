@@ -1,7 +1,7 @@
 \section{Testing}\label{sec:testing}
 
 \subsection{Transcribing}
-
+The Whisper-based transcription system was evaluated using the 7 different commands in quiet, semi-noisy, and noisy environments. Audio was captured using the three microphones mounted on the TurtleBot, and a transcription was considered correct if the recognized command matched the spoken command. The results are summarized in \cref{tab:command_accuracy_transcribe}.
 \begin{table}[H]
     \centering
     \begin{tabular}{l | c c c}
@@ -25,7 +25,7 @@
     \label{tab:command_accuracy_transcribe}
 \end{table}
 
-The Whisper-based transcription system was evaluated using the 7 different commands in quiet, semi-noisy, and noisy environments. Audio was captured using the three microphones mounted on the TurtleBot, and a transcription was considered correct if the recognized command matched the spoken command.
+
 
 \subsection{Command identification}
 Small tests were created to test the command identification system. For each command different sentences were created to check the robustness of the process. The results are shown in \cref{tab:commandidentificationtest}.
@@ -73,7 +73,7 @@ GCC-PHAT (Generalised Cross Correlation-Phase Transform) was tested using real-t
         \caption{Comparison of GCC-PHAT angle error with and without filter for best configuration}
         \label{fig:GCC-Phat-filter-vs-no-filter}
     \end{subfigure}
-    \caption{GCC-PHAT real data testing results. More graphs are available in \cref{app:GCC-Phat-testing}}
+    \caption{GCC-PHAT real data testing results. Lower is better. More graphs are available in \cref{app:GCC-Phat-testing}}
     \label{fig:GCC-PHAT-combined}
 \end{figure}
 
@@ -158,16 +158,16 @@ Besides the physical inaccuracies, the robot does return to the correct position
 
 
 
-This test was done using the whole system, meaning talking to the robot and it moving succesfully. The test were done in three differnet environments: quiet, semi-noisy and noisy. The quiet environment is when nothing else is happening in the room, the semi-noise environment is when there is some background noise, and the noise environment is when a there is a lot of background noise.
+This test was done using the whole system, meaning talking to the robot and it moving succesfully. The test was done in three differnet environments: quiet, semi-noisy and noisy. The quiet environment is when nothing else is happening in the room, the semi-noisy environment has some moderate background noise equivalent to a small cafe, and the noisy environment has loud background noise, simulating a workshop or a quiet construction site.
 The videoes showcassing the test environments can be found here:
+
 \href{https://youtube.com/shorts/-Jo3rEJsfjg?feature=share}{Quiet Environment Video link}
 
 \href{https://youtube.com/shorts/5an6NhUYo2M?feature=share}{Semi-Noisy Environment Video link}
 
 \href{https://youtube.com/shorts/m3pxYh3Ubt0?feature=share}{Noisy Environment Video link}
+'
 They can also be found in \cref{app:recordings}.
-
-
 
 A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
 
@@ -179,11 +179,5 @@ For ``return'', an error of more than 20\,cm from the expected position is count
 
 The ``stop'' command has to be said while the TurtleBot is moving.
 
-
-
-
-
-
-
-
+The test showed a similar result for a quiet and slightly noisy environment, with an average success rate of about 68\%. However, in a noisy environment the success rate dropped to 50\%. Notably the stop command was very unreliable, and noticably worse in all tests.
 

@@ -12,10 +12,10 @@ Since the Whisper model does not operate in the time domain, it is not possible 
 To narrow down the audio data, which is known to contain ``come here'', Whisper is continuously given a smaller and smaller number of samples until the only detectable word is ``come'' which is usually around 2-7 buckets at a sample rate of 16 kHz. Then, the timestamp of the bucket located in the middle of the interval is chosen as the best possible timestamp for audio data to later be used for GCC-PHAT.
 
 This method requires heavy computing because Whisper has to decode segments 20--30 times before finding the optimal index. Therefore, the model is loaded into VRAM (Video Random Access Memory) and processed by a GPU (Graphics Processing Unit), which allows for parallel processing and much higher bandwidth. This is done using the CUDA driver (Compute Unified Device Architecture), which allows efficiently schedule and execute tensor operations on the GPU \cite{cuda}.
-An video without the use of GPU and instead just the CPU running whisper can be seen in \cref{app:recordings} at "Example of come here without GPU." For comparison, "Example with no noise" shows the ``Come here'' but with GPU acceleration.
+A video without the use of GPU and instead just the CPU running whisper can be seen in \cref{app:recordings} at "Example of come here without GPU." For comparison, "Example with no noise" shows the ``Come here'' but with GPU acceleration.
 
 \subsection{GCC-PHAT}
-GCC-PHAT is an algorithm that calculates the TDOA of one signal in relation to another signal \cite{MathWorks_gccphat}. This is used to calculate, where the signal is coming from by finding the time delay between 2 different microphones spaced by a known distance, dividing by the samplerate, and multiplying the time delay with the speed of sound. The time delay is found by comparing the phase difference for all frequencies between two signals using cross-correlation.
+GCC-PHAT is an algorithm that calculates the TDOA of one signal in relation to another signal \cite{MathWorks_gccphat}. This is used to calculate where the signal is coming from by finding the time delay between 2 different microphones spaced by a known distance, dividing by the samplerate, and multiplying the time delay with the speed of sound. The time delay is found by comparing the phase difference for all frequencies between two signals using cross-correlation.
 
 An example of two raw signals received from the microphones on the robot can be seen in \cref{fig:GCC-PHAT_Raw_Signal_Example}.
 
@@ -61,7 +61,7 @@ While in the frequency domain, a perfect band-pass filter can also easily be app
         \caption{}
         \label{fig:GCC-PHAT_Frequency_Domain_Example_b}
     \end{subfigure}
-    \caption{The difference in frequency domain representation of the two signals received from the microphones on the robot. a) shows the frequency domain represantation without applying the band-pass filter, while b) shows the frequency domain representation after applying the band-pass filter. The effectiveness of the band-pass filter in comparison to the result of GCC-PHAT without a filter can be seen in \cref{sec:testing}.}
+    \caption{The difference in frequency domain representation of the two signals received from the microphones on the robot. a) shows the frequency domain representation without applying the band-pass filter, while b) shows the frequency domain representation after applying the band-pass filter. The effectiveness of the band-pass filter in comparison to the result of GCC-PHAT without a filter can be seen in \cref{sec:testing}.}
     \label{fig:GCC-PHAT_filter_vs_no_filter}
 \end{figure}
 
@@ -76,7 +76,7 @@ $\phi_1$ and $\phi_2$ are the phases of the signals.
 
 This is the standard cross-spectrum, which is used in standard cross-correlation known as xcorr \cite{Bimodial_sound_source}. As seen in the formula the standard cross-correlation compares the magnitude of the signals, since the amplitudes are multiplied by the phase difference, which can vary a lot depending on the environment. In this project GCC-PHAT is instead used, because it only keeps the phase difference by normalising the cross-spectrum. This makes GCC-PHAT more robust to noise since the phase difference is more consistent across all frequencies in the signal compared to the magnitude. 
 
-Depending on what GCC-PHAT is used for a weighting can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation. The weight that is most suitable for this project can be tested and found experimentally, which is done in \cref{sec:testing}.
+Depending on what GCC-PHAT is used for, a weight can also be applied, where a weight of 1 means normalising all frequencies to the same amplitude, and a weight of 0 means keeping the original amplitude, which is equivalent to standard cross-correlation. The weight that is most suitable for this project can be tested and found experimentally, which is done in \cref{sec:testing}.
 The formula with weighting therefore becomes:
 
 \begin{equation}
@@ -92,7 +92,7 @@ The normalised cross-spectrum can then be used to calculate the TDOA by first ap
     \label{fig:GCC-PHAT_TDOA_Example}
 \end{figure}
 
-The sample offset is then divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different pairs, corresponding to the microphone pairs: 1 and 2, 1 and 3 and 2 and 3. 
+The sample offset is then divided by the sample rate and then multiplied by the speed of sound (343 m/s) to get the TDOA. This process is done 3 times, because there are 3 microphones and therefore 3 different pairs, corresponding to the microphone pairs: 1 to 2, 1 to 3, and 2 to 3. 
 
 \subsection{Triangulation}
 By knowing the distance between the three microphones and the TDOA between each pair, the AOA (Angle Of Arrival) can be calculated. In practice a 3D grid is designed with a space of 20 cm between each point. By having all the microphones on the xy-plane, a solution mirrored in this plane would therefore exist with a negative z-value. These solutions are automatically not found since the grid only searches for solutions between 0 and 2 meters on the z-axis. For each point in the grid the expected TDOA for all three microphone pairs is calculated and compared to the measured TDOA. Then the point with the best fit, the point with the smallest difference, is chosen as the calculated position of the sound source. Since the TDOA values are not perfect, there will not be a point that corresponds to all three TDOA pairs simultaneously. The point of sound origin is therefore estimated, by calculating the theoretical TDOA for each point in the grid and comparing it to the measured TDOA. The expected TDOA for each microphone pair can be calculated by finding the distance from the point P to each microphone and finding the difference:
