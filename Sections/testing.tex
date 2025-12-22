@@ -77,9 +77,9 @@ GCC-PHAT (Generalised Cross Correlation-Phase Transform) was tested using real-t
     \label{fig:GCC-PHAT-combined}
 \end{figure}
 
-The trend shows the best configuration was 2048 samples, a PHAT weight of 0.9 and a telephone bandpass filter. Similar, yet worse results are seen at 0.6 to 0.8 PHAT weights. While a PHAT weight of 1.0 shows a significant decline in performance. As does the weights with and below 0.5. Smaller sample sizes also corrolates with a lower error, with 2048 samples being the best. Similarly, the effect of the filter was tested, and the results can be seen in \cref{fig:GCC-Phat-filter-vs-no-filter}. The graph shows that using the filter reduces the angle error slightly yet consistently across all weights.
+The trend shows the best configuration was 1920 samples, a PHAT weight of 0.9 and a telephone bandpass filter. Similar, yet worse results are seen at 0.6 to 0.8 PHAT weights. While a PHAT weight of 1.0 shows a significant decline in performance. As does the weights with and below 0.5. Smaller sample sizes also corrolates with a lower error, with 1920 samples being the best. Similarly, the effect of the filter was tested, and the results can be seen in \cref{fig:GCC-Phat-filter-vs-no-filter}. The graph shows that using the filter reduces the angle error slightly yet consistently across all weights.
 
-With this, the configuration chosen for the final system is 2048 samples, a PHAT weight of 0.9 and using the filter. This should result in a mean angle error of about 16 degrees.
+With this, the configuration chosen for the final system is 1920 samples, a PHAT weight of 0.9 and using the filter. This should result in a mean angle error of about 16 degrees.
 
 \subsection{Movement control}
 \begin{figure}[H]
@@ -145,10 +145,10 @@ Besides the physical inaccuracies, the robot does return to the correct position
             Move Backward  & 85 & 80 & 65 \\
             Turn Left      & 80 & 75 & 55 \\
             Turn Right     & 75 & 70 & 50 \\
-            Come Here      & 60 & 60 & 40 \\
+            Come Here      & 60 & 60 & 50 \\
             Return         & 90 & 85 & 65 \\
             Stop           & 10 & 15 & 5 \\
-            \textbf{Average} & 68.8 & 67.1 & 48.6 \\       
+            \textbf{Average} & 68.8 & 67.1 & 50 \\       
             \bottomrule
         \end{tabular}
     }
@@ -157,17 +157,19 @@ Besides the physical inaccuracies, the robot does return to the correct position
 \end{table}
 
 
-\textbf{Video footage of test environment:}
 
+This test was done using the whole system, meaning talking to the robot and it moving succesfully. The test were done in three differnet environments: quiet, semi-noisy and noisy. The quiet environment is when nothing else is happening in the room, the semi-noise environment is when there is some background noise, and the noise environment is when a there is a lot of background noise.
+The videoes showcassing the test environments can be found here:
 \href{https://youtube.com/shorts/-Jo3rEJsfjg?feature=share}{Quiet Environment Video link}
 
 \href{https://youtube.com/shorts/5an6NhUYo2M?feature=share}{Semi-Noisy Environment Video link}
 
 \href{https://youtube.com/shorts/m3pxYh3Ubt0?feature=share}{Noisy Environment Video link}
+They can also be found in \cref{app:recordings}.
 
-Can also be found in \cref{app:recordings}.
 
-This test was done using the whole system, in three different levels of noisy environments. A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
+
+A success is defined by human speech resulting in correct robot movement. Every command was tested 20 times.
 
 For the ``come here'' command, an error of more than 30 degrees is counted as a fail.
 
